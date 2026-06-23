@@ -1,0 +1,77 @@
+@import 'tailwindcss';
+
+@theme {
+  --color-ink-50: #f5f7fb;
+  --color-ink-900: #0b1220;
+  --font-mono:
+    ui-monospace, 'SF Mono', 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+}
+
+:root {
+  color-scheme: light;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  min-height: 100svh;
+  width: 100%;
+}
+
+body {
+  font-family: system-ui, 'Segoe UI', Roboto, sans-serif;
+  color: #0f172a;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Prevent iOS double-tap zoom from interfering with interactive canvases. */
+canvas {
+  touch-action: none;
+}
+
+@layer utilities {
+  /* Subtle blueprint / graph-paper backdrop for a physics feel. */
+  .bg-grid {
+    background-color: #f7f9fc;
+    background-image:
+      linear-gradient(to right, rgba(15, 23, 42, 0.045) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(15, 23, 42, 0.045) 1px, transparent 1px);
+    background-size: 26px 26px;
+    background-position: center top;
+  }
+
+  /* Faint radial glow used behind hero content. */
+  .bg-glow {
+    background:
+      radial-gradient(
+        60% 50% at 50% 0%,
+        rgba(79, 70, 229, 0.1) 0%,
+        transparent 70%
+      );
+  }
+
+  .num {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 hover:shadow active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50;
+  }
+
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-100 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40;
+  }
+
+  .card {
+    @apply rounded-2xl border border-slate-200/80 bg-white shadow-sm;
+  }
+
+  .chip {
+    @apply inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold;
+  }
+}

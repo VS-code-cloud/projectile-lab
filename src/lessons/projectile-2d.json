@@ -1,0 +1,73 @@
+{
+  "uid": "projectile-2d",
+  "displayName": "2D Projectile Motion",
+  "text": "Combine the 1D kinematic equations you already know to predict where a launched projectile goes in two dimensions.",
+  "steps": [
+    {
+      "uid": "step-0-intro",
+      "stepType": "demo",
+      "displayText": "In this lesson you'll learn how to do 2D kinematics using the 1D kinematic equations you already know. We'll fire cannons, decompose velocities into horizontal and vertical pieces, and predict flight time, height, and landing distance.",
+      "interactiveComponent": "IntroDemo",
+      "expected": [0],
+      "explanation": ""
+    },
+    {
+      "uid": "step-1-three-cannons",
+      "stepType": "demo",
+      "displayText": "Fire all three cannons. Each launches at the same speed but a different angle (30, 45, and 60 degrees). Watch which one travels the farthest before deciding why.",
+      "interactiveComponent": "ThreeCannons",
+      "expected": [0],
+      "explanation": "",
+      "params": { "speed": 30 }
+    },
+    {
+      "uid": "step-2-equations",
+      "stepType": "demo",
+      "displayText": "You already have two 1D equations. Vertically, height follows y = vt - gt^2 as gravity pulls the ball back down. Horizontally, distance follows x = vt at constant speed. Combining them gives a full 2D model of a launched object.",
+      "interactiveComponent": "TwoPanelEquations",
+      "expected": [0],
+      "explanation": "",
+      "params": { "v": 20 }
+    },
+    {
+      "uid": "step-3-decompose",
+      "stepType": "question",
+      "displayText": "A cannon fires at angle theta = 45 degrees with speed v = 30 m/s. Using information about right triangles (hint: it involves sin and cosine), enter the horizontal and vertical velocity components. Round each to the nearest tenth (m/s).",
+      "interactiveComponent": "VectorDecomposition",
+      "expected": [21.2, 21.2],
+      "explanation": "Decompose the velocity along the triangle: vx = v*cos(theta) = 30*cos(45 degrees) = 21.2 m/s and vy = v*sin(theta) = 30*sin(45 degrees) = 21.2 m/s. At 45 degrees the components are equal.",
+      "tolerance": [0.1, 0.1],
+      "params": { "v": 30, "theta": 45 }
+    },
+    {
+      "uid": "step-4-time",
+      "stepType": "question",
+      "displayText": "A cannonball is fired at theta = 30 degrees with speed v = 20 m/s. How long (in seconds) until it returns to its starting elevation? Hint: you only need to know it's vertical trajectory. Round to the nearest tenth (s).",
+      "interactiveComponent": "TimeOfFlight",
+      "expected": [2.0],
+      "explanation": "Set the vertical displacement to zero: 0 = vy*t - (1/2)g*t^2, so t = 2*vy/g. With vy = 20*sin(30 degrees) = 10 m/s and g = 9.8, t = 2*10/9.8 = 2.0 s.",
+      "tolerance": [0.1],
+      "params": { "v": 20, "theta": 30 }
+    },
+    {
+      "uid": "step-5-max-height",
+      "stepType": "question",
+      "displayText": "A cannonball is fired at theta = 60 degrees with speed v = 20 m/s. Drag the bar to predict the maximum height it reaches, then press Fire cannonball. Round to the nearest meter.",
+      "interactiveComponent": "MaxHeightDragBar",
+      "expected": [15],
+      "explanation": "At the top, vertical velocity is zero. Using vy^2 = 2*g*H, H = vy^2/(2g). With vy = 20*sin(60 degrees) = 17.3 m/s, H = 17.3^2/(2*9.8) = 15 m.",
+      "tolerance": [1],
+      "params": { "v": 20, "theta": 60 }
+    },
+    {
+      "uid": "step-6-cliff",
+      "stepType": "question",
+      "displayText": "A cannon on a 25 m cliff fires at theta = 45 degrees with speed v = 20 m/s. Predict how far from the base of the cliff the ball lands. If you're stuck, consider that only the vertical trajectory impacts time in air, while horizontal distance is only dependent on time. Round to the nearest meter.",
+      "interactiveComponent": "CliffLanding",
+      "expected": [58],
+      "explanation": "First find time to land: 0 = 25 + vy*t - (1/2)g*t^2 with vy = 20*sin(45 degrees) = 14.1 m/s gives t = 4.12 s. Then x = vx*t = 14.1*4.12 = 58 m.",
+      "tolerance": [1],
+      "params": { "v": 20, "theta": 45, "h0": 25 }
+    }
+  ]
+}

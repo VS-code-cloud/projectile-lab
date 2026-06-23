@@ -1,0 +1,15 @@
+rules_version = '2';
+
+// =============================================================================
+// WARNING: TEST-MODE RULES - INSECURE.
+// These allow anyone on the internet to read and write the entire database.
+// This matches the MVP/PRD requirement ("assume all read-write access in test
+// mode") and is NOT suitable for production. Harden before any real launch.
+// =============================================================================
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if true;
+    }
+  }
+}

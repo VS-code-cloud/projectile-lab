@@ -1,0 +1,29 @@
+{
+  "auth": {
+    "providers": {
+      "googleSignIn": {
+        "oAuthBrandDisplayName": "ProjectileLab",
+        "supportEmail": "vishnu.sharma@alphaaiengineering.com",
+        "authorizedRedirectUris": [
+          "https://brilliant-clone-eee48.web.app",
+          "https://brilliant-clone-eee48.firebaseapp.com",
+          "http://localhost"
+        ]
+      }
+    }
+  },
+  "firestore": {
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  },
+  "hosting": {
+    "public": "dist",
+    "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+    "rewrites": [
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ]
+  }
+}
