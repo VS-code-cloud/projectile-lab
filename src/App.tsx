@@ -1,10 +1,19 @@
 import { lazy, Suspense } from 'react'
-import { Route, Routes } from 'react-router-dom'
+import { Route, Routes, useParams } from 'react-router-dom'
 import { ProtectedRoute } from './components/ProtectedRoute'
 
 const HomePage = lazy(() => import('./pages/HomePage'))
 const LoginPage = lazy(() => import('./pages/LoginPage'))
 const LessonPage = lazy(() => import('./pages/LessonPage'))
+
+/**
+ * Wraps the lesson player with a key on the lesson uid so navigating between
+ * lessons (same route) remounts it, resetting paging and resume state.
+ */
+function LessonRoute() {
+  const { lessonUid = '' } = useParams()
+  return <LessonPage key={lessonUid} />
+}
 
 /**
  * Application route table. Home and lesson routes require authentication; the
@@ -26,7 +35,7 @@ export default function App() {
           path="/lesson/:lessonUid"
           element={
             <ProtectedRoute>
-              <LessonPage />
+              <LessonRoute />
             </ProtectedRoute>
           }
         />

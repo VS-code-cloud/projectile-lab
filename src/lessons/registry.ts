@@ -24,6 +24,18 @@ export const interactiveRegistry: Record<
     () => import('../components/interactive/MaxHeightDragBar'),
   ),
   CliffLanding: lazy(() => import('../components/interactive/CliffLanding')),
+  MotionTrackDemo: lazy(
+    () => import('../components/interactive/MotionTrackDemo'),
+  ),
+  MotionQuestion: lazy(
+    () => import('../components/interactive/MotionQuestion'),
+  ),
+  ForceSledDemo: lazy(() => import('../components/interactive/ForceSledDemo')),
+  ForceQuestion: lazy(() => import('../components/interactive/ForceQuestion')),
+  RampDemo: lazy(() => import('../components/interactive/RampDemo')),
+  RampQuestion: lazy(() => import('../components/interactive/RampQuestion')),
+  OrbitDemo: lazy(() => import('../components/interactive/OrbitDemo')),
+  OrbitQuestion: lazy(() => import('../components/interactive/OrbitQuestion')),
 }
 
 /**

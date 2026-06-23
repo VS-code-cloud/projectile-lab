@@ -1,0 +1,55 @@
+{
+  "uid": "newtons-second-law",
+  "displayName": "Newton's Second Law",
+  "text": "Connect force, mass, and acceleration through F = m·a, the single equation at the heart of classical mechanics.",
+  "steps": [
+    {
+      "uid": "step-0-intro",
+      "stepType": "demo",
+      "displayText": "Newton's second law says the acceleration of an object equals the net force on it divided by its mass: a = F/m. Press Play to push this block across a frictionless surface, then read off its acceleration.",
+      "interactiveComponent": "ForceSledDemo",
+      "expected": [0],
+      "explanation": "",
+      "params": { "force": 12, "mass": 4 }
+    },
+    {
+      "uid": "step-1-explore",
+      "stepType": "demo",
+      "displayText": "Experiment with the sliders. Increasing the force makes the block accelerate faster, while increasing the mass makes the same force produce less acceleration. Force and mass pull acceleration in opposite directions.",
+      "interactiveComponent": "ForceSledDemo",
+      "expected": [0],
+      "explanation": "",
+      "params": { "force": 20, "mass": 2 }
+    },
+    {
+      "uid": "step-2-solve-acceleration",
+      "stepType": "question",
+      "displayText": "A net force of F = 20 N acts on a block of mass m = 4 kg on a frictionless surface. What is its acceleration? Use a = F/m. Enter the answer in m/s^2.",
+      "interactiveComponent": "ForceQuestion",
+      "expected": [5],
+      "explanation": "Use a = F/m = 20/4 = 5 m/s^2.",
+      "tolerance": [0.1],
+      "params": { "force": 20, "mass": 4 }
+    },
+    {
+      "uid": "step-3-solve-force",
+      "stepType": "question",
+      "displayText": "A block of mass m = 3 kg accelerates at a = 2 m/s^2. What net force is acting on it? Use F = m*a. Enter the answer in newtons (N).",
+      "interactiveComponent": "ForceQuestion",
+      "expected": [6],
+      "explanation": "Use F = m*a = 3*2 = 6 N.",
+      "tolerance": [0.1],
+      "params": { "mass": 3, "accel": 2 }
+    },
+    {
+      "uid": "step-4-solve-mass",
+      "stepType": "question",
+      "displayText": "A net force of F = 18 N gives a block an acceleration of a = 3 m/s^2. What is the block's mass? Rearrange F = m*a to m = F/a. Enter the answer in kilograms (kg).",
+      "interactiveComponent": "ForceQuestion",
+      "expected": [6],
+      "explanation": "Rearrange F = m*a to m = F/a = 18/3 = 6 kg.",
+      "tolerance": [0.1],
+      "params": { "force": 18, "accel": 3 }
+    }
+  ]
+}

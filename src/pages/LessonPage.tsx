@@ -4,7 +4,7 @@ import { Header } from '../components/layout/Header'
 import { MasteryBar } from '../components/MasteryBar'
 import { AnswerFeedback } from '../components/AnswerFeedback'
 import { InteractiveStep } from '../components/InteractiveStep'
-import { getLesson } from '../lessons'
+import { allLessons, getLesson } from '../lessons'
 import { countQuestions } from '../lessons/types'
 import { useLessonProgress } from '../hooks/useLessonProgress'
 import { checkAnswer } from '../lib/checkAnswer'
@@ -12,7 +12,8 @@ import { checkAnswer } from '../lib/checkAnswer'
 /**
  * Lesson player: walks the learner through each step, renders the referenced
  * interactive component, records progress, and shows answer feedback. After the
- * final step it recommends that more lessons are coming soon.
+ * final step it recommends the next lesson (or notes that more are coming if
+ * this is the last lesson).
  */
 export default function LessonPage() {
   const { lessonUid = '' } = useParams()
@@ -74,6 +75,9 @@ export default function LessonPage() {
   }
 
   const isQuestion = step.stepType === 'question'
+  const lessonOrder = allLessons.findIndex((l) => l.uid === lesson.uid)
+  const nextLesson =
+    lessonOrder === -1 ? undefined : allLessons[lessonOrder + 1]
 
   return (
     <div className="bg-grid min-h-svh">
@@ -162,13 +166,30 @@ export default function LessonPage() {
             <p className="text-lg font-semibold text-indigo-900">
               You finished the lesson!
             </p>
-            <p className="mt-1 text-sm text-indigo-700">
-              More lessons are coming soon &mdash; check back for the next step in
-              your physics journey.
-            </p>
-            <Link to="/" className="btn-primary mt-4">
-              Back to lessons
-            </Link>
+            {nextLesson ? (
+              <>
+                <p className="mt-1 text-sm text-indigo-700">
+                  Up next: <span className="font-semibold">{nextLesson.displayName}</span> &mdash;{' '}
+                  {nextLesson.text}
+                </p>
+                <Link
+                  to={`/lesson/${nextLesson.uid}`}
+                  className="btn-primary mt-4"
+                >
+                  Start {nextLesson.displayName} &rarr;
+                </Link>
+              </>
+            ) : (
+              <>
+                <p className="mt-1 text-sm text-indigo-700">
+                  More lessons are coming soon &mdash; check back for the next
+                  step in your physics journey.
+                </p>
+                <Link to="/" className="btn-primary mt-4">
+                  Back to lessons
+                </Link>
+              </>
+            )}
           </div>
         )}
 

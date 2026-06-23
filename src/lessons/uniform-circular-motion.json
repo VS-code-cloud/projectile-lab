@@ -1,0 +1,55 @@
+{
+  "uid": "uniform-circular-motion",
+  "displayName": "Uniform Circular Motion",
+  "text": "Move in a circle at constant speed yet always accelerate. Discover centripetal acceleration, period, and the force that keeps objects turning.",
+  "steps": [
+    {
+      "uid": "step-0-intro",
+      "stepType": "demo",
+      "displayText": "An object moving in a circle at constant speed is still accelerating, because its direction keeps changing. Watch the blue velocity arrow stay tangent to the circle while the orange acceleration arrow always points toward the center.",
+      "interactiveComponent": "OrbitDemo",
+      "expected": [0],
+      "explanation": "",
+      "params": { "speed": 8, "radius": 5 }
+    },
+    {
+      "uid": "step-1-explore",
+      "stepType": "demo",
+      "displayText": "Adjust the speed and radius. A faster object or a tighter circle needs a larger inward (centripetal) acceleration to keep turning. The relationship is a = v²/r.",
+      "interactiveComponent": "OrbitDemo",
+      "expected": [0],
+      "explanation": "",
+      "params": { "speed": 10, "radius": 4 }
+    },
+    {
+      "uid": "step-2-centripetal-accel",
+      "stepType": "question",
+      "displayText": "An object moves in a circle of radius r = 5 m at a constant speed v = 10 m/s. What is its centripetal acceleration? Use a = v^2/r. Round to the nearest tenth (m/s^2).",
+      "interactiveComponent": "OrbitQuestion",
+      "expected": [20],
+      "explanation": "Use a = v^2/r = (10^2)/5 = 100/5 = 20 m/s^2, directed toward the center.",
+      "tolerance": [0.1],
+      "params": { "speed": 10, "radius": 5 }
+    },
+    {
+      "uid": "step-3-period",
+      "stepType": "question",
+      "displayText": "The same object (r = 5 m, v = 10 m/s) goes once around the circle. How long does one full revolution take? Hint: the period is T = 2*pi*r / v. Round to the nearest tenth (s).",
+      "interactiveComponent": "OrbitQuestion",
+      "expected": [3.1],
+      "explanation": "One revolution covers a distance of 2*pi*r, so T = 2*pi*r/v = 2*pi*5/10 = pi = 3.1 s.",
+      "tolerance": [0.1],
+      "params": { "speed": 10, "radius": 5 }
+    },
+    {
+      "uid": "step-4-centripetal-force",
+      "stepType": "question",
+      "displayText": "An object of mass m = 2 kg moves in a circle of radius r = 5 m at v = 10 m/s. What centripetal force is required to keep it on this path? Use F = m*v^2/r. Round to the nearest newton (N).",
+      "interactiveComponent": "OrbitQuestion",
+      "expected": [40],
+      "explanation": "Combine Newton's second law with centripetal acceleration: F = m*a = m*v^2/r = 2*100/5 = 40 N.",
+      "tolerance": [1],
+      "params": { "speed": 10, "radius": 5, "mass": 2 }
+    }
+  ]
+}

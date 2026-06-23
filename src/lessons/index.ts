@@ -1,13 +1,26 @@
 import type { Lesson } from './types'
 import projectile2d from './projectile-2d.json'
+import kinematics1d from './kinematics-1d.json'
+import newtonsSecondLaw from './newtons-second-law.json'
+import inclinedPlanes from './inclined-planes.json'
+import uniformCircularMotion from './uniform-circular-motion.json'
 
-/** All lessons available in the app, keyed by lesson uid. */
-const lessons: Record<string, Lesson> = {
-  [projectile2d.uid]: projectile2d as Lesson,
-}
+/**
+ * Ordered list of all lessons (used by the home page). The array order is the
+ * order shown to learners.
+ */
+export const allLessons: Lesson[] = [
+  projectile2d as unknown as Lesson,
+  kinematics1d as unknown as Lesson,
+  newtonsSecondLaw as unknown as Lesson,
+  inclinedPlanes as unknown as Lesson,
+  uniformCircularMotion as unknown as Lesson,
+]
 
-/** Ordered list of all lessons (used by the home page). */
-export const allLessons: Lesson[] = Object.values(lessons)
+/** All lessons keyed by lesson uid. */
+const lessons: Record<string, Lesson> = Object.fromEntries(
+  allLessons.map((lesson) => [lesson.uid, lesson]),
+)
 
 /**
  * Looks up a lesson by its uid.
