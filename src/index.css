@@ -1,18 +1,55 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Sora:wght@500;600;700;800&display=swap');
 @import 'tailwindcss';
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap');
+
+/*
+ * Design system — "Quantum Lab"
+ * A premium, professional STEM-learning aesthetic: airy light study surfaces
+ * with depth (layered elevation + glass), an immersive dark hero/auth, and an
+ * indigo→violet brand with an electric-teal accent. Interactive canvas
+ * components intentionally keep light surfaces for legibility.
+ */
 
 @theme {
-  --color-ink-50: #f5f7fb;
+  /* Brand + semantic palette */
+  --color-brand-50: #eef2ff;
+  --color-brand-100: #e0e7ff;
+  --color-brand-300: #a5b4fc;
+  --color-brand-500: #6366f1;
+  --color-brand-600: #4f46e5;
+  --color-brand-700: #4338ca;
+  --color-accent-400: #2dd4bf;
+  --color-accent-500: #14b8a6;
+  --color-accent-600: #0d9488;
   --color-ink-900: #0b1220;
+
   --font-sans:
     'Inter', system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-  --font-display: 'Space Grotesk', 'Inter', system-ui, sans-serif;
+  --font-display: 'Sora', 'Inter', system-ui, sans-serif;
   --font-mono:
     ui-monospace, 'SF Mono', 'JetBrains Mono', 'Fira Code', Consolas, monospace;
 }
 
 :root {
   color-scheme: light;
+
+  /* Surfaces */
+  --surface: #ffffff;
+  --surface-muted: #f6f8fc;
+  --border-subtle: rgba(15, 23, 42, 0.08);
+  --border-strong: rgba(15, 23, 42, 0.14);
+
+  /* Elevation scale (soft, layered shadows for depth) */
+  --elev-1:
+    0 1px 2px rgba(15, 23, 42, 0.04), 0 1px 3px rgba(15, 23, 42, 0.06);
+  --elev-2:
+    0 2px 4px rgba(15, 23, 42, 0.04), 0 8px 20px -8px rgba(15, 23, 42, 0.12);
+  --elev-3:
+    0 4px 8px rgba(15, 23, 42, 0.05), 0 18px 40px -16px rgba(15, 23, 42, 0.22);
+  --elev-brand:
+    0 1px 2px rgba(79, 70, 229, 0.25),
+    0 10px 28px -10px rgba(124, 58, 237, 0.5);
+
+  --radius: 16px;
 }
 
 html,
@@ -26,7 +63,7 @@ body,
 body {
   font-family: var(--font-sans);
   color: #0f172a;
-  background-color: #f6f8fc;
+  background-color: var(--surface-muted);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -35,27 +72,40 @@ body {
   background: rgba(99, 102, 241, 0.18);
 }
 
+/* Accessible keyboard focus across all interactive elements. */
+:focus-visible {
+  outline: 2px solid var(--color-brand-600);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
 /* Prevent iOS double-tap zoom from interfering with interactive canvases. */
 canvas {
   touch-action: none;
 }
 
 @layer utilities {
-  /* Subtle blueprint / graph-paper backdrop with a soft vignette. */
+  /* Subtle blueprint / graph-paper backdrop with a soft brand vignette. */
   .bg-grid {
-    background-color: #f6f8fc;
+    background-color: var(--surface-muted);
     background-image:
       radial-gradient(
-        100% 60% at 50% -10%,
-        rgba(99, 102, 241, 0.07) 0%,
+        90% 60% at 50% -10%,
+        rgba(99, 102, 241, 0.08) 0%,
         transparent 60%
       ),
-      linear-gradient(to right, rgba(15, 23, 42, 0.04) 1px, transparent 1px),
-      linear-gradient(to bottom, rgba(15, 23, 42, 0.04) 1px, transparent 1px);
+      radial-gradient(
+        70% 50% at 100% 0%,
+        rgba(20, 184, 166, 0.06) 0%,
+        transparent 55%
+      ),
+      linear-gradient(to right, rgba(15, 23, 42, 0.035) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(15, 23, 42, 0.035) 1px, transparent 1px);
     background-size:
       100% 100%,
-      28px 28px,
-      28px 28px;
+      100% 100%,
+      30px 30px,
+      30px 30px;
     background-position: center top;
   }
 
@@ -64,7 +114,24 @@ canvas {
     background-image:
       linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
       linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
-    background-size: 30px 30px;
+    background-size: 32px 32px;
+  }
+
+  /* Deep immersive backdrop for hero/auth sections. */
+  .bg-immersive {
+    background-color: #0b1020;
+    background-image:
+      radial-gradient(
+        60% 50% at 15% 0%,
+        rgba(99, 102, 241, 0.35) 0%,
+        transparent 60%
+      ),
+      radial-gradient(
+        50% 45% at 100% 20%,
+        rgba(20, 184, 166, 0.22) 0%,
+        transparent 60%
+      ),
+      linear-gradient(160deg, #0f172a 0%, #131036 55%, #0b1020 100%);
   }
 
   /* Faint radial glow used behind hero content. */
@@ -77,10 +144,53 @@ canvas {
   }
 
   .text-gradient {
-    background-image: linear-gradient(120deg, #4f46e5 0%, #7c3aed 50%, #6366f1 100%);
+    background-image: linear-gradient(
+      120deg,
+      #4f46e5 0%,
+      #7c3aed 45%,
+      #14b8a6 110%
+    );
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
+  }
+
+  /* Frosted glass surface (use over imagery / immersive backgrounds). */
+  .glass {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(16px) saturate(140%);
+    -webkit-backdrop-filter: blur(16px) saturate(140%);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+  }
+
+  .glass-dark {
+    background: rgba(17, 24, 39, 0.55);
+    backdrop-filter: blur(16px) saturate(140%);
+    -webkit-backdrop-filter: blur(16px) saturate(140%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  /* Accent glow halo, e.g. behind a primary CTA or focal element. */
+  .glow-brand {
+    box-shadow: 0 0 0 1px rgba(99, 102, 241, 0.25),
+      0 12px 50px -12px rgba(99, 102, 241, 0.6);
+  }
+
+  /* Elevation utilities (depth scale). */
+  .elev-1 { box-shadow: var(--elev-1); }
+  .elev-2 { box-shadow: var(--elev-2); }
+  .elev-3 { box-shadow: var(--elev-3); }
+
+  /* Tactile lift on hover (depth + slight rise). Transform-only for perf. */
+  .lift {
+    transition:
+      transform 0.25s cubic-bezier(0.22, 1, 0.36, 1),
+      box-shadow 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+    will-change: transform;
+  }
+  .lift:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--elev-3);
   }
 
   .num {
@@ -95,12 +205,29 @@ canvas {
   .animate-fade {
     animation: fade 0.4s ease-out both;
   }
+
+  /* Slow ambient drift for decorative glow blobs. */
+  .animate-float {
+    animation: float 9s ease-in-out infinite;
+  }
+
+  /* Shimmer for skeleton loading states. */
+  .animate-shimmer {
+    background: linear-gradient(
+      100deg,
+      rgba(148, 163, 184, 0.12) 30%,
+      rgba(148, 163, 184, 0.28) 50%,
+      rgba(148, 163, 184, 0.12) 70%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.4s ease-in-out infinite;
+  }
 }
 
 @keyframes rise {
   from {
     opacity: 0;
-    transform: translateY(10px);
+    transform: translateY(12px);
   }
   to {
     opacity: 1;
@@ -117,32 +244,87 @@ canvas {
   }
 }
 
+@keyframes float {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(0, -22px, 0);
+  }
+}
+
+@keyframes shimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+
+/* Respect users who prefer reduced motion. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+  .lift:hover {
+    transform: none;
+  }
+}
+
 @layer components {
   .btn-primary {
-    @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50;
-    background-image: linear-gradient(to bottom right, #4f46e5, #7c3aed);
-    box-shadow:
-      0 1px 2px rgba(79, 70, 229, 0.25),
-      0 6px 16px -6px rgba(124, 58, 237, 0.45);
+    @apply inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50;
+    background-image: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+    box-shadow: var(--elev-brand);
   }
 
   .btn-primary:hover {
     filter: brightness(1.07);
     box-shadow:
-      0 2px 4px rgba(79, 70, 229, 0.3),
-      0 10px 24px -8px rgba(124, 58, 237, 0.55);
+      0 2px 6px rgba(79, 70, 229, 0.3),
+      0 14px 32px -10px rgba(124, 58, 237, 0.6);
+  }
+
+  .btn-accent {
+    @apply inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50;
+    background-image: linear-gradient(135deg, #0d9488 0%, #14b8a6 100%);
+    box-shadow:
+      0 1px 2px rgba(13, 148, 136, 0.25),
+      0 10px 28px -10px rgba(20, 184, 166, 0.5);
+  }
+  .btn-accent:hover {
+    filter: brightness(1.06);
   }
 
   .btn-secondary {
-    @apply inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50;
+    @apply inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50;
+    box-shadow: var(--elev-1);
   }
 
   .btn-ghost {
-    @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-100 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40;
+    @apply inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-100 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40;
   }
 
   .card {
-    @apply rounded-2xl border border-slate-200/70 bg-white shadow-sm;
+    @apply rounded-2xl border bg-white;
+    border-color: var(--border-subtle);
+    box-shadow: var(--elev-2);
+  }
+
+  .card-glass {
+    @apply rounded-2xl;
+    background: rgba(255, 255, 255, 0.72);
+    backdrop-filter: blur(16px) saturate(140%);
+    -webkit-backdrop-filter: blur(16px) saturate(140%);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    box-shadow: var(--elev-2);
   }
 
   .chip {

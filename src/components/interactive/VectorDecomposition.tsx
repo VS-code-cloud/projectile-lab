@@ -36,6 +36,7 @@ export default function VectorDecomposition({
           strokeWidth="2"
         />
         <line x1="40" y1="150" x2="200" y2="30" stroke="#4f46e5" strokeWidth="2.5" />
+        <path d="M60 150 A 20 20 0 0 0 56 138" fill="none" stroke="#334155" strokeWidth="1.5" />
         <text
           x="108"
           y="74"
@@ -52,7 +53,7 @@ export default function VectorDecomposition({
         <text x="208" y="92" fill="#b45309" fontSize="13">
           vy = ?
         </text>
-        <text x="50" y="142" fill="#334155" fontSize="12">
+        <text x="14" y="166" fill="#334155" fontSize="12" textAnchor="start">
           {theta}&deg;
         </text>
       </svg>

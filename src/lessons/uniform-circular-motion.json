@@ -37,41 +37,45 @@
     {
       "uid": "step-3-centripetal-accel",
       "stepType": "question",
-      "displayText": "An object moves in a circle of radius r = 5 m at a constant speed v = 10 m/s. What is its centripetal acceleration? Round to the nearest tenth (m/s^2).",
+      "displayText": "An object moves in a circle of radius r = 5 m at a constant speed v = 10 m/s. Drag the gauge to predict its centripetal acceleration (m/s\u00B2), then lock it in.",
       "interactiveComponent": "OrbitQuestion",
       "expected": [20],
       "explanation": "Use a = v^2/r = (10^2)/5 = 100/5 = 20 m/s^2, directed toward the center.",
-      "tolerance": [0.1],
+      "tolerance": [1],
+      "variant": "accel",
       "params": { "speed": 10, "radius": 5 }
     },
     {
       "uid": "step-4-centripetal-accel-2",
       "stepType": "question",
-      "displayText": "A car rounds a curve of radius r = 8 m at a constant speed v = 12 m/s. What is its centripetal acceleration? Round to the nearest tenth (m/s^2).",
+      "displayText": "A car rounds a curve of radius r = 8 m at a constant speed v = 12 m/s. Drag the gauge to predict its centripetal acceleration (m/s\u00B2), then lock it in.",
       "interactiveComponent": "OrbitQuestion",
       "expected": [18],
       "explanation": "Use a = v^2/r = (12^2)/8 = 144/8 = 18 m/s^2, directed toward the center.",
-      "tolerance": [0.1],
+      "tolerance": [1],
+      "variant": "accel",
       "params": { "speed": 12, "radius": 8 }
     },
     {
       "uid": "step-5-period",
       "stepType": "question",
-      "displayText": "An object moves in a circle of radius r = 5 m at v = 10 m/s. How long does one full revolution take? Round to the nearest tenth (s).",
+      "displayText": "An object moves in a circle of radius r = 5 m at v = 10 m/s. Drag the gauge to predict how long one full revolution takes (s), then lock it in.",
       "interactiveComponent": "OrbitQuestion",
       "expected": [3.1],
       "explanation": "One revolution covers a distance of 2*pi*r, so T = 2*pi*r/v = 2*pi*5/10 = pi = 3.1 s.",
-      "tolerance": [0.1],
+      "tolerance": [0.3],
+      "variant": "period",
       "params": { "speed": 10, "radius": 5 }
     },
     {
       "uid": "step-6-centripetal-force",
       "stepType": "question",
-      "displayText": "An object of mass m = 2 kg moves in a circle of radius r = 5 m at v = 10 m/s. What centripetal force is required to keep it on this path? Round to the nearest newton (N).",
+      "displayText": "An object of mass m = 2 kg moves in a circle of radius r = 5 m at v = 10 m/s. Drag the gauge to predict the centripetal force required to keep it on this path (N), then lock it in.",
       "interactiveComponent": "OrbitQuestion",
       "expected": [40],
       "explanation": "Combine Newton's second law with centripetal acceleration: F = m*a = m*v^2/r = 2*100/5 = 40 N.",
-      "tolerance": [1],
+      "tolerance": [2],
+      "variant": "force",
       "params": { "speed": 10, "radius": 5, "mass": 2 }
     }
   ]

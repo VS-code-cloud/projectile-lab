@@ -29,19 +29,20 @@ export function MasteryBar({
 
   return (
     <div className="space-y-2">
-      <div className="flex items-center justify-between text-sm font-medium text-slate-600">
-        <span>
-          <span className="num">
+      <div className="flex items-center justify-between gap-2 text-sm">
+        <span className="font-medium text-slate-600">
+          <span className="num font-semibold text-slate-900">
             {stepsCompleted}/{totalSteps}
           </span>{' '}
           steps
         </span>
-        <span>
-          <span className="num">{masteryPct}%</span> mastery
+        <span className="font-medium text-slate-600">
+          <span className="num font-semibold text-brand-600">{masteryPct}%</span>{' '}
+          mastery
         </span>
       </div>
       <div
-        className="h-2.5 w-full overflow-hidden rounded-full bg-slate-200"
+        className="h-3 w-full overflow-hidden rounded-full bg-slate-200/80 shadow-inner"
         role="progressbar"
         aria-valuenow={stepPct}
         aria-valuemin={0}
@@ -49,10 +50,11 @@ export function MasteryBar({
         aria-label="Lesson progress"
       >
         <div
-          className="h-full rounded-full transition-[width] duration-500"
+          className="h-full rounded-full transition-[width] duration-500 ease-out"
           style={{
             width: `${stepPct}%`,
-            backgroundImage: 'linear-gradient(to right, #6366f1, #8b5cf6)',
+            backgroundImage:
+              'linear-gradient(to right, #4f46e5 0%, #7c3aed 60%, #14b8a6 130%)',
           }}
         />
       </div>

@@ -26,11 +26,12 @@ export function BrandMark({ size = 28, className }: BrandMarkProps) {
       <defs>
         <linearGradient id={gid} x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
           <stop stopColor="#6366f1" />
-          <stop offset="1" stopColor="#8b5cf6" />
+          <stop offset="0.55" stopColor="#7c3aed" />
+          <stop offset="1" stopColor="#4338ca" />
         </linearGradient>
       </defs>
       <rect x="1" y="1" width="30" height="30" rx="9" fill={`url(#${gid})`} />
-      <rect x="1" y="1" width="30" height="15" rx="9" fill="#ffffff" opacity="0.08" />
+      <rect x="1" y="1" width="30" height="15" rx="9" fill="#ffffff" opacity="0.1" />
       <path
         d="M6 25 C 12 7, 20 7, 26 25"
         stroke="#e0e7ff"
@@ -40,8 +41,9 @@ export function BrandMark({ size = 28, className }: BrandMarkProps) {
         fill="none"
       />
       <line x1="6" y1="25" x2="26" y2="25" stroke="#c7d2fe" strokeWidth="1.5" />
-      <circle cx="6" cy="25" r="2.6" fill="#ffffff" />
+      <circle cx="6" cy="25" r="2.6" fill="#5eead4" />
       <circle cx="20.3" cy="11.6" r="3.4" fill="#ffffff" />
+      <circle cx="20.3" cy="11.6" r="1.4" fill="#a5b4fc" />
     </svg>
   )
 }

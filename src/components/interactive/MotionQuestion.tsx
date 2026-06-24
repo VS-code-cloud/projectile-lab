@@ -1,13 +1,29 @@
 import { useMemo, useState } from 'react'
 import { SceneCanvas } from './shared/SceneCanvas'
 import { drawArrow, drawLabel } from './shared/draw'
-import { NumericAnswer } from './shared/NumericAnswer'
+import { PredictGauge } from './shared/PredictGauge'
+import { niceGaugeMax } from './shared/gauge'
 import type { StepComponentProps } from '../../lessons/types'
 
+/** Display config per asked quantity. */
+const VARIANTS = {
+  velocity: {
+    unit: 'm/s',
+    decimals: 0,
+    label: 'Drag the gauge to predict the final velocity, then lock it in.',
+  },
+  distance: {
+    unit: 'm',
+    decimals: 0,
+    label: 'Drag the gauge to predict how far the cart travels, then lock it in.',
+  },
+} as const
+
 /**
- * Question step for 1-D motion. Shows the scenario cart, and animates it through
- * the motion (x = v0·t + ½·a·t²) once the learner submits a numeric answer.
- * @param props.step Provides `params.v0`, `params.a`, and `params.t`.
+ * Question step for 1-D motion. Animates the scenario cart through
+ * x = v0·t + ½·a·t² and lets the learner predict the final velocity or distance
+ * on a gauge before revealing the true value. One answer per step.
+ * @param props.step Provides `params.v0`, `params.a`, `params.t`, and `variant`.
  */
 export default function MotionQuestion({
   step,
@@ -19,6 +35,11 @@ export default function MotionQuestion({
   const a = step.params?.a ?? 0
   const duration = step.params?.t ?? 4
 
+  const variant = step.variant === 'distance' ? 'distance' : 'velocity'
+  const cfg = VARIANTS[variant]
+  const trueValue = step.expected[0]
+  const gaugeMax = niceGaugeMax(trueValue)
+
   const [playToken, setPlayToken] = useState(answered ? 1 : 0)
 
   const xAt = useMemo(
@@ -27,10 +48,10 @@ export default function MotionQuestion({
   )
   const xMax = Math.max(xAt(duration), 0.001)
 
-  /** Plays the motion animation and records the answer. */
-  function handleSubmit(values: number[]) {
+  /** Records the prediction and plays the motion animation. */
+  function handleSubmit(value: number) {
     setPlayToken((token) => token + 1)
-    onSubmit(values)
+    onSubmit([value])
   }
 
   const draw = (
@@ -39,10 +60,18 @@ export default function MotionQuestion({
     h: number,
     time: number,
   ) => {
+    drawLabel(
+      ctx,
+      `v\u2080 = ${v0} m/s    a = ${a} m/s\u00B2`,
+      14,
+      18,
+      '#475569',
+    )
+
     const left = 44
     const right = 24
     const trackW = w - left - right
-    const trackY = h * 0.62
+    const trackY = h * 0.64
     const toPx = (x: number) => left + (x / xMax) * trackW
 
     ctx.strokeStyle = '#cbd5e1'
@@ -74,7 +103,8 @@ export default function MotionQuestion({
     const arrowLen = Math.min(Math.abs(vAtTime) * 6, trackW * 0.4)
     if (arrowLen > 2) {
       const dir = Math.sign(vAtTime) || 1
-      drawArrow(ctx, cx, trackY - 26, cx + dir * arrowLen, trackY - 26, '#0ea5e9', 3)
+      const tipX = Math.min(Math.max(cx + dir * arrowLen, left), w - right)
+      drawArrow(ctx, cx, trackY - 26, tipX, trackY - 26, '#0ea5e9', 3)
     }
 
     const cartW = 30
@@ -92,17 +122,21 @@ export default function MotionQuestion({
   }
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-4">
       <SceneCanvas
         draw={draw}
         playToken={playToken}
         duration={duration}
         heightClass="h-44"
       />
-      <NumericAnswer
-        label="Your answer"
+      <PredictGauge
+        label={cfg.label}
+        unit={cfg.unit}
+        max={gaugeMax}
+        trueValue={trueValue}
+        decimals={cfg.decimals}
         answered={answered}
-        submittedValues={submittedValues}
+        submittedValue={submittedValues ? submittedValues[0] : null}
         onSubmit={handleSubmit}
       />
     </div>

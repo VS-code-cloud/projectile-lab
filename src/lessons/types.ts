@@ -30,6 +30,11 @@ export interface Step {
    * component). Each entry pairs a formula with a short plain-language label.
    */
   equations?: { formula: string; label: string }[]
+  /**
+   * Question variant key. Selects which quantity a question asks about (e.g.
+   * "velocity" vs "distance") so a single component can drive several steps.
+   */
+  variant?: string
 }
 
 /** A structured lesson: an ordered array of steps plus display metadata. */

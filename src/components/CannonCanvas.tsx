@@ -268,26 +268,35 @@ export function CannonCanvas({
       }
 
       const launchY = cliffHeight > 0 ? cliffHeight : 0
+      const scaleX = plotW / (xMax - xMin)
+      const scaleY = plotH / yMax
 
-      // Cannon barrels (one per shot, colored).
+      // Cannon (barrel + base) per shot, drawn at that shot's own launch point so
+      // it sits exactly where the projectile starts (e.g. on a platform or cliff
+      // top) rather than always on the ground. The barrel direction follows the
+      // arc's launch tangent in the canvas's non-uniform screen scales.
       for (const traj of trajectories) {
+        const shotLaunchY = traj.shot.h0 ?? launchY
         const angle = (traj.shot.thetaDeg * Math.PI) / 180
         const bx = sx(0)
-        const by = sy(launchY)
+        const by = sy(shotLaunchY)
+        const dirX = Math.cos(angle) * scaleX
+        const dirY = -Math.sin(angle) * scaleY
+        const mag = Math.hypot(dirX, dirY) || 1
         const len = 22
         ctx.strokeStyle = traj.shot.color ?? '#1e293b'
         ctx.lineWidth = 5
         ctx.lineCap = 'round'
         ctx.beginPath()
         ctx.moveTo(bx, by)
-        ctx.lineTo(bx + Math.cos(angle) * len, by - Math.sin(angle) * len)
+        ctx.lineTo(bx + (dirX / mag) * len, by + (dirY / mag) * len)
         ctx.stroke()
+        // Cannon base at the launch point.
+        ctx.fillStyle = '#1e293b'
+        ctx.beginPath()
+        ctx.arc(bx, by, 6, 0, Math.PI * 2)
+        ctx.fill()
       }
-      // Cannon base.
-      ctx.fillStyle = '#1e293b'
-      ctx.beginPath()
-      ctx.arc(sx(0), sy(launchY), 6, 0, Math.PI * 2)
-      ctx.fill()
 
       const fired = (fireToken ?? 0) > 0
       if (fired) {
@@ -299,7 +308,7 @@ export function CannonCanvas({
           ctx.beginPath()
           let started = false
           let ballX = sx(0)
-          let ballY = sy(launchY)
+          let ballY = sy(traj.shot.h0 ?? launchY)
           for (const p of traj.points) {
             if (p.t > visibleTime) break
             const px = sx(p.x)

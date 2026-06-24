@@ -1,13 +1,37 @@
 import { SceneCanvas } from './shared/SceneCanvas'
-import { drawArrow } from './shared/draw'
-import { NumericAnswer } from './shared/NumericAnswer'
+import { drawArrow, drawLabel } from './shared/draw'
+import { PredictGauge } from './shared/PredictGauge'
+import { niceGaugeMax } from './shared/gauge'
 import type { StepComponentProps } from '../../lessons/types'
+
+/** Display config per asked quantity. */
+const VARIANTS = {
+  accel: {
+    unit: 'm/s\u00B2',
+    decimals: 0,
+    label: 'Drag the gauge to predict the centripetal acceleration.',
+  },
+  period: {
+    unit: 's',
+    decimals: 1,
+    label: 'Drag the gauge to predict the period of one revolution.',
+  },
+  force: {
+    unit: 'N',
+    decimals: 0,
+    label: 'Drag the gauge to predict the centripetal force.',
+  },
+} as const
+
+type Variant = keyof typeof VARIANTS
 
 /**
  * Question step for uniform circular motion. Shows the object orbiting at the
- * scenario's speed and radius with tangent velocity and inward acceleration,
- * and records the learner's numeric answer.
- * @param props.step Provides `params.speed`, `params.radius`, and optional `params.mass`.
+ * scenario's speed and radius with tangent velocity and inward acceleration, and
+ * lets the learner predict the asked quantity (acceleration, period, or force)
+ * on a gauge before revealing the answer.
+ * @param props.step Provides `params.speed`, `params.radius`, optional
+ * `params.mass`, and `variant`.
  */
 export default function OrbitQuestion({
   step,
@@ -17,6 +41,15 @@ export default function OrbitQuestion({
 }: StepComponentProps) {
   const speed = step.params?.speed ?? 10
   const radius = step.params?.radius ?? 5
+  const mass = step.params?.mass
+
+  const variant: Variant =
+    step.variant === 'period' || step.variant === 'force'
+      ? step.variant
+      : 'accel'
+  const cfg = VARIANTS[variant]
+  const trueValue = step.expected[0]
+  const gaugeMax = niceGaugeMax(trueValue)
 
   const draw = (
     ctx: CanvasRenderingContext2D,
@@ -24,9 +57,14 @@ export default function OrbitQuestion({
     h: number,
     time: number,
   ) => {
+    const given =
+      `v = ${speed} m/s    r = ${radius} m` +
+      (mass !== undefined ? `    m = ${mass} kg` : '')
+    drawLabel(ctx, given, 14, 18, '#475569')
+
     const cx = w / 2
-    const cy = h / 2
-    const rPx = Math.min(20 + radius * 14, Math.min(w, h) * 0.36)
+    const cy = h / 2 + 8
+    const rPx = Math.min(20 + radius * 14, Math.min(w, h) * 0.34)
     const omega = speed / radius
     const theta = omega * time
 
@@ -61,12 +99,13 @@ export default function OrbitQuestion({
       '#2563eb',
       3,
     )
+    const aLen = Math.min(((speed * speed) / radius) * 2.4, rPx * 0.9)
     drawArrow(
       ctx,
       px,
       py,
-      px - Math.cos(theta) * Math.min((speed * speed) / radius * 2.4, rPx * 0.9),
-      py - Math.sin(theta) * Math.min((speed * speed) / radius * 2.4, rPx * 0.9),
+      px - Math.cos(theta) * aLen,
+      py - Math.sin(theta) * aLen,
       '#ea580c',
       3,
     )
@@ -78,13 +117,17 @@ export default function OrbitQuestion({
   }
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-4">
       <SceneCanvas draw={draw} loop heightClass="h-52" />
-      <NumericAnswer
-        label="Your answer"
+      <PredictGauge
+        label={cfg.label}
+        unit={cfg.unit}
+        max={gaugeMax}
+        trueValue={trueValue}
+        decimals={cfg.decimals}
         answered={answered}
-        submittedValues={submittedValues}
-        onSubmit={onSubmit}
+        submittedValue={submittedValues ? submittedValues[0] : null}
+        onSubmit={(v) => onSubmit([v])}
       />
     </div>
   )

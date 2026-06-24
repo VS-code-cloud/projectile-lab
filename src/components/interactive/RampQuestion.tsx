@@ -1,16 +1,46 @@
 import { useState } from 'react'
 import { SceneCanvas } from './shared/SceneCanvas'
 import { drawLabel } from './shared/draw'
-import { NumericAnswer } from './shared/NumericAnswer'
+import { PredictGauge } from './shared/PredictGauge'
+import { niceGaugeMax } from './shared/gauge'
 import { GRAVITY } from '../../physics/kinematics'
 import type { StepComponentProps } from '../../lessons/types'
 
 const RAMP_LENGTH_M = 10
 
+/** Display config per asked quantity. */
+const VARIANTS = {
+  accel: {
+    unit: 'm/s\u00B2',
+    decimals: 1,
+    label: 'Drag the gauge to predict the acceleration down the ramp.',
+  },
+  normal: {
+    unit: 'N',
+    decimals: 0,
+    label: 'Drag the gauge to predict the normal force from the ramp.',
+  },
+  gravityParallel: {
+    unit: 'N',
+    decimals: 1,
+    label: 'Drag the gauge to predict the along-ramp pull of gravity.',
+  },
+  speed: {
+    unit: 'm/s',
+    decimals: 1,
+    label: 'Drag the gauge to predict the speed at the bottom.',
+  },
+} as const
+
+type Variant = keyof typeof VARIANTS
+
 /**
- * Question step for inclined planes. Shows the ramp scenario and slides the
- * block (a = g·sinθ) once the learner submits a numeric answer.
- * @param props.step Provides `params.angleDeg`, `params.mass`, and optional `params.length`.
+ * Question step for inclined planes. Shows the ramp scenario, slides the block
+ * (a = g·sinθ) on submit, and lets the learner predict the asked quantity
+ * (acceleration, normal force, along-ramp force, or final speed) on a gauge
+ * before revealing the answer.
+ * @param props.step Provides `params.angleDeg`, `params.mass`,
+ * optional `params.length`, and `variant`.
  */
 export default function RampQuestion({
   step,
@@ -19,17 +49,28 @@ export default function RampQuestion({
   onSubmit,
 }: StepComponentProps) {
   const angleDeg = step.params?.angleDeg ?? 30
+  const mass = step.params?.mass ?? 2
   const lengthM = step.params?.length ?? RAMP_LENGTH_M
   const rad = (angleDeg * Math.PI) / 180
   const accel = GRAVITY * Math.sin(rad)
   const slideDuration = Math.sqrt((2 * lengthM) / Math.max(accel, 0.01))
 
+  const variant: Variant =
+    step.variant === 'normal' ||
+    step.variant === 'gravityParallel' ||
+    step.variant === 'speed'
+      ? step.variant
+      : 'accel'
+  const cfg = VARIANTS[variant]
+  const trueValue = step.expected[0]
+  const gaugeMax = niceGaugeMax(trueValue)
+
   const [playToken, setPlayToken] = useState(answered ? 1 : 0)
 
-  /** Plays the slide animation and records the answer. */
-  function handleSubmit(values: number[]) {
+  /** Records the prediction and plays the slide animation. */
+  function handleSubmit(value: number) {
     setPlayToken((token) => token + 1)
-    onSubmit(values)
+    onSubmit([value])
   }
 
   const draw = (
@@ -38,13 +79,21 @@ export default function RampQuestion({
     h: number,
     time: number,
   ) => {
-    const baseY = h * 0.82
+    drawLabel(
+      ctx,
+      `\u03B8 = ${angleDeg}\u00B0    m = ${mass} kg    L = ${lengthM} m`,
+      14,
+      18,
+      '#475569',
+    )
+
+    const baseY = h * 0.84
     const left = 56
     const cos = Math.cos(rad)
     const sin = Math.sin(rad)
     const lengthPx = Math.min(
       (w - 120) / Math.max(cos, 0.2),
-      (h * 0.6) / Math.max(sin, 0.12),
+      (h * 0.58) / Math.max(sin, 0.12),
     )
     const run = lengthPx * cos
     const rise = lengthPx * sin
@@ -63,7 +112,7 @@ export default function RampQuestion({
     ctx.closePath()
     ctx.fill()
     ctx.stroke()
-    drawLabel(ctx, `${angleDeg}°`, ax + 26, ay - 8, '#475569')
+    drawLabel(ctx, `${angleDeg}\u00B0`, ax + 26, ay - 8, '#475569')
 
     const sMeters = Math.min(0.5 * accel * time * time, lengthM)
     const f = sMeters / lengthM
@@ -84,17 +133,21 @@ export default function RampQuestion({
   }
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-4">
       <SceneCanvas
         draw={draw}
         playToken={playToken}
         duration={slideDuration}
         heightClass="h-48"
       />
-      <NumericAnswer
-        label="Your answer"
+      <PredictGauge
+        label={cfg.label}
+        unit={cfg.unit}
+        max={gaugeMax}
+        trueValue={trueValue}
+        decimals={cfg.decimals}
         answered={answered}
-        submittedValues={submittedValues}
+        submittedValue={submittedValues ? submittedValues[0] : null}
         onSubmit={handleSubmit}
       />
     </div>

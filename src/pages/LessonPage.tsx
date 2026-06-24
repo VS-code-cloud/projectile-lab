@@ -52,11 +52,18 @@ export default function LessonPage() {
     return (
       <div className="bg-grid min-h-svh">
         <Header />
-        <main className="mx-auto max-w-2xl px-4 py-10 text-center">
-          <p className="text-slate-600">Lesson not found.</p>
-          <Link to="/" className="mt-3 inline-block font-semibold text-indigo-600">
-            Back to lessons
-          </Link>
+        <main className="mx-auto max-w-2xl px-4 py-16 text-center">
+          <div className="card animate-rise mx-auto max-w-md p-8">
+            <p className="font-display text-lg font-semibold text-slate-900">
+              Lesson not found
+            </p>
+            <p className="mt-1 text-sm text-slate-500">
+              We couldn't find the lesson you're looking for.
+            </p>
+            <Link to="/" className="btn-primary mt-5">
+              Back to lessons
+            </Link>
+          </div>
         </main>
       </div>
     )
@@ -88,23 +95,42 @@ export default function LessonPage() {
   return (
     <div className="bg-grid min-h-svh">
       <Header />
-      <main className="mx-auto max-w-2xl px-4 py-6">
+      <main className="mx-auto max-w-3xl px-4 py-6 sm:py-8">
         <Link
           to="/"
-          className="inline-flex items-center text-sm font-semibold text-indigo-600 hover:text-indigo-700"
+          className="inline-flex items-center gap-1.5 text-sm font-semibold text-brand-600 transition hover:text-brand-700"
         >
-          &larr; Lessons
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <path d="m15 18-6-6 6-6" />
+          </svg>
+          Lessons
         </Link>
 
-        <div className="card mt-3 p-4">
-          <MasteryBar
-            stepsCompleted={progress.numStepsCompleted}
-            totalSteps={lesson.steps.length}
-            numCorrect={progress.numCorrect}
-            totalQuestions={totalQuestions}
-          />
+        {/* Progress overview: mastery bar + step dot navigation. */}
+        <div className="card mt-3 p-4 sm:p-5">
+          <h1 className="font-display text-base font-semibold text-slate-900 sm:text-lg">
+            {lesson.displayName}
+          </h1>
+          <div className="mt-3">
+            <MasteryBar
+              stepsCompleted={progress.numStepsCompleted}
+              totalSteps={lesson.steps.length}
+              numCorrect={progress.numCorrect}
+              totalQuestions={totalQuestions}
+            />
+          </div>
           {/* Step indicator: one dot per step, current highlighted. */}
-          <div className="mt-3 flex items-center gap-1.5">
+          <div className="mt-4 flex items-center gap-1.5">
             {lesson.steps.map((s, i) => {
               const done = progress.completedStepUids.includes(s.uid)
               const current = i === index
@@ -115,39 +141,50 @@ export default function LessonPage() {
                   onClick={() => setIndex(i)}
                   aria-label={`Go to step ${i + 1}`}
                   aria-current={current ? 'step' : undefined}
-                  className={`h-2 flex-1 rounded-full transition ${
-                    current
-                      ? 'bg-indigo-600'
-                      : done
-                        ? 'bg-indigo-300'
-                        : 'bg-slate-200 hover:bg-slate-300'
-                  }`}
-                />
+                  className="group flex h-6 flex-1 items-center justify-center rounded-full transition"
+                >
+                  <span
+                    className={`h-2 w-full rounded-full transition ${
+                      current
+                        ? 'bg-brand-600 shadow-[0_0_0_3px_rgba(99,102,241,0.18)]'
+                        : done
+                          ? 'bg-brand-300 group-hover:bg-brand-500'
+                          : 'bg-slate-200 group-hover:bg-slate-300'
+                    }`}
+                  />
+                </button>
               )
             })}
           </div>
         </div>
 
-        <div className="mt-5 flex items-center gap-2">
+        {/* Step header: kind chip + counter. */}
+        <div className="mt-6 flex items-center gap-2.5">
           <span
             className={`chip ${
               isQuestion
-                ? 'bg-violet-50 text-violet-700'
-                : 'bg-teal-50 text-teal-700'
+                ? 'bg-brand-50 text-brand-700'
+                : 'bg-teal-50 text-accent-600'
             }`}
           >
+            <span
+              className={`h-1.5 w-1.5 rounded-full ${
+                isQuestion ? 'bg-brand-500' : 'bg-accent-500'
+              }`}
+              aria-hidden="true"
+            />
             {isQuestion ? 'Question' : 'Demonstration'}
           </span>
-          <span className="text-xs font-medium uppercase tracking-wide text-slate-400">
+          <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">
             Step <span className="num">{index + 1}</span> of{' '}
             <span className="num">{lesson.steps.length}</span>
           </span>
         </div>
-        <p className="mt-2 text-base leading-relaxed text-slate-800">
+        <p className="mt-3 max-w-[68ch] text-lg leading-relaxed text-slate-800">
           {step.displayText}
         </p>
 
-        <div className="card mt-4 p-4">
+        <div className="card mt-4 p-4 sm:p-5">
           <InteractiveStep
             key={step.uid}
             step={step}
@@ -168,23 +205,18 @@ export default function LessonPage() {
         )}
 
         {isLastStep && currentCompleted && (
-          <div
-            className="animate-rise mt-4 overflow-hidden rounded-2xl border border-indigo-200 p-5 text-center"
-            style={{
-              backgroundImage:
-                'linear-gradient(to bottom right, #eef2ff, #f5f3ff)',
-            }}
-          >
+          <div className="card animate-rise glow-brand mt-4 overflow-hidden p-6 text-center sm:p-8">
             <div
-              className="mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-full text-white"
+              className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl text-white"
               style={{
                 backgroundImage:
-                  'linear-gradient(to bottom right, #6366f1, #8b5cf6)',
+                  'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)',
+                boxShadow: '0 10px 28px -10px rgba(124, 58, 237, 0.6)',
               }}
             >
               <svg
-                width="22"
-                height="22"
+                width="26"
+                height="26"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
@@ -196,38 +228,41 @@ export default function LessonPage() {
                 <path d="M20 6 9 17l-5-5" />
               </svg>
             </div>
-            <p className="font-display text-lg font-semibold text-indigo-900">
+            <p className="font-display text-xl font-semibold text-slate-900">
               You finished the lesson!
             </p>
             {nextLesson ? (
               <>
-                <p className="mt-1 text-sm text-indigo-700">
-                  Up next: <span className="font-semibold">{nextLesson.displayName}</span> &mdash;{' '}
-                  {nextLesson.text}
+                <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-slate-600">
+                  Up next:{' '}
+                  <span className="font-semibold text-slate-800">
+                    {nextLesson.displayName}
+                  </span>{' '}
+                  &mdash; {nextLesson.text}
                 </p>
                 <Link
                   to={`/lesson/${nextLesson.uid}`}
-                  className="btn-primary mt-4"
+                  className="btn-primary mt-5"
                 >
                   Start {nextLesson.displayName} &rarr;
                 </Link>
               </>
             ) : (
               <>
-                <p className="mt-1 text-sm text-indigo-700">
+                <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-slate-600">
                   More lessons are coming soon &mdash; check back for the next
                   step in your physics journey.
                 </p>
-                <Link to="/" className="btn-primary mt-4">
+                <Link to="/" className="btn-primary mt-5">
                   Back to lessons
                 </Link>
               </>
             )}
-            <div className="mt-3">
+            <div className="mt-4">
               <button
                 type="button"
                 onClick={handleRestart}
-                className="text-sm font-semibold text-indigo-600 hover:text-indigo-700"
+                className="btn-ghost"
               >
                 &#8634; Restart this lesson
               </button>
@@ -235,12 +270,12 @@ export default function LessonPage() {
           </div>
         )}
 
-        <div className="mt-6 flex items-center justify-between">
+        <div className="mt-6 flex items-center justify-between gap-3">
           <button
             type="button"
             onClick={() => setIndex((i) => Math.max(0, i - 1))}
             disabled={index === 0}
-            className="btn-ghost"
+            className="btn-secondary"
           >
             &larr; Back
           </button>

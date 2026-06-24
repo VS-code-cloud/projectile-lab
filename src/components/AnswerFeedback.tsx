@@ -14,26 +14,29 @@ export function AnswerFeedback({ correct, explanation }: AnswerFeedbackProps) {
   if (correct) {
     return (
       <div
-        className="flex items-start gap-3 rounded-xl border border-green-300 bg-green-50 p-4 text-green-800"
+        className="animate-rise flex items-start gap-3 rounded-xl border border-emerald-300 bg-emerald-50 p-4 text-emerald-800 elev-1"
         role="status"
       >
-        <svg
-          className="mt-0.5 shrink-0"
-          width="20"
-          height="20"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          aria-hidden="true"
-        >
-          <path d="M20 6 9 17l-5-5" />
-        </svg>
+        <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-emerald-500 text-white">
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="3"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M20 6 9 17l-5-5" />
+          </svg>
+        </span>
         <div>
-          <p className="font-semibold">Great work!</p>
-          <p className="text-sm">That's correct.</p>
+          <p className="font-display font-semibold text-emerald-900">
+            Great work!
+          </p>
+          <p className="text-sm text-emerald-700">That's correct.</p>
         </div>
       </div>
     )
@@ -41,27 +44,31 @@ export function AnswerFeedback({ correct, explanation }: AnswerFeedbackProps) {
 
   return (
     <div
-      className="flex items-start gap-3 rounded-xl border border-red-300 bg-red-50 p-4 text-red-800"
+      className="animate-rise flex items-start gap-3 rounded-xl border border-rose-300 bg-rose-50 p-4 text-rose-800 elev-1"
       role="status"
     >
-      <svg
-        className="mt-0.5 shrink-0 text-red-500"
-        width="20"
-        height="20"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden="true"
-      >
-        <circle cx="12" cy="12" r="10" />
-        <path d="M15 9l-6 6M9 9l6 6" />
-      </svg>
+      <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-rose-500 text-white">
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="3"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden="true"
+        >
+          <path d="M18 6 6 18M6 6l12 12" />
+        </svg>
+      </span>
       <div>
-        <p className="font-semibold">Here's the correct solution and why</p>
-        <p className="mt-1 text-sm leading-relaxed">{explanation}</p>
+        <p className="font-display font-semibold text-rose-900">
+          Here's the correct solution and why
+        </p>
+        <p className="mt-1 text-sm leading-relaxed text-rose-700">
+          {explanation}
+        </p>
       </div>
     </div>
   )

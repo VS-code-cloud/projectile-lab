@@ -37,41 +37,45 @@
     {
       "uid": "step-3-solve-acceleration",
       "stepType": "question",
-      "displayText": "A net force of F = 20 N acts on a block of mass m = 4 kg on a frictionless surface. What is its acceleration? Enter the answer in m/s^2.",
+      "displayText": "A net force of F = 20 N acts on a block of mass m = 4 kg on a frictionless surface. Drag the gauge to predict its acceleration (m/s\u00B2), then lock it in.",
       "interactiveComponent": "ForceQuestion",
       "expected": [5],
       "explanation": "Use a = F/m = 20/4 = 5 m/s^2.",
-      "tolerance": [0.1],
+      "tolerance": [1],
+      "variant": "accel",
       "params": { "force": 20, "mass": 4 }
     },
     {
       "uid": "step-4-solve-acceleration-2",
       "stepType": "question",
-      "displayText": "A net force of F = 30 N acts on a cart of mass m = 5 kg. What is its acceleration? Enter the answer in m/s^2.",
+      "displayText": "A net force of F = 30 N acts on a cart of mass m = 5 kg. Drag the gauge to predict its acceleration (m/s\u00B2), then lock it in.",
       "interactiveComponent": "ForceQuestion",
       "expected": [6],
       "explanation": "Use a = F/m = 30/5 = 6 m/s^2.",
-      "tolerance": [0.1],
+      "tolerance": [1],
+      "variant": "accel",
       "params": { "force": 30, "mass": 5 }
     },
     {
       "uid": "step-5-solve-force",
       "stepType": "question",
-      "displayText": "A block of mass m = 3 kg accelerates at a = 2 m/s^2. What net force is acting on it? Enter the answer in newtons (N).",
+      "displayText": "A block of mass m = 3 kg accelerates at a = 2 m/s\u00B2. Drag the gauge to predict the net force acting on it (N), then lock it in.",
       "interactiveComponent": "ForceQuestion",
       "expected": [6],
       "explanation": "Use F = m*a = 3*2 = 6 N.",
-      "tolerance": [0.1],
+      "tolerance": [1],
+      "variant": "force",
       "params": { "mass": 3, "accel": 2 }
     },
     {
       "uid": "step-6-solve-mass",
       "stepType": "question",
-      "displayText": "A net force of F = 18 N gives a block an acceleration of a = 3 m/s^2. What is the block's mass? Enter the answer in kilograms (kg).",
+      "displayText": "A net force of F = 18 N gives a block an acceleration of a = 3 m/s\u00B2. Drag the gauge to predict the block's mass (kg), then lock it in.",
       "interactiveComponent": "ForceQuestion",
       "expected": [6],
       "explanation": "Rearrange F = m*a to m = F/a = 18/3 = 6 kg.",
-      "tolerance": [0.1],
+      "tolerance": [1],
+      "variant": "mass",
       "params": { "force": 18, "accel": 3 }
     }
   ]

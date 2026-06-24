@@ -6,7 +6,7 @@
     {
       "uid": "step-0-intro",
       "stepType": "demo",
-      "displayText": "Motion in a straight line is described by position, velocity, and acceleration. Scrub the time slider or press Play to watch a cart move at constant velocity. Notice the position changes by equal amounts in equal times.",
+      "displayText": "Motion in a straight line is described by position, velocity, and acceleration. Press Play to watch a cart move at constant velocity. Notice the position changes by equal amounts in equal times.",
       "interactiveComponent": "MotionTrackDemo",
       "expected": [0],
       "explanation": "",
@@ -37,41 +37,45 @@
     {
       "uid": "step-3-final-velocity",
       "stepType": "question",
-      "displayText": "A cart starts at v0 = 5 m/s and accelerates at a = 3 m/s^2 for t = 4 s. What is its final velocity? Enter the answer in m/s.",
+      "displayText": "A cart starts at v0 = 5 m/s and accelerates at a = 3 m/s^2 for t = 4 s. Drag the gauge to predict its final velocity (m/s), then lock it in.",
       "interactiveComponent": "MotionQuestion",
       "expected": [17],
       "explanation": "Use v = v0 + a*t = 5 + 3*4 = 5 + 12 = 17 m/s.",
-      "tolerance": [0.1],
+      "tolerance": [1],
+      "variant": "velocity",
       "params": { "v0": 5, "a": 3, "t": 4 }
     },
     {
       "uid": "step-4-displacement",
       "stepType": "question",
-      "displayText": "A cart starts at v0 = 8 m/s and accelerates at a = 2 m/s^2 for t = 5 s. How far does it travel? Round to the nearest meter.",
+      "displayText": "A cart starts at v0 = 8 m/s and accelerates at a = 2 m/s^2 for t = 5 s. Drag the gauge to predict how far it travels (m), then lock it in.",
       "interactiveComponent": "MotionQuestion",
       "expected": [65],
       "explanation": "Use x = v0*t + (1/2)*a*t^2 = 8*5 + 0.5*2*5^2 = 40 + 25 = 65 m.",
-      "tolerance": [1],
+      "tolerance": [3],
+      "variant": "distance",
       "params": { "v0": 8, "a": 2, "t": 5 }
     },
     {
       "uid": "step-5-final-velocity-2",
       "stepType": "question",
-      "displayText": "A train traveling at v0 = 12 m/s accelerates at a = 1.5 m/s^2 for t = 6 s. What is its velocity? Enter the answer in m/s.",
+      "displayText": "A train traveling at v0 = 12 m/s accelerates at a = 1.5 m/s^2 for t = 6 s. Drag the gauge to predict its final velocity (m/s), then lock it in.",
       "interactiveComponent": "MotionQuestion",
       "expected": [21],
       "explanation": "Use v = v0 + a*t = 12 + 1.5*6 = 12 + 9 = 21 m/s.",
-      "tolerance": [0.1],
+      "tolerance": [1],
+      "variant": "velocity",
       "params": { "v0": 12, "a": 1.5, "t": 6 }
     },
     {
       "uid": "step-6-stopping-distance",
       "stepType": "question",
-      "displayText": "A car traveling at v0 = 20 m/s brakes with a = -5 m/s^2. How far does it travel before stopping? Round to the nearest meter.",
+      "displayText": "A car traveling at v0 = 20 m/s brakes with a = -5 m/s^2. Drag the gauge to predict how far it travels before stopping (m), then lock it in.",
       "interactiveComponent": "MotionQuestion",
       "expected": [40],
       "explanation": "With v = 0: 0 = v0^2 + 2*a*x, so x = -v0^2/(2*a) = -(20^2)/(2*-5) = 400/10 = 40 m.",
-      "tolerance": [1],
+      "tolerance": [2],
+      "variant": "distance",
       "params": { "v0": 20, "a": -5, "t": 4 }
     }
   ]
