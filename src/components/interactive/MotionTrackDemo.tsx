@@ -1,12 +1,12 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { SceneCanvas } from './shared/SceneCanvas'
 import { drawArrow, drawLabel } from './shared/draw'
 import type { StepComponentProps } from '../../lessons/types'
 
 /**
- * Demonstration: a cart moving along a 1-D track. Scrub the time slider or press
- * Play to watch position evolve under constant velocity and/or acceleration
- * (x = v0·t + ½·a·t²). Velocity arrow length tracks the instantaneous speed.
+ * Demonstration: a cart moving along a 1-D track. Pressing Play animates the
+ * motion from the beginning (x = v0·t + ½·a·t²); the velocity arrow length
+ * tracks the instantaneous speed.
  * @param props.step Provides `params.v0`, `params.a`, and `params.duration`.
  */
 export default function MotionTrackDemo({ step }: StepComponentProps) {
@@ -15,7 +15,56 @@ export default function MotionTrackDemo({ step }: StepComponentProps) {
   const duration = step.params?.duration ?? 4
 
   const [t, setT] = useState(0)
+  // Incrementing this (re)starts the animation from the beginning.
   const [playToken, setPlayToken] = useState(0)
+  // Loop guard and current frame id, mutated synchronously by the handlers so a
+  // scrub stops the animation immediately (no race with a pending frame).
+  const playingRef = useRef(false)
+  const rafIdRef = useRef<number | null>(null)
+
+  /** Cancels any pending animation frame and stops the loop. */
+  function stopLoop() {
+    playingRef.current = false
+    if (rafIdRef.current !== null) {
+      cancelAnimationFrame(rafIdRef.current)
+      rafIdRef.current = null
+    }
+  }
+
+  // Animation loop: advances `t` from 0 to duration. Driven here (not in the
+  // canvas) so the slider thumb and numeric readouts stay synchronized.
+  useEffect(() => {
+    if (playToken === 0) return
+    let startTime: number | null = null
+    const tick = (now: number) => {
+      if (!playingRef.current) return
+      if (startTime === null) startTime = now
+      const elapsed = (now - startTime) / 1000
+      if (elapsed >= duration) {
+        playingRef.current = false
+        rafIdRef.current = null
+        setT(duration)
+        return
+      }
+      setT(elapsed)
+      rafIdRef.current = requestAnimationFrame(tick)
+    }
+    rafIdRef.current = requestAnimationFrame(tick)
+    return () => {
+      if (rafIdRef.current !== null) {
+        cancelAnimationFrame(rafIdRef.current)
+        rafIdRef.current = null
+      }
+    }
+  }, [playToken, duration])
+
+  /** Starts (or restarts) the animation from the beginning. */
+  function play() {
+    stopLoop()
+    playingRef.current = true
+    setT(0)
+    setPlayToken((token) => token + 1)
+  }
 
   /** Displacement x at time tt (m). */
   const xAt = useMemo(
@@ -23,8 +72,6 @@ export default function MotionTrackDemo({ step }: StepComponentProps) {
     [v0, a],
   )
   const xMax = Math.max(xAt(duration), 0.001)
-  const vNow = v0 + a * t
-  const xNow = xAt(t)
 
   const draw = (
     ctx: CanvasRenderingContext2D,
@@ -68,27 +115,22 @@ export default function MotionTrackDemo({ step }: StepComponentProps) {
     ctx.lineTo(cx, trackY)
     ctx.stroke()
 
-    // Velocity arrow above the cart, scaled to current speed.
+    // Velocity arrow above the cart, scaled to current speed. Both the arrow
+    // tip and the label are clamped so they never clip the canvas edges.
     const vAtTime = v0 + a * time
     const arrowLen = Math.min(Math.abs(vAtTime) * 6, trackW * 0.4)
     if (arrowLen > 2) {
       const dir = Math.sign(vAtTime) || 1
-      drawArrow(
-        ctx,
-        cx,
-        trackY - 26,
-        cx + dir * arrowLen,
-        trackY - 26,
-        '#0ea5e9',
-        3,
-      )
+      const tipX = Math.max(left, Math.min(cx + dir * arrowLen, w - 8))
+      drawArrow(ctx, cx, trackY - 26, tipX, trackY - 26, '#0ea5e9', 3)
+      const labelX = Math.max(left + 40, Math.min(cx, w - right - 40))
       drawLabel(
         ctx,
         `v = ${vAtTime.toFixed(1)} m/s`,
-        cx + dir * arrowLen + dir * 4,
-        trackY - 38,
+        labelX,
+        trackY - 40,
         '#0369a1',
-        dir > 0 ? 'left' : 'right',
+        'center',
       )
     }
 
@@ -111,50 +153,13 @@ export default function MotionTrackDemo({ step }: StepComponentProps) {
     <div className="space-y-4">
       <SceneCanvas
         draw={draw}
-        playToken={playToken}
-        duration={duration}
         staticT={t}
         redrawKey={`${v0}-${a}-${t}`}
         heightClass="h-52"
       />
-      <div className="grid grid-cols-2 gap-3 text-sm">
-        <div className="rounded-lg bg-slate-50 px-3 py-2">
-          <span className="text-slate-500">Position</span>{' '}
-          <span className="num font-semibold text-slate-800">
-            {xNow.toFixed(1)} m
-          </span>
-        </div>
-        <div className="rounded-lg bg-slate-50 px-3 py-2">
-          <span className="text-slate-500">Velocity</span>{' '}
-          <span className="num font-semibold text-slate-800">
-            {vNow.toFixed(1)} m/s
-          </span>
-        </div>
-      </div>
-      <div className="space-y-2">
-        <label className="block text-sm font-medium text-slate-700">
-          Time: <span className="num">{t.toFixed(1)} s</span>
-          <input
-            type="range"
-            min={0}
-            max={duration}
-            step={0.05}
-            value={t}
-            onChange={(e) => setT(Number.parseFloat(e.target.value))}
-            className="mt-1 w-full"
-          />
-        </label>
-        <button
-          type="button"
-          onClick={() => {
-            setT(0)
-            setPlayToken((token) => token + 1)
-          }}
-          className="btn-ghost"
-        >
-          Play motion
-        </button>
-      </div>
+      <button type="button" onClick={play} className="btn-ghost">
+        Play motion
+      </button>
     </div>
   )
 }

@@ -27,7 +27,9 @@ export default function ForceSledDemo({ step }: StepComponentProps) {
     time: number,
   ) => {
     const floorY = h * 0.74
-    const startX = 70
+    // Start far enough right that the (longest) force arrow + label never clip
+    // the left edge: max arrow (90) + half of the largest block (30) + margin.
+    const startX = 132
 
     // Floor.
     ctx.strokeStyle = '#cbd5e1'
@@ -62,11 +64,13 @@ export default function ForceSledDemo({ step }: StepComponentProps) {
       'center',
     )
 
-    // Applied force arrow, length scaled to the force magnitude.
+    // Applied force arrow, length scaled to the force magnitude. The tail is
+    // clamped to a left margin so the arrow and its label never clip the edge.
     const arrowLen = 20 + (force / MAX_FORCE) * 70
+    const tailX = Math.max(px - blockW / 2 - arrowLen, 8)
     drawArrow(
       ctx,
-      px - blockW / 2 - arrowLen,
+      tailX,
       floorY - blockH / 2,
       px - blockW / 2 - 4,
       floorY - blockH / 2,
@@ -76,7 +80,7 @@ export default function ForceSledDemo({ step }: StepComponentProps) {
     drawLabel(
       ctx,
       `F = ${force} N`,
-      px - blockW / 2 - arrowLen,
+      tailX,
       floorY - blockH / 2 - 14,
       '#b91c1c',
     )

@@ -36,6 +36,9 @@ export const interactiveRegistry: Record<
   RampQuestion: lazy(() => import('../components/interactive/RampQuestion')),
   OrbitDemo: lazy(() => import('../components/interactive/OrbitDemo')),
   OrbitQuestion: lazy(() => import('../components/interactive/OrbitQuestion')),
+  EquationReference: lazy(
+    () => import('../components/interactive/EquationReference'),
+  ),
 }
 
 /**

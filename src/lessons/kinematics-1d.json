@@ -22,9 +22,22 @@
       "params": { "v0": 2, "a": 3, "duration": 4 }
     },
     {
-      "uid": "step-2-final-velocity",
+      "uid": "step-2-equations",
+      "stepType": "demo",
+      "displayText": "These three kinematic equations describe motion with constant acceleration. You'll use them to solve the problems that follow, so take a moment to see what each one relates.",
+      "interactiveComponent": "EquationReference",
+      "expected": [0],
+      "explanation": "",
+      "equations": [
+        { "formula": "v = v\u2080 + at", "label": "Final velocity from acceleration and time" },
+        { "formula": "x = v\u2080t + \u00BDat\u00B2", "label": "Displacement from velocity, acceleration, and time" },
+        { "formula": "v\u00B2 = v\u2080\u00B2 + 2ax", "label": "Relates velocity and displacement without time" }
+      ]
+    },
+    {
+      "uid": "step-3-final-velocity",
       "stepType": "question",
-      "displayText": "A cart starts at v0 = 5 m/s and accelerates at a = 3 m/s^2 for t = 4 s. What is its final velocity? Use v = v0 + a*t. Enter the answer in m/s.",
+      "displayText": "A cart starts at v0 = 5 m/s and accelerates at a = 3 m/s^2 for t = 4 s. What is its final velocity? Enter the answer in m/s.",
       "interactiveComponent": "MotionQuestion",
       "expected": [17],
       "explanation": "Use v = v0 + a*t = 5 + 3*4 = 5 + 12 = 17 m/s.",
@@ -32,9 +45,9 @@
       "params": { "v0": 5, "a": 3, "t": 4 }
     },
     {
-      "uid": "step-3-displacement",
+      "uid": "step-4-displacement",
       "stepType": "question",
-      "displayText": "A cart starts at v0 = 8 m/s and accelerates at a = 2 m/s^2 for t = 5 s. How far does it travel? Use x = v0*t + (1/2)*a*t^2. Round to the nearest meter.",
+      "displayText": "A cart starts at v0 = 8 m/s and accelerates at a = 2 m/s^2 for t = 5 s. How far does it travel? Round to the nearest meter.",
       "interactiveComponent": "MotionQuestion",
       "expected": [65],
       "explanation": "Use x = v0*t + (1/2)*a*t^2 = 8*5 + 0.5*2*5^2 = 40 + 25 = 65 m.",
@@ -42,9 +55,19 @@
       "params": { "v0": 8, "a": 2, "t": 5 }
     },
     {
-      "uid": "step-4-stopping-distance",
+      "uid": "step-5-final-velocity-2",
       "stepType": "question",
-      "displayText": "A car traveling at v0 = 20 m/s brakes with a = -5 m/s^2. How far does it travel before stopping? Hint: use v^2 = v0^2 + 2*a*x with final speed v = 0. Round to the nearest meter.",
+      "displayText": "A train traveling at v0 = 12 m/s accelerates at a = 1.5 m/s^2 for t = 6 s. What is its velocity? Enter the answer in m/s.",
+      "interactiveComponent": "MotionQuestion",
+      "expected": [21],
+      "explanation": "Use v = v0 + a*t = 12 + 1.5*6 = 12 + 9 = 21 m/s.",
+      "tolerance": [0.1],
+      "params": { "v0": 12, "a": 1.5, "t": 6 }
+    },
+    {
+      "uid": "step-6-stopping-distance",
+      "stepType": "question",
+      "displayText": "A car traveling at v0 = 20 m/s brakes with a = -5 m/s^2. How far does it travel before stopping? Round to the nearest meter.",
       "interactiveComponent": "MotionQuestion",
       "expected": [40],
       "explanation": "With v = 0: 0 = v0^2 + 2*a*x, so x = -v0^2/(2*a) = -(20^2)/(2*-5) = 400/10 = 40 m.",

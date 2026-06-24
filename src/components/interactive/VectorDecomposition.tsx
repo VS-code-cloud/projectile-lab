@@ -28,7 +28,7 @@ export default function VectorDecomposition({
 
   return (
     <div className="space-y-4">
-      <svg viewBox="0 0 240 180" className="mx-auto h-44 w-full max-w-sm">
+      <svg viewBox="0 0 250 180" className="mx-auto h-44 w-full max-w-sm">
         <polygon
           points="40,150 200,150 200,30"
           fill="#eef2ff"
@@ -36,16 +36,23 @@ export default function VectorDecomposition({
           strokeWidth="2"
         />
         <line x1="40" y1="150" x2="200" y2="30" stroke="#4f46e5" strokeWidth="2.5" />
-        <text x="110" y="80" fill="#4f46e5" fontSize="13" fontWeight="600">
+        <text
+          x="108"
+          y="74"
+          fill="#4f46e5"
+          fontSize="13"
+          fontWeight="600"
+          textAnchor="middle"
+        >
           v = {v}
         </text>
-        <text x="115" y="167" fill="#0f766e" fontSize="13">
+        <text x="120" y="168" fill="#0f766e" fontSize="13" textAnchor="middle">
           vx = ?
         </text>
-        <text x="205" y="95" fill="#b45309" fontSize="13">
+        <text x="208" y="92" fill="#b45309" fontSize="13">
           vy = ?
         </text>
-        <text x="52" y="143" fill="#334155" fontSize="12">
+        <text x="50" y="142" fill="#334155" fontSize="12">
           {theta}&deg;
         </text>
       </svg>

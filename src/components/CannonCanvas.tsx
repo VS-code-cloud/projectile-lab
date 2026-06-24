@@ -165,6 +165,22 @@ export function CannonCanvas({
         marginL + ((x - xMin) / (xMax - xMin)) * plotW
       const sy = (y: number) => marginT + plotH - (y / yMax) * plotH
 
+      /**
+       * Draws label text with a soft white halo so it stays legible where it
+       * overlaps the trajectory, grid, or other lines. Uses the caller's
+       * current fillStyle, font, textAlign, and textBaseline.
+       */
+      const label = (text: string, x: number, y: number) => {
+        if (!ctx) return
+        ctx.save()
+        ctx.lineWidth = 3
+        ctx.lineJoin = 'round'
+        ctx.strokeStyle = 'rgba(248, 250, 252, 0.92)'
+        ctx.strokeText(text, x, y)
+        ctx.restore()
+        ctx.fillText(text, x, y)
+      }
+
       // Sky background.
       ctx.fillStyle = '#f8fafc'
       ctx.fillRect(marginL, marginT, plotW, plotH)
@@ -205,11 +221,11 @@ export function CannonCanvas({
       ctx.font = '11px system-ui, sans-serif'
       ctx.textBaseline = 'middle'
       ctx.textAlign = 'right'
-      ctx.fillText(`${Math.round(yMax)} m`, marginL - 4, sy(yMax))
-      ctx.fillText('0', marginL - 4, groundY)
+      label(`${Math.round(yMax)} m`, marginL - 4, sy(yMax))
+      label('0', marginL - 4, groundY)
       ctx.textAlign = 'center'
       ctx.textBaseline = 'top'
-      ctx.fillText(`${Math.round(xMax)} m`, sx(xMax), groundY + 4)
+      label(`${Math.round(xMax)} m`, sx(xMax), groundY + 4)
 
       // Guide line (prediction).
       if (guideHeight !== undefined) {
@@ -224,7 +240,7 @@ export function CannonCanvas({
         ctx.fillStyle = '#9333ea'
         ctx.textAlign = 'left'
         ctx.textBaseline = 'bottom'
-        ctx.fillText(
+        label(
           guideLabel ?? `${guideHeight.toFixed(0)} m`,
           marginL + 4,
           sy(guideHeight) - 2,
@@ -244,7 +260,7 @@ export function CannonCanvas({
         ctx.fillStyle = '#9333ea'
         ctx.textAlign = 'center'
         ctx.textBaseline = 'top'
-        ctx.fillText(
+        label(
           guideXLabel ?? `${guideX.toFixed(0)} m`,
           sx(guideX),
           marginT + 2,
@@ -308,7 +324,7 @@ export function CannonCanvas({
             ctx.fillStyle = color
             ctx.textAlign = 'center'
             ctx.textBaseline = 'bottom'
-            ctx.fillText(traj.shot.label, sx(traj.points[traj.points.length - 1].x), groundY - 6)
+            label(traj.shot.label, sx(traj.points[traj.points.length - 1].x), groundY - 6)
           }
         }
 
@@ -322,7 +338,7 @@ export function CannonCanvas({
             if (m.label) {
               ctx.textAlign = 'left'
               ctx.textBaseline = 'middle'
-              ctx.fillText(m.label, sx(m.x) + 6, sy(m.y))
+              label(m.label, sx(m.x) + 6, sy(m.y))
             }
           }
         }

@@ -41,11 +41,11 @@ export function AnswerFeedback({ correct, explanation }: AnswerFeedbackProps) {
 
   return (
     <div
-      className="flex items-start gap-3 rounded-xl border border-slate-300 bg-slate-100 p-4 text-slate-700"
+      className="flex items-start gap-3 rounded-xl border border-red-300 bg-red-50 p-4 text-red-800"
       role="status"
     >
       <svg
-        className="mt-0.5 shrink-0 text-slate-400"
+        className="mt-0.5 shrink-0 text-red-500"
         width="20"
         height="20"
         viewBox="0 0 24 24"
@@ -57,7 +57,7 @@ export function AnswerFeedback({ correct, explanation }: AnswerFeedbackProps) {
         aria-hidden="true"
       >
         <circle cx="12" cy="12" r="10" />
-        <path d="M12 16v-4M12 8h.01" />
+        <path d="M15 9l-6 6M9 9l6 6" />
       </svg>
       <div>
         <p className="font-semibold">Here's the correct solution and why</p>

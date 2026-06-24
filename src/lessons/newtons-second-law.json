@@ -22,9 +22,22 @@
       "params": { "force": 20, "mass": 2 }
     },
     {
-      "uid": "step-2-solve-acceleration",
+      "uid": "step-2-equations",
+      "stepType": "demo",
+      "displayText": "Newton's second law links force, mass, and acceleration. It's a single relationship you can rearrange depending on what you need to find.",
+      "interactiveComponent": "EquationReference",
+      "expected": [0],
+      "explanation": "",
+      "equations": [
+        { "formula": "F = ma", "label": "Net force equals mass times acceleration" },
+        { "formula": "a = F / m", "label": "Solve for acceleration" },
+        { "formula": "m = F / a", "label": "Solve for mass" }
+      ]
+    },
+    {
+      "uid": "step-3-solve-acceleration",
       "stepType": "question",
-      "displayText": "A net force of F = 20 N acts on a block of mass m = 4 kg on a frictionless surface. What is its acceleration? Use a = F/m. Enter the answer in m/s^2.",
+      "displayText": "A net force of F = 20 N acts on a block of mass m = 4 kg on a frictionless surface. What is its acceleration? Enter the answer in m/s^2.",
       "interactiveComponent": "ForceQuestion",
       "expected": [5],
       "explanation": "Use a = F/m = 20/4 = 5 m/s^2.",
@@ -32,9 +45,19 @@
       "params": { "force": 20, "mass": 4 }
     },
     {
-      "uid": "step-3-solve-force",
+      "uid": "step-4-solve-acceleration-2",
       "stepType": "question",
-      "displayText": "A block of mass m = 3 kg accelerates at a = 2 m/s^2. What net force is acting on it? Use F = m*a. Enter the answer in newtons (N).",
+      "displayText": "A net force of F = 30 N acts on a cart of mass m = 5 kg. What is its acceleration? Enter the answer in m/s^2.",
+      "interactiveComponent": "ForceQuestion",
+      "expected": [6],
+      "explanation": "Use a = F/m = 30/5 = 6 m/s^2.",
+      "tolerance": [0.1],
+      "params": { "force": 30, "mass": 5 }
+    },
+    {
+      "uid": "step-5-solve-force",
+      "stepType": "question",
+      "displayText": "A block of mass m = 3 kg accelerates at a = 2 m/s^2. What net force is acting on it? Enter the answer in newtons (N).",
       "interactiveComponent": "ForceQuestion",
       "expected": [6],
       "explanation": "Use F = m*a = 3*2 = 6 N.",
@@ -42,9 +65,9 @@
       "params": { "mass": 3, "accel": 2 }
     },
     {
-      "uid": "step-4-solve-mass",
+      "uid": "step-6-solve-mass",
       "stepType": "question",
-      "displayText": "A net force of F = 18 N gives a block an acceleration of a = 3 m/s^2. What is the block's mass? Rearrange F = m*a to m = F/a. Enter the answer in kilograms (kg).",
+      "displayText": "A net force of F = 18 N gives a block an acceleration of a = 3 m/s^2. What is the block's mass? Enter the answer in kilograms (kg).",
       "interactiveComponent": "ForceQuestion",
       "expected": [6],
       "explanation": "Rearrange F = m*a to m = F/a = 18/3 = 6 kg.",

@@ -25,6 +25,11 @@ export interface Step {
    * speed, angle, cliff height). Keeps the engine data-driven.
    */
   params?: Record<string, number>
+  /**
+   * Reference equations rendered by an equation step (the EquationReference
+   * component). Each entry pairs a formula with a short plain-language label.
+   */
+  equations?: { formula: string; label: string }[]
 }
 
 /** A structured lesson: an ordered array of steps plus display metadata. */
