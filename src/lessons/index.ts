@@ -10,8 +10,8 @@ import uniformCircularMotion from './uniform-circular-motion.json'
  * order shown to learners.
  */
 export const allLessons: Lesson[] = [
-  projectile2d as unknown as Lesson,
   kinematics1d as unknown as Lesson,
+  projectile2d as unknown as Lesson,
   newtonsSecondLaw as unknown as Lesson,
   inclinedPlanes as unknown as Lesson,
   uniformCircularMotion as unknown as Lesson,

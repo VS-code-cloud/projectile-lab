@@ -18,7 +18,7 @@ import { checkAnswer } from '../lib/checkAnswer'
 export default function LessonPage() {
   const { lessonUid = '' } = useParams()
   const lesson = getLesson(lessonUid)
-  const { progress, loading, completeStep, recordAnswer } =
+  const { progress, loading, completeStep, recordAnswer, resetLesson } =
     useLessonProgress(lessonUid)
 
   const [index, setIndex] = useState(0)
@@ -72,6 +72,12 @@ export default function LessonPage() {
     if (!step) return
     const correct = checkAnswer(step, values)
     recordAnswer(step.uid, values, correct)
+  }
+
+  /** Clears progress and returns to the first step to replay the lesson. */
+  function handleRestart() {
+    resetLesson()
+    setIndex(0)
   }
 
   const isQuestion = step.stepType === 'question'
@@ -217,6 +223,15 @@ export default function LessonPage() {
                 </Link>
               </>
             )}
+            <div className="mt-3">
+              <button
+                type="button"
+                onClick={handleRestart}
+                className="text-sm font-semibold text-indigo-600 hover:text-indigo-700"
+              >
+                &#8634; Restart this lesson
+              </button>
+            </div>
           </div>
         )}
 

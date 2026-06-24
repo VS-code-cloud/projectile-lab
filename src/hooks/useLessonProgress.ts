@@ -23,6 +23,8 @@ interface UseLessonProgressResult {
    * count, and completes the step.
    */
   recordAnswer: (stepUid: string, values: number[], correct: boolean) => void
+  /** Clears all progress for the lesson so it can be played again from scratch. */
+  resetLesson: () => void
 }
 
 /**
@@ -126,5 +128,9 @@ export function useLessonProgress(
     [apply],
   )
 
-  return { progress, loading, completeStep, recordAnswer }
+  const resetLesson = useCallback(() => {
+    apply(() => emptyLessonProgress())
+  }, [apply])
+
+  return { progress, loading, completeStep, recordAnswer, resetLesson }
 }
