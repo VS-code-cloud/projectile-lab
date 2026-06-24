@@ -13,7 +13,8 @@ HTML5 Canvas and are driven by a physically accurate kinematics engine.
   missed day; new users start at 1).
 - Per-lesson mastery bar: steps completed and
   `mastery % = (correct answers / total questions) * 100`.
-- A 7-step (0-6) interactive lesson with instant correct/incorrect feedback.
+- Multiple interactive lessons (projectile motion, 1D kinematics, Newton's second
+  law, inclined planes, uniform circular motion) with instant feedback.
 - Mobile-first, touch-friendly UI.
 
 ## Getting started

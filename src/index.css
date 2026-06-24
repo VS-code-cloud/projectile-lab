@@ -1,8 +1,12 @@
 @import 'tailwindcss';
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap');
 
 @theme {
   --color-ink-50: #f5f7fb;
   --color-ink-900: #0b1220;
+  --font-sans:
+    'Inter', system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-display: 'Space Grotesk', 'Inter', system-ui, sans-serif;
   --font-mono:
     ui-monospace, 'SF Mono', 'JetBrains Mono', 'Fira Code', Consolas, monospace;
 }
@@ -20,10 +24,15 @@ body,
 }
 
 body {
-  font-family: system-ui, 'Segoe UI', Roboto, sans-serif;
+  font-family: var(--font-sans);
   color: #0f172a;
+  background-color: #f6f8fc;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+::selection {
+  background: rgba(99, 102, 241, 0.18);
 }
 
 /* Prevent iOS double-tap zoom from interfering with interactive canvases. */
@@ -32,35 +41,100 @@ canvas {
 }
 
 @layer utilities {
-  /* Subtle blueprint / graph-paper backdrop for a physics feel. */
+  /* Subtle blueprint / graph-paper backdrop with a soft vignette. */
   .bg-grid {
-    background-color: #f7f9fc;
+    background-color: #f6f8fc;
     background-image:
-      linear-gradient(to right, rgba(15, 23, 42, 0.045) 1px, transparent 1px),
-      linear-gradient(to bottom, rgba(15, 23, 42, 0.045) 1px, transparent 1px);
-    background-size: 26px 26px;
+      radial-gradient(
+        100% 60% at 50% -10%,
+        rgba(99, 102, 241, 0.07) 0%,
+        transparent 60%
+      ),
+      linear-gradient(to right, rgba(15, 23, 42, 0.04) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(15, 23, 42, 0.04) 1px, transparent 1px);
+    background-size:
+      100% 100%,
+      28px 28px,
+      28px 28px;
     background-position: center top;
+  }
+
+  /* Dark blueprint grid for hero / feature panels. */
+  .bg-grid-dark {
+    background-image:
+      linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+    background-size: 30px 30px;
   }
 
   /* Faint radial glow used behind hero content. */
   .bg-glow {
-    background:
-      radial-gradient(
-        60% 50% at 50% 0%,
-        rgba(79, 70, 229, 0.1) 0%,
-        transparent 70%
-      );
+    background: radial-gradient(
+      60% 50% at 50% 0%,
+      rgba(99, 102, 241, 0.12) 0%,
+      transparent 70%
+    );
+  }
+
+  .text-gradient {
+    background-image: linear-gradient(120deg, #4f46e5 0%, #7c3aed 50%, #6366f1 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
   }
 
   .num {
     font-family: var(--font-mono);
     font-variant-numeric: tabular-nums;
   }
+
+  .animate-rise {
+    animation: rise 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .animate-fade {
+    animation: fade 0.4s ease-out both;
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 @layer components {
   .btn-primary {
-    @apply inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 hover:shadow active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50;
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50;
+    background-image: linear-gradient(to bottom right, #4f46e5, #7c3aed);
+    box-shadow:
+      0 1px 2px rgba(79, 70, 229, 0.25),
+      0 6px 16px -6px rgba(124, 58, 237, 0.45);
+  }
+
+  .btn-primary:hover {
+    filter: brightness(1.07);
+    box-shadow:
+      0 2px 4px rgba(79, 70, 229, 0.3),
+      0 10px 24px -8px rgba(124, 58, 237, 0.55);
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50;
   }
 
   .btn-ghost {
@@ -68,7 +142,7 @@ canvas {
   }
 
   .card {
-    @apply rounded-2xl border border-slate-200/80 bg-white shadow-sm;
+    @apply rounded-2xl border border-slate-200/70 bg-white shadow-sm;
   }
 
   .chip {

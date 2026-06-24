@@ -40,12 +40,12 @@ export function Header() {
   }
 
   return (
-    <header className="sticky top-0 z-10 border-b border-slate-200/80 bg-white/80 backdrop-blur-md">
-      <div className="mx-auto flex max-w-3xl items-center justify-between px-4 py-3">
-        <Link to="/" className="flex items-center gap-2.5">
-          <BrandMark size={28} />
-          <span className="text-lg font-bold tracking-tight text-slate-900">
-            Projectile<span className="text-indigo-600">Lab</span>
+    <header className="sticky top-0 z-20 border-b border-slate-200/70 bg-white/75 backdrop-blur-xl">
+      <div className="mx-auto flex max-w-4xl items-center justify-between px-4 py-3">
+        <Link to="/" className="group flex items-center gap-2.5">
+          <BrandMark size={30} className="transition-transform group-hover:-rotate-6" />
+          <span className="font-display text-lg font-bold tracking-tight text-slate-900">
+            Projectile<span className="text-gradient">Lab</span>
           </span>
         </Link>
 

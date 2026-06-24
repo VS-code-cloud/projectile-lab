@@ -10,10 +10,13 @@ lerna-debug.log*
 node_modules
 dist
 dist-ssr
+.agents/*
+.cursor/*
 *.local
 
 # Local environment files
 .env
+skills-lock.json
 .env.*
 !.env.example
 

@@ -57,32 +57,51 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="bg-grid flex min-h-svh flex-col items-center justify-center px-4">
-      <div className="bg-glow absolute inset-x-0 top-0 h-80" aria-hidden="true" />
-      <div className="card relative w-full max-w-sm p-8 text-center">
+    <div className="bg-grid relative flex min-h-svh flex-col items-center justify-center px-4">
+      <div className="bg-glow pointer-events-none absolute inset-x-0 top-0 h-96" aria-hidden="true" />
+      <div
+        className="pointer-events-none absolute left-1/2 top-10 h-64 w-64 -translate-x-1/2 rounded-full bg-violet-400/20 blur-3xl"
+        aria-hidden="true"
+      />
+
+      <div className="animate-rise card relative w-full max-w-sm overflow-hidden p-8 text-center shadow-lg">
+        <div
+          className="absolute inset-x-0 top-0 h-1.5"
+          style={{
+            backgroundImage: 'linear-gradient(to right, #6366f1, #8b5cf6, #2dd4bf)',
+          }}
+          aria-hidden="true"
+        />
         <div className="mb-5 flex justify-center">
-          <BrandMark size={52} />
+          <BrandMark size={54} />
         </div>
-        <h1 className="text-2xl font-bold tracking-tight text-slate-900">
-          Projectile<span className="text-indigo-600">Lab</span>
+        <h1 className="font-display text-2xl font-bold tracking-tight text-slate-900">
+          Projectile<span className="text-gradient">Lab</span>
         </h1>
-        <p className="mt-2 text-sm text-slate-500">
-          Sign in to explore interactive 2D projectile motion and track your
+        <p className="mt-2 text-sm leading-relaxed text-slate-500">
+          Sign in to explore interactive physics simulations and track your
           mastery.
         </p>
         <button
           type="button"
           onClick={handleSignIn}
           disabled={busy}
-          className="mt-6 flex w-full items-center justify-center gap-2.5 rounded-xl border border-slate-300 bg-white px-4 py-2.5 font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 active:scale-[0.99] disabled:opacity-60"
+          className="mt-6 flex w-full items-center justify-center gap-2.5 rounded-xl border border-slate-300 bg-white px-4 py-2.5 font-semibold text-slate-700 shadow-sm transition hover:border-slate-400 hover:bg-slate-50 hover:shadow active:scale-[0.99] disabled:opacity-60"
         >
           <GoogleIcon />
-          {busy ? 'Signing in...' : 'Continue with Google'}
+          {busy ? 'Signing in…' : 'Continue with Google'}
         </button>
         {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
+
+        <div className="mt-6 flex items-center justify-center gap-2 text-xs font-medium text-slate-400">
+          <span className="h-px w-8 bg-slate-200" />
+          No account needed beyond Google
+          <span className="h-px w-8 bg-slate-200" />
+        </div>
       </div>
+
       <p className="relative mt-6 text-xs text-slate-400">
-        Decompose velocities &middot; apply 1D equations &middot; predict the arc
+        Decompose velocities &middot; apply the equations &middot; predict the arc
       </p>
     </div>
   )

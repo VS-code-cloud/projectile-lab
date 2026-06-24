@@ -162,8 +162,35 @@ export default function LessonPage() {
         )}
 
         {isLastStep && currentCompleted && (
-          <div className="mt-4 overflow-hidden rounded-2xl border border-indigo-200 bg-gradient-to-br from-indigo-50 to-violet-50 p-5 text-center">
-            <p className="text-lg font-semibold text-indigo-900">
+          <div
+            className="animate-rise mt-4 overflow-hidden rounded-2xl border border-indigo-200 p-5 text-center"
+            style={{
+              backgroundImage:
+                'linear-gradient(to bottom right, #eef2ff, #f5f3ff)',
+            }}
+          >
+            <div
+              className="mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-full text-white"
+              style={{
+                backgroundImage:
+                  'linear-gradient(to bottom right, #6366f1, #8b5cf6)',
+              }}
+            >
+              <svg
+                width="22"
+                height="22"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M20 6 9 17l-5-5" />
+              </svg>
+            </div>
+            <p className="font-display text-lg font-semibold text-indigo-900">
               You finished the lesson!
             </p>
             {nextLesson ? (

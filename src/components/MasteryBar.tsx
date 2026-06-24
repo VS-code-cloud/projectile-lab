@@ -49,8 +49,11 @@ export function MasteryBar({
         aria-label="Lesson progress"
       >
         <div
-          className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-violet-500 transition-[width] duration-500"
-          style={{ width: `${stepPct}%` }}
+          className="h-full rounded-full transition-[width] duration-500"
+          style={{
+            width: `${stepPct}%`,
+            backgroundImage: 'linear-gradient(to right, #6366f1, #8b5cf6)',
+          }}
         />
       </div>
     </div>
