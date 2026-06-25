@@ -1,6 +1,6 @@
 import type { Step } from '../lessons/types'
 
-/** Guards against floating-point comparison noise. */
+/** Guards against floating-point comparison noise after rounding. */
 const EPSILON = 1e-9
 
 /**
@@ -15,30 +15,28 @@ function decimalPlaces(value: number): number {
 }
 
 /**
- * Derives the allowed absolute error for an expected value: an explicit
- * tolerance when provided, otherwise one unit in the value's last decimal place
- * ("within 1 rounding error").
- * @param step The step being checked.
- * @param index Index of the expected value.
+ * Rounds a value to a fixed number of decimal places.
+ * @param value The value to round.
+ * @param places How many decimal places to keep.
  */
-function toleranceFor(step: Step, index: number): number {
-  if (step.tolerance && step.tolerance[index] !== undefined) {
-    return step.tolerance[index]
-  }
-  return Math.pow(10, -decimalPlaces(step.expected[index]))
+function roundToPlaces(value: number, places: number): number {
+  const factor = Math.pow(10, places)
+  return Math.round(value * factor) / factor
 }
 
 /**
- * Checks a user's submitted values against a step's expected answer, allowing
- * up to one rounding error per value.
+ * Checks a user's submitted values against a step's expected answer.
+ * Each submitted value is rounded to the same precision as the corresponding
+ * expected value, then compared for exact equality (with EPSILON for float noise).
+ * The `tolerance` field on the step is ignored.
  * @param step The question step.
  * @param values The user's submitted numeric values.
- * @returns True if every value is within tolerance of the expected value.
+ * @returns True if every rounded value equals the expected value.
  */
 export function checkAnswer(step: Step, values: number[]): boolean {
   if (values.length !== step.expected.length) return false
   return step.expected.every((expected, i) => {
-    const tolerance = toleranceFor(step, i)
-    return Math.abs(values[i] - expected) <= tolerance + EPSILON
+    const rounded = roundToPlaces(values[i], decimalPlaces(expected))
+    return Math.abs(rounded - expected) <= EPSILON
   })
 }

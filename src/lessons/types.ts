@@ -16,8 +16,8 @@ export interface Step {
   /** Explanation shown when an answer is wrong. Empty for demonstrations. */
   explanation: string
   /**
-   * Allowed absolute error per expected value ("within 1 rounding error").
-   * When omitted, tolerance is inferred from each value's decimal places.
+   * @deprecated Ignored by grading. Answers must match expected values exactly
+   * after rounding to the same decimal precision.
    */
   tolerance?: number[]
   /**

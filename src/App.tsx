@@ -4,6 +4,7 @@ import { Route, Routes, useLocation, useParams } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { BrandMark } from './components/BrandMark'
+import { ImmersiveBackground } from './components/visual/ImmersiveBackground'
 
 const HomePage = lazy(() => import('./pages/HomePage'))
 const LoginPage = lazy(() => import('./pages/LoginPage'))
@@ -38,13 +39,13 @@ function PageTransition({ children }: { children: ReactNode }) {
 /** Branded loading state shown while a lazy page chunk is fetched. */
 function RouteFallback() {
   return (
-    <div className="bg-grid flex min-h-svh items-center justify-center px-4">
+    <ImmersiveBackground contentClassName="flex min-h-svh items-center justify-center px-4">
       <div className="card-glass flex flex-col items-center gap-4 px-10 py-8">
         <BrandMark size={44} className="animate-float" />
         <div className="h-2 w-40 animate-shimmer rounded-full" />
         <p className="text-sm font-medium text-slate-500">Loading…</p>
       </div>
-    </div>
+    </ImmersiveBackground>
   )
 }
 

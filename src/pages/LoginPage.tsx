@@ -4,7 +4,7 @@ import { motion } from 'framer-motion'
 import { useAuth } from '../hooks/useAuth'
 import { signInWithGoogle } from '../firebase/auth'
 import { BrandMark } from '../components/BrandMark'
-import ShaderBackdrop from '../components/visual/ShaderBackdrop'
+import { ImmersiveBackground } from '../components/visual/ImmersiveBackground'
 
 /** The multi-color Google "G" logo, used inside the sign-in button. */
 function GoogleIcon() {
@@ -59,10 +59,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="bg-immersive relative flex min-h-svh flex-col items-center justify-center overflow-hidden px-4 py-10">
-      <div className="bg-grid-dark absolute inset-0 opacity-40" aria-hidden="true" />
-      <ShaderBackdrop />
-
+    <ImmersiveBackground contentClassName="flex min-h-svh flex-col items-center justify-center px-4 py-10">
       <motion.div
         initial={{ opacity: 0, y: 18, scale: 0.98 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -111,6 +108,6 @@ export default function LoginPage() {
       <p className="relative mt-6 text-xs text-slate-300">
         Decompose velocities &middot; apply the equations &middot; predict the arc
       </p>
-    </div>
+    </ImmersiveBackground>
   )
 }

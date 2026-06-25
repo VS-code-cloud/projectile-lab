@@ -66,7 +66,8 @@ body,
 body {
   font-family: var(--font-sans);
   color: #0f172a;
-  background-color: var(--surface-muted);
+  /* Deep immersive base so there is no light flash before pages paint. */
+  background-color: #0b1020;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -115,26 +116,31 @@ canvas {
   /* Dark blueprint grid for hero / feature panels. */
   .bg-grid-dark {
     background-image:
-      linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
-      linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+      linear-gradient(to right, rgba(255, 255, 255, 0.08) 1.75px, transparent 1.75px),
+      linear-gradient(to bottom, rgba(255, 255, 255, 0.08) 1.75px, transparent 1.75px);
     background-size: 32px 32px;
   }
 
   /* Deep immersive backdrop for hero/auth sections. */
   .bg-immersive {
-    background-color: #0b1020;
+    background-color: #090d1a;
     background-image:
       radial-gradient(
-        60% 50% at 15% 0%,
-        rgba(99, 102, 241, 0.35) 0%,
-        transparent 60%
+        62% 52% at 12% -5%,
+        rgba(99, 102, 241, 0.5) 0%,
+        transparent 58%
       ),
       radial-gradient(
-        50% 45% at 100% 20%,
-        rgba(20, 184, 166, 0.22) 0%,
+        52% 46% at 102% 18%,
+        rgba(20, 184, 166, 0.32) 0%,
+        transparent 58%
+      ),
+      radial-gradient(
+        42% 42% at 82% 102%,
+        rgba(124, 58, 237, 0.28) 0%,
         transparent 60%
       ),
-      linear-gradient(160deg, #0f172a 0%, #131036 55%, #0b1020 100%);
+      linear-gradient(160deg, #131a33 0%, #171039 52%, #080b16 100%);
   }
 
   /* Faint radial glow used behind hero content. */

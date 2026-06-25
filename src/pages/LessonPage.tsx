@@ -3,6 +3,7 @@ import type { CSSProperties } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Link, useParams } from 'react-router-dom'
 import { Header } from '../components/layout/Header'
+import { ImmersiveBackground } from '../components/visual/ImmersiveBackground'
 import { MasteryBar } from '../components/MasteryBar'
 import { AnswerFeedback } from '../components/AnswerFeedback'
 import { InteractiveStep } from '../components/InteractiveStep'
@@ -114,7 +115,7 @@ export default function LessonPage() {
 
   if (!lesson || !step) {
     return (
-      <div className="bg-grid min-h-svh">
+      <ImmersiveBackground>
         <Header />
         <main className="mx-auto max-w-2xl px-4 py-16 text-center">
           <div className="card animate-rise mx-auto max-w-md p-8">
@@ -129,7 +130,7 @@ export default function LessonPage() {
             </Link>
           </div>
         </main>
-      </div>
+      </ImmersiveBackground>
     )
   }
 
@@ -158,12 +159,12 @@ export default function LessonPage() {
     lessonOrder === -1 ? undefined : allLessons[lessonOrder + 1]
 
   return (
-    <div className="bg-grid min-h-svh">
+    <ImmersiveBackground>
       <Header />
       <main className="mx-auto max-w-3xl px-4 py-6 sm:py-8">
         <Link
           to="/"
-          className="inline-flex items-center gap-1.5 text-sm font-semibold text-brand-600 transition hover:text-brand-700"
+          className="inline-flex items-center gap-1.5 text-sm font-semibold text-slate-200 transition hover:text-white"
         >
           <svg
             width="16"
@@ -260,14 +261,12 @@ export default function LessonPage() {
                 />
                 {isQuestion ? 'Question' : 'Demonstration'}
               </span>
-              <span
-                className={`text-xs font-semibold uppercase tracking-wide ${theme.accentText ?? 'text-slate-400'}`}
-              >
+              <span className="text-xs font-semibold uppercase tracking-wide text-slate-300">
                 Step <span className="num">{index + 1}</span> of{' '}
                 <span className="num">{lesson.steps.length}</span>
               </span>
             </div>
-            <p className="mt-3 max-w-[68ch] text-lg leading-relaxed text-slate-800">
+            <p className="mt-3 max-w-[68ch] text-lg leading-relaxed text-slate-100">
               {step.displayText}
             </p>
 
@@ -388,6 +387,6 @@ export default function LessonPage() {
           </button>
         </div>
       </main>
-    </div>
+    </ImmersiveBackground>
   )
 }

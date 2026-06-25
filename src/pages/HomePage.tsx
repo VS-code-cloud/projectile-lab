@@ -6,12 +6,13 @@ import { Header } from '../components/layout/Header'
 import { MasteryBar } from '../components/MasteryBar'
 import { BrandMark } from '../components/BrandMark'
 import { LessonGlyph } from '../components/LessonGlyph'
-import ShaderBackdrop from '../components/visual/ShaderBackdrop'
+import { ImmersiveBackground } from '../components/visual/ImmersiveBackground'
 import { getLessonTheme } from '../lib/lessonTheme'
 import { allLessons } from '../lessons'
 import { countQuestions } from '../lessons/types'
 import type { Lesson } from '../lessons/types'
 import { useAuth } from '../hooks/useAuth'
+import { useCompletedLessonsCount } from '../hooks/useCompletedLessonsCount'
 import { useLessonProgress } from '../hooks/useLessonProgress'
 
 /** Parent variant: staggers the reveal of its motion children. */
@@ -183,21 +184,20 @@ function LessonCard({ lesson }: { lesson: Lesson }) {
  */
 export default function HomePage() {
   const { user, loading } = useAuth()
+  const { count: completedLessons, loading: progressLoading } =
+    useCompletedLessonsCount()
   const firstName = user?.displayName?.split(' ')[0]
-  const totalSteps = allLessons.reduce((sum, lesson) => sum + lesson.steps.length, 0)
+  const dashboardLoading = loading || progressLoading
 
   return (
-    <div className="bg-grid min-h-svh">
+    <ImmersiveBackground>
       <Header />
       <main className="mx-auto max-w-6xl px-4 py-6">
-        {loading ? (
+        {dashboardLoading ? (
           <div className="space-y-4">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
               <div className="h-20 flex-1 animate-shimmer rounded-2xl" />
-              <div className="grid grid-cols-2 gap-3 sm:max-w-md">
-                <div className="h-16 animate-shimmer rounded-2xl" />
-                <div className="h-16 animate-shimmer rounded-2xl" />
-              </div>
+              <div className="h-16 w-32 shrink-0 animate-shimmer rounded-2xl" />
             </div>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               <div className="h-52 animate-shimmer rounded-2xl" />
@@ -209,20 +209,22 @@ export default function HomePage() {
           <>
             <div className="animate-fade mb-5 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between lg:mb-6">
               <div>
-                <p className="text-sm font-semibold text-brand-600">
+                <p className="text-sm font-semibold text-accent-400">
                   Welcome back{firstName ? `, ${firstName}` : ''}
                 </p>
-                <h1 className="font-display mt-1 text-3xl font-bold tracking-tight text-slate-900">
+                <h1 className="font-display mt-1 text-3xl font-bold tracking-tight text-white">
                   Your physics lessons
                 </h1>
-                <p className="mt-1.5 text-sm leading-relaxed text-slate-500">
+                <p className="mt-1.5 text-sm leading-relaxed text-slate-300">
                   Build intuition for motion and forces, one interactive step at a
                   time.
                 </p>
               </div>
-              <div className="grid shrink-0 grid-cols-2 gap-3 sm:max-w-md">
-                <StatCard value={String(allLessons.length)} label="Lessons available" />
-                <StatCard value={String(totalSteps)} label="Interactive steps" />
+              <div className="shrink-0">
+                <StatCard
+                  value={String(completedLessons ?? 0)}
+                  label="Lessons completed"
+                />
               </div>
             </div>
             <motion.div
@@ -237,9 +239,7 @@ export default function HomePage() {
             </motion.div>
           </>
         ) : (
-          <section className="bg-immersive relative overflow-hidden rounded-3xl px-6 py-10 text-center shadow-xl ring-1 ring-white/10 sm:px-10 sm:py-12 lg:text-left">
-            <div className="bg-grid-dark absolute inset-0 opacity-40" aria-hidden="true" />
-            <ShaderBackdrop />
+          <section className="relative px-2 py-8 text-center sm:px-6 sm:py-10 lg:text-left">
             <motion.div
               className="relative"
               variants={staggerContainer}
@@ -315,6 +315,6 @@ export default function HomePage() {
           </section>
         )}
       </main>
-    </div>
+    </ImmersiveBackground>
   )
 }

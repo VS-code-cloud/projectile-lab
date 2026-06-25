@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { CannonCanvas } from '../CannonCanvas'
 import type { Shot } from '../CannonCanvas'
 import type { StepComponentProps } from '../../lessons/types'
+import { timeToGround, timeToReturn } from '../../physics/kinematics'
 
 /** Launch height (m) for the horizontal panel; it sits at the vertical center. */
 const HORIZONTAL_LAUNCH_HEIGHT = 20
@@ -33,6 +34,13 @@ export default function TwoPanelEquations({ step }: StepComponentProps) {
     [v],
   )
 
+  // Sync wall-clock finish: vertical arc plays faster to match horizontal flight.
+  const playbackDuration = useMemo(() => {
+    const verticalTime = timeToReturn(v, 90)
+    const horizontalTime = timeToGround(v, 0, HORIZONTAL_LAUNCH_HEIGHT)
+    return Math.min(verticalTime, horizontalTime)
+  }, [v])
+
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -40,12 +48,22 @@ export default function TwoPanelEquations({ step }: StepComponentProps) {
           <p className="text-center font-mono text-sm text-slate-700">
             y = vt - gt&sup2;
           </p>
-          <CannonCanvas shots={verticalShots} fireToken={fireToken} heightClass="h-56" />
+          <CannonCanvas
+            shots={verticalShots}
+            fireToken={fireToken}
+            playbackDuration={playbackDuration}
+            heightClass="h-56"
+          />
           <p className="text-center text-xs text-slate-500">Vertical motion</p>
         </div>
         <div className="space-y-2">
           <p className="text-center font-mono text-sm text-slate-700">x = vt</p>
-          <CannonCanvas shots={horizontalShots} fireToken={fireToken} heightClass="h-56" />
+          <CannonCanvas
+            shots={horizontalShots}
+            fireToken={fireToken}
+            playbackDuration={playbackDuration}
+            heightClass="h-56"
+          />
           <p className="text-center text-xs text-slate-500">Horizontal motion</p>
         </div>
       </div>

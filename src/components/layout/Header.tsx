@@ -155,8 +155,11 @@ export function Header() {
   }
 
   return (
-    <header className="glass sticky top-0 z-20 border-b border-white/40">
-      <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-2.5">
+    <header
+      className="glass sticky top-0 z-20 border-b border-white/40"
+      style={{ background: '#ffffff' }}
+    >
+      <div className="relative mx-auto flex max-w-6xl items-center justify-between px-4 py-2.5">
         <Link
           to="/"
           className="group flex min-h-11 items-center gap-2.5"

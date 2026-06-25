@@ -54,6 +54,12 @@ interface CannonCanvasProps {
    * Incrementing it (re)plays the projectile animation.
    */
   fireToken?: number
+  /**
+   * Wall-clock animation duration (seconds). When set, overrides the default
+   * duration derived from trajectory physics time; simulated time still spans
+   * the full flight so shorter durations play the arc faster.
+   */
+  playbackDuration?: number
   /** Tailwind height class for the canvas container. Defaults to h-64. */
   heightClass?: string
 }
@@ -114,6 +120,7 @@ export function CannonCanvas({
   guideX,
   guideXLabel,
   fireToken = 0,
+  playbackDuration,
   heightClass = 'h-64',
 }: CannonCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null)
@@ -385,7 +392,9 @@ export function CannonCanvas({
 
     if ((fireToken ?? 0) > 0) {
       // Animate from t=0 across the global flight time.
-      const durationMs = Math.min(Math.max(maxTime, 1.2), 3.5) * 1000
+      const baseDuration =
+        playbackDuration !== undefined ? playbackDuration : maxTime
+      const durationMs = Math.min(Math.max(baseDuration, 1.2), 3.5) * 1000
       const start = performance.now()
       const tick = (now: number) => {
         const progress = Math.min((now - start) / durationMs, 1)
@@ -425,6 +434,7 @@ export function CannonCanvas({
     guideX,
     guideXLabel,
     fireToken,
+    playbackDuration,
     heightClass,
   ])
 
