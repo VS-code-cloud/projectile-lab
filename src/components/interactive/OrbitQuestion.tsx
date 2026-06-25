@@ -67,6 +67,91 @@ function distanceToEdge(
   return Number.isFinite(t) ? Math.max(t, 0) : 0
 }
 
+/** Draws a cratered moon disc centered at (cx, cy) with the given radius. */
+function drawMoon(
+  ctx: CanvasRenderingContext2D,
+  cx: number,
+  cy: number,
+  r: number,
+) {
+  const grad = ctx.createRadialGradient(
+    cx - r * 0.35,
+    cy - r * 0.35,
+    r * 0.15,
+    cx,
+    cy,
+    r,
+  )
+  grad.addColorStop(0, '#eef2f7')
+  grad.addColorStop(1, '#94a3b8')
+  ctx.save()
+  ctx.fillStyle = grad
+  ctx.beginPath()
+  ctx.arc(cx, cy, r, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.fillStyle = 'rgba(71, 85, 105, 0.32)'
+  const craters: [number, number, number][] = [
+    [-0.32, -0.18, 0.17],
+    [0.28, 0.08, 0.13],
+    [0.04, 0.34, 0.1],
+    [-0.18, 0.3, 0.08],
+    [0.34, -0.3, 0.09],
+  ]
+  for (const [dx, dy, cr] of craters) {
+    ctx.beginPath()
+    ctx.arc(cx + dx * r, cy + dy * r, cr * r, 0, Math.PI * 2)
+    ctx.fill()
+  }
+  ctx.restore()
+}
+
+/**
+ * Draws a small satellite (body + two solar panels) centered at (x, y) with its
+ * panel axis aligned to the unit direction (ax, ay).
+ */
+function drawSatellite(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  ax: number,
+  ay: number,
+) {
+  ctx.save()
+  ctx.translate(x, y)
+  ctx.rotate(Math.atan2(ay, ax))
+  // Solar panels.
+  ctx.fillStyle = '#1d4ed8'
+  ctx.fillRect(-23, -5, 13, 10)
+  ctx.fillRect(10, -5, 13, 10)
+  ctx.strokeStyle = 'rgba(191, 219, 254, 0.75)'
+  ctx.lineWidth = 1
+  for (const gx of [-19.5, -16.5, -13.5, 13.5, 16.5, 19.5]) {
+    ctx.beginPath()
+    ctx.moveTo(gx, -5)
+    ctx.lineTo(gx, 5)
+    ctx.stroke()
+  }
+  // Struts to the body.
+  ctx.strokeStyle = '#475569'
+  ctx.lineWidth = 1.5
+  ctx.beginPath()
+  ctx.moveTo(-10, 0)
+  ctx.lineTo(-6, 0)
+  ctx.moveTo(6, 0)
+  ctx.lineTo(10, 0)
+  ctx.stroke()
+  // Body.
+  ctx.fillStyle = '#4f46e5'
+  ctx.beginPath()
+  ctx.roundRect(-7, -7, 14, 14, 3)
+  ctx.fill()
+  ctx.fillStyle = '#c7d2fe'
+  ctx.beginPath()
+  ctx.roundRect(-4, -4, 8, 8, 2)
+  ctx.fill()
+  ctx.restore()
+}
+
 /**
  * Question step for uniform circular motion. Shows the object orbiting at the
  * scenario's speed and radius with tangent velocity and inward acceleration, and
@@ -83,6 +168,7 @@ export default function OrbitQuestion({
 }: StepComponentProps) {
   const radius = step.params?.radius ?? 5
   const mass = step.params?.mass
+  const moonScene = (step.params?.moon ?? 0) === 1
 
   const variant: Variant =
     step.variant === 'period' ||
@@ -127,7 +213,11 @@ export default function OrbitQuestion({
     const cx = w / 2
     const cy = h / 2 + 8
     const rPx = Math.min(20 + radius * 14, Math.min(w, h) * 0.34)
-    const omega = speed / radius
+    const moonR = Math.min(rPx * 0.55, Math.min(w, h) * 0.2)
+    // Clamp the visual angular speed so the dot orbits legibly regardless of the
+    // literal radius: a planetary-scale radius would otherwise leave it frozen,
+    // while existing toy-scale steps (already 1.5-2.0 rad/s) are unaffected.
+    const omega = Math.min(Math.max(speed / radius, 0.6), 2.4)
     const theta = omega * time
 
     // Circle path + center (always shown, even after the object is freed).
@@ -137,10 +227,14 @@ export default function OrbitQuestion({
     ctx.arc(cx, cy, rPx, 0, Math.PI * 2)
     ctx.stroke()
 
-    ctx.fillStyle = '#94a3b8'
-    ctx.beginPath()
-    ctx.arc(cx, cy, 3, 0, Math.PI * 2)
-    ctx.fill()
+    if (moonScene) {
+      drawMoon(ctx, cx, cy, moonR)
+    } else {
+      ctx.fillStyle = '#94a3b8'
+      ctx.beginPath()
+      ctx.arc(cx, cy, 3, 0, Math.PI * 2)
+      ctx.fill()
+    }
 
     if (flyOff) {
       // Release the object tangentially (perpendicular to the radius) at the
@@ -203,7 +297,11 @@ export default function OrbitQuestion({
     ctx.strokeStyle = '#cbd5e1'
     ctx.lineWidth = 1
     ctx.beginPath()
-    ctx.moveTo(cx, cy)
+    // Start the radius line at the moon's edge so it doesn't cross the disc.
+    ctx.moveTo(
+      moonScene ? cx + Math.cos(theta) * moonR : cx,
+      moonScene ? cy + Math.sin(theta) * moonR : cy,
+    )
     ctx.lineTo(px, py)
     ctx.stroke()
 
@@ -217,7 +315,11 @@ export default function OrbitQuestion({
       '#2563eb',
       3,
     )
-    const aLen = Math.min(((speed * speed) / radius) * 2.4, rPx * 0.9)
+    // The literal centripetal acceleration is tiny at planetary scale, so use a
+    // fixed illustrative length for the moon scene to keep the inward arrow clear.
+    const aLen = moonScene
+      ? rPx * 0.55
+      : Math.min(((speed * speed) / radius) * 2.4, rPx * 0.9)
     drawArrow(
       ctx,
       px,
@@ -228,10 +330,15 @@ export default function OrbitQuestion({
       3,
     )
 
-    ctx.fillStyle = '#4f46e5'
-    ctx.beginPath()
-    ctx.arc(px, py, 9, 0, Math.PI * 2)
-    ctx.fill()
+    if (moonScene) {
+      // Align the satellite's panel axis with its tangential velocity.
+      drawSatellite(ctx, px, py, -Math.sin(theta), Math.cos(theta))
+    } else {
+      ctx.fillStyle = '#4f46e5'
+      ctx.beginPath()
+      ctx.arc(px, py, 9, 0, Math.PI * 2)
+      ctx.fill()
+    }
   }
 
   return (

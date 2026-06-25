@@ -72,13 +72,13 @@
     {
       "uid": "step-6-centripetal-force",
       "stepType": "question",
-      "displayText": "An object of mass m = 2 kg moves in a circle of radius r = 5 m at v = 10 m/s. Drag the gauge to predict the centripetal force required to keep it on this path (N), then lock it in.",
+      "displayText": "A small satellite of mass m = 12 kg orbits the Moon in a circle 200 m above the surface at a constant speed v = 1700 m/s. The Moon's radius is 1,737,400 m. Drag the gauge to predict the centripetal force required to keep the satellite on this path (N), then lock it in. Hint: the relevant radius is from the center of the moon.",
       "interactiveComponent": "OrbitQuestion",
-      "expected": [40],
-      "explanation": "Combine Newton's second law with centripetal acceleration: F = m*a = m*v^2/r = 2*100/5 = 40 N.",
+      "expected": [20],
+      "explanation": "The orbital radius is measured from the Moon's center: r = 1,737,400 m + 200 m = 1,737,600 m. Then F = m*v^2/r = 12 * 1700^2 / 1,737,600 = 12 * 2,890,000 / 1,737,600 \u2248 20 N, directed toward the Moon's center.",
       "tolerance": [2],
       "variant": "force",
-      "params": { "speed": 10, "radius": 5, "mass": 2 }
+      "params": { "speed": 1700, "radius": 1737600, "mass": 12, "moon": 1 }
     }
   ]
 }
