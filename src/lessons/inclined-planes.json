@@ -38,7 +38,7 @@
     {
       "uid": "step-3-acceleration",
       "stepType": "question",
-      "displayText": "A block is released from rest on a frictionless ramp tilted at θ = 30°. (Use g = 9.8 m/s\u00B2.) Drag the gauge to predict its acceleration down the ramp (m/s\u00B2), then lock it in.",
+      "displayText": "A block is released from rest on a frictionless ramp tilted at θ = 30°. (Use g = 9.8 m/s\u00B2.) Calculate its acceleration down the ramp (m/s\u00B2) and enter your answer.",
       "interactiveComponent": "RampQuestion",
       "expected": [4.9],
       "explanation": "Only the along-ramp component of gravity accelerates the block: a = g·sinθ = 9.8·sin(30°) = 9.8·0.5 = 4.9 m/s^2.",
@@ -49,7 +49,7 @@
     {
       "uid": "step-4-normal-force",
       "stepType": "question",
-      "displayText": "A block of mass m = 2 kg rests on a ramp at θ = 30°. (Use g = 9.8 m/s\u00B2.) Drag the gauge to predict the normal force the ramp exerts on it (N), then lock it in.",
+      "displayText": "A block of mass m = 2 kg rests on a ramp at θ = 30°. (Use g = 9.8 m/s\u00B2.) Calculate the normal force the ramp exerts on it (N) and enter your answer.",
       "interactiveComponent": "RampQuestion",
       "expected": [17],
       "explanation": "The normal force balances the into-ramp component of gravity: N = m·g·cosθ = 2·9.8·cos(30°) = 19.6·0.866 = 17.0 N.",
@@ -60,7 +60,7 @@
     {
       "uid": "step-5-gravity-component",
       "stepType": "question",
-      "displayText": "For the same block (m = 2 kg) on the θ = 30° ramp, drag the gauge to predict the component of gravity pulling it along the ramp (N), then lock it in.",
+      "displayText": "For the same block (m = 2 kg) on the θ = 30° ramp, calculate the component of gravity pulling it along the ramp (N) and enter your answer.",
       "interactiveComponent": "RampQuestion",
       "expected": [9.8],
       "explanation": "The along-ramp pull is F = m·g·sinθ = 2·9.8·sin(30°) = 19.6·0.5 = 9.8 N.",
@@ -71,7 +71,7 @@
     {
       "uid": "step-6-speed-at-bottom",
       "stepType": "question",
-      "displayText": "The block slides from rest down the full L = 10 m of the frictionless θ = 30° ramp. Drag the gauge to predict how fast it is moving at the bottom (m/s), then lock it in.",
+      "displayText": "The block slides from rest down the full L = 10 m of the frictionless θ = 30° ramp. Calculate how fast it is moving at the bottom (m/s) and enter your answer.",
       "interactiveComponent": "RampQuestion",
       "expected": [9.9],
       "explanation": "First a = g·sinθ = 4.9 m/s^2. Then v = sqrt(2·a·L) = sqrt(2·4.9·10) = sqrt(98) = 9.9 m/s.",

@@ -133,6 +133,7 @@ export default function ForceQuestion({
         answered={answered}
         submittedValue={submittedValues ? submittedValues[0] : null}
         onSubmit={handleSubmit}
+        orientation="horizontal"
       />
     </div>
   )

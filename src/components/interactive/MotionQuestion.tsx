@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { SceneCanvas } from './shared/SceneCanvas'
 import { drawArrow, drawLabel } from './shared/draw'
 import { PredictGauge } from './shared/PredictGauge'
+import { NumericAnswer } from './shared/NumericAnswer'
 import { niceGaugeMax } from './shared/gauge'
 import type { StepComponentProps } from '../../lessons/types'
 
@@ -15,7 +16,7 @@ const VARIANTS = {
   distance: {
     unit: 'm',
     decimals: 0,
-    label: 'Drag the gauge to predict how far the cart travels, then lock it in.',
+    label: 'Enter how far the cart travels (m), then submit.',
   },
 } as const
 
@@ -129,16 +130,30 @@ export default function MotionQuestion({
         duration={duration}
         heightClass="h-44"
       />
-      <PredictGauge
-        label={cfg.label}
-        unit={cfg.unit}
-        max={gaugeMax}
-        trueValue={trueValue}
-        decimals={cfg.decimals}
-        answered={answered}
-        submittedValue={submittedValues ? submittedValues[0] : null}
-        onSubmit={handleSubmit}
-      />
+      {variant === 'velocity' ? (
+        <PredictGauge
+          label={cfg.label}
+          unit={cfg.unit}
+          max={gaugeMax}
+          trueValue={trueValue}
+          decimals={cfg.decimals}
+          answered={answered}
+          submittedValue={submittedValues ? submittedValues[0] : null}
+          onSubmit={handleSubmit}
+          orientation="horizontal"
+        />
+      ) : (
+        <NumericAnswer
+          label={cfg.label}
+          unit={cfg.unit}
+          answered={answered}
+          submittedValues={submittedValues}
+          onSubmit={(vals) => {
+            setPlayToken((token) => token + 1)
+            onSubmit(vals)
+          }}
+        />
+      )}
     </div>
   )
 }

@@ -48,7 +48,7 @@
     {
       "uid": "step-4-displacement",
       "stepType": "question",
-      "displayText": "A cart starts at v0 = 8 m/s and accelerates at a = 2 m/s^2 for t = 5 s. Drag the gauge to predict how far it travels (m), then lock it in.",
+      "displayText": "A cart starts at v0 = 8 m/s and accelerates at a = 2 m/s^2 for t = 5 s. Calculate how far it travels (m) and enter your answer.",
       "interactiveComponent": "MotionQuestion",
       "expected": [65],
       "explanation": "Use x = v0*t + (1/2)*a*t^2 = 8*5 + 0.5*2*5^2 = 40 + 25 = 65 m.",
@@ -70,7 +70,7 @@
     {
       "uid": "step-6-stopping-distance",
       "stepType": "question",
-      "displayText": "A car traveling at v0 = 20 m/s brakes with a = -5 m/s^2. Drag the gauge to predict how far it travels before stopping (m), then lock it in.",
+      "displayText": "A car traveling at v0 = 20 m/s brakes with a = -5 m/s^2. Calculate how far it travels before stopping (m) and enter your answer.",
       "interactiveComponent": "MotionQuestion",
       "expected": [40],
       "explanation": "With v = 0: 0 = v0^2 + 2*a*x, so x = -v0^2/(2*a) = -(20^2)/(2*-5) = 400/10 = 40 m.",

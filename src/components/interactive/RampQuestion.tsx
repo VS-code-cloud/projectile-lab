@@ -1,8 +1,7 @@
 import { useState } from 'react'
 import { SceneCanvas } from './shared/SceneCanvas'
 import { drawLabel } from './shared/draw'
-import { PredictGauge } from './shared/PredictGauge'
-import { niceGaugeMax } from './shared/gauge'
+import { NumericAnswer } from './shared/NumericAnswer'
 import { GRAVITY } from '../../physics/kinematics'
 import type { StepComponentProps } from '../../lessons/types'
 
@@ -13,22 +12,22 @@ const VARIANTS = {
   accel: {
     unit: 'm/s\u00B2',
     decimals: 1,
-    label: 'Drag the gauge to predict the acceleration down the ramp.',
+    label: 'Enter the acceleration down the ramp.',
   },
   normal: {
     unit: 'N',
     decimals: 0,
-    label: 'Drag the gauge to predict the normal force from the ramp.',
+    label: 'Enter the normal force from the ramp.',
   },
   gravityParallel: {
     unit: 'N',
     decimals: 1,
-    label: 'Drag the gauge to predict the along-ramp pull of gravity.',
+    label: 'Enter the along-ramp pull of gravity.',
   },
   speed: {
     unit: 'm/s',
     decimals: 1,
-    label: 'Drag the gauge to predict the speed at the bottom.',
+    label: 'Enter the speed at the bottom.',
   },
 } as const
 
@@ -37,8 +36,8 @@ type Variant = keyof typeof VARIANTS
 /**
  * Question step for inclined planes. Shows the ramp scenario, slides the block
  * (a = g·sinθ) on submit, and lets the learner predict the asked quantity
- * (acceleration, normal force, along-ramp force, or final speed) on a gauge
- * before revealing the answer.
+ * (acceleration, normal force, along-ramp force, or final speed) in a numeric
+ * box before revealing the answer.
  * @param props.step Provides `params.angleDeg`, `params.mass`,
  * optional `params.length`, and `variant`.
  */
@@ -62,16 +61,8 @@ export default function RampQuestion({
       ? step.variant
       : 'accel'
   const cfg = VARIANTS[variant]
-  const trueValue = step.expected[0]
-  const gaugeMax = niceGaugeMax(trueValue)
 
   const [playToken, setPlayToken] = useState(answered ? 1 : 0)
-
-  /** Records the prediction and plays the slide animation. */
-  function handleSubmit(value: number) {
-    setPlayToken((token) => token + 1)
-    onSubmit([value])
-  }
 
   const draw = (
     ctx: CanvasRenderingContext2D,
@@ -140,15 +131,15 @@ export default function RampQuestion({
         duration={slideDuration}
         heightClass="h-48"
       />
-      <PredictGauge
+      <NumericAnswer
         label={cfg.label}
         unit={cfg.unit}
-        max={gaugeMax}
-        trueValue={trueValue}
-        decimals={cfg.decimals}
         answered={answered}
-        submittedValue={submittedValues ? submittedValues[0] : null}
-        onSubmit={handleSubmit}
+        submittedValues={submittedValues}
+        onSubmit={(vals) => {
+          setPlayToken((token) => token + 1)
+          onSubmit(vals)
+        }}
       />
     </div>
   )
