@@ -143,8 +143,8 @@ function LessonCard({ lesson }: { lesson: Lesson }) {
             <LessonGlyph uid={lesson.uid} size={26} />
           </div>
           <div className="min-w-0 flex-1">
-            <div className="flex items-start justify-between gap-2">
-              <h2 className="font-display text-lg font-semibold leading-snug text-slate-900">
+            <div className="flex flex-wrap items-start justify-between gap-x-2 gap-y-1">
+              <h2 className="font-display min-w-0 text-lg font-semibold leading-snug text-slate-900">
                 {lesson.displayName}
               </h2>
               <span className={`chip shrink-0 ${theme.chip}`}>
@@ -192,7 +192,7 @@ export default function HomePage() {
   return (
     <ImmersiveBackground>
       <Header />
-      <main className="mx-auto max-w-6xl px-4 py-6">
+      <main className="mx-auto max-w-6xl px-3 py-6 sm:px-4">
         {dashboardLoading ? (
           <div className="space-y-4">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
@@ -239,7 +239,7 @@ export default function HomePage() {
             </motion.div>
           </>
         ) : (
-          <section className="relative px-2 py-8 text-center sm:px-6 sm:py-10 lg:text-left">
+          <section className="relative px-1 py-8 text-center sm:px-6 sm:py-10 lg:text-left">
             <motion.div
               className="relative"
               variants={staggerContainer}
@@ -257,7 +257,7 @@ export default function HomePage() {
                   <p className="text-xs font-semibold uppercase tracking-[0.2em] text-accent-400">
                     Interactive physics, done right
                   </p>
-                  <h1 className="font-display mt-3 text-4xl font-bold leading-tight tracking-tight text-white sm:text-5xl">
+                  <h1 className="font-display mt-3 text-3xl font-bold leading-tight tracking-tight text-white sm:text-4xl lg:text-5xl">
                     Learn physics by <span className="text-gradient">doing</span>.
                   </h1>
                   <p className="mx-auto mt-4 max-w-md text-base leading-relaxed text-slate-200 lg:mx-0">
@@ -265,7 +265,7 @@ export default function HomePage() {
                     motion through hands-on, physically accurate simulations.
                   </p>
                   <div className="mt-6 flex justify-center lg:justify-start">
-                    <Link to="/login" className="btn-primary glow-brand px-7 py-3 text-base">
+                    <Link to="/login" className="btn-primary glow-brand px-5 py-3 text-base sm:px-7">
                       Log in to start &rarr;
                     </Link>
                   </div>

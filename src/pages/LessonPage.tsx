@@ -117,8 +117,8 @@ export default function LessonPage() {
     return (
       <ImmersiveBackground>
         <Header />
-        <main className="mx-auto max-w-2xl px-4 py-16 text-center">
-          <div className="card animate-rise mx-auto max-w-md p-8">
+        <main className="mx-auto max-w-2xl px-3 py-16 text-center sm:px-4">
+          <div className="card animate-rise mx-auto max-w-md p-6 sm:p-8">
             <p className="font-display text-lg font-semibold text-slate-900">
               Lesson not found
             </p>
@@ -161,7 +161,7 @@ export default function LessonPage() {
   return (
     <ImmersiveBackground>
       <Header />
-      <main className="mx-auto max-w-3xl px-4 py-6 sm:py-8">
+      <main className="mx-auto max-w-3xl px-3 py-6 sm:px-4 sm:py-8">
         <Link
           to="/"
           className="inline-flex items-center gap-1.5 text-sm font-semibold text-slate-200 transition hover:text-white"
@@ -185,7 +185,7 @@ export default function LessonPage() {
         {/* Progress overview: mastery bar + step dot navigation. */}
         <div className="relative mt-3">
           <div
-            className="bg-halo pointer-events-none absolute -inset-x-6 -top-8 h-32"
+            className="bg-halo pointer-events-none absolute -inset-x-3 -top-8 h-32 sm:-inset-x-6"
             style={
               { '--halo': theme.halo ?? 'rgba(99, 102, 241, 0.14)' } as CSSProperties
             }
@@ -205,7 +205,7 @@ export default function LessonPage() {
               />
             </div>
             {/* Step indicator: one dot per step, current highlighted. */}
-            <div className="mt-4 flex items-center gap-1.5">
+            <div className="mt-4 flex items-center gap-1 sm:gap-1.5">
               {lesson.steps.map((s, i) => {
                 const done = progress.completedStepUids.includes(s.uid)
                 const current = i === index
@@ -245,7 +245,7 @@ export default function LessonPage() {
             transition={{ duration: 0.28, ease: 'easeOut' }}
           >
             {/* Step header: kind chip + counter. */}
-            <div className="mt-6 flex items-center gap-2.5">
+            <div className="mt-6 flex flex-wrap items-center gap-x-2.5 gap-y-1">
               <span
                 className={`chip ${
                   isQuestion
@@ -266,7 +266,7 @@ export default function LessonPage() {
                 <span className="num">{lesson.steps.length}</span>
               </span>
             </div>
-            <p className="mt-3 max-w-[68ch] text-lg leading-relaxed text-slate-100">
+            <p className="mt-3 max-w-[68ch] text-base leading-relaxed text-slate-100 sm:text-lg">
               {step.displayText}
             </p>
 
@@ -294,7 +294,7 @@ export default function LessonPage() {
 
             {isLastStep && currentCompleted && (
               <motion.div
-                className="card glow-brand relative mt-4 overflow-hidden p-6 text-center sm:p-8"
+                className="card glow-brand relative mt-4 overflow-hidden p-5 text-center sm:p-8"
                 initial={{ opacity: 0, scale: 0.96, y: 8 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 transition={{ type: 'spring', stiffness: 260, damping: 24 }}
@@ -338,7 +338,7 @@ export default function LessonPage() {
                 </p>
                 <Link
                   to={`/lesson/${nextLesson.uid}`}
-                  className="btn-primary mt-5"
+                  className="btn-primary mt-5 max-w-full whitespace-normal"
                 >
                   Start {nextLesson.displayName} &rarr;
                 </Link>
@@ -368,12 +368,12 @@ export default function LessonPage() {
           </motion.div>
         </AnimatePresence>
 
-        <div className="mt-6 flex items-center justify-between gap-3">
+        <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
           <button
             type="button"
             onClick={() => goTo(index - 1)}
             disabled={index === 0}
-            className="btn-secondary"
+            className="btn-secondary min-h-11"
           >
             &larr; Back
           </button>
@@ -381,7 +381,7 @@ export default function LessonPage() {
             type="button"
             onClick={() => goTo(index + 1)}
             disabled={isLastStep}
-            className="btn-primary"
+            className="btn-primary min-h-11"
           >
             Next &rarr;
           </button>

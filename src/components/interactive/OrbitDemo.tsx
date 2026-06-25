@@ -94,9 +94,9 @@ export default function OrbitDemo({ step }: StepComponentProps) {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="min-w-0 space-y-4">
       <SceneCanvas draw={draw} loop heightClass="h-60" />
-      <div className="rounded-lg bg-slate-50 px-3 py-2 text-sm">
+      <div className="break-words rounded-lg bg-slate-50 px-3 py-2 text-sm">
         <span className="text-slate-500">Centripetal acceleration</span>{' '}
         <span className="num font-semibold text-slate-800">
           a = v²/r = {accel.toFixed(2)} m/s²
@@ -112,7 +112,7 @@ export default function OrbitDemo({ step }: StepComponentProps) {
             step={1}
             value={speed}
             onChange={(e) => setSpeed(Number.parseFloat(e.target.value))}
-            className="mt-1 w-full"
+            className="mt-1 w-full touch-manipulation"
           />
         </label>
         <label className="block text-sm font-medium text-slate-700">
@@ -124,7 +124,7 @@ export default function OrbitDemo({ step }: StepComponentProps) {
             step={1}
             value={radius}
             onChange={(e) => setRadius(Number.parseFloat(e.target.value))}
-            className="mt-1 w-full"
+            className="mt-1 w-full touch-manipulation"
           />
         </label>
       </div>

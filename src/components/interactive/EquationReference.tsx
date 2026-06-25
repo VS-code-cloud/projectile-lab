@@ -13,9 +13,9 @@ export default function EquationReference({ step }: StepComponentProps) {
       {equations.map((eq) => (
         <div
           key={eq.formula}
-          className="flex flex-col gap-1 rounded-xl border border-slate-200 bg-slate-50 p-4 sm:flex-row sm:items-center sm:justify-between sm:gap-4"
+          className="flex min-w-0 flex-col gap-1 break-words rounded-xl border border-slate-200 bg-slate-50 p-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:p-4"
         >
-          <span className="num text-lg font-semibold text-indigo-700">
+          <span className="num min-w-0 text-lg font-semibold text-indigo-700">
             {eq.formula}
           </span>
           <span className="text-sm text-slate-500">{eq.label}</span>

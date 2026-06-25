@@ -54,9 +54,9 @@ export default function MaxHeightDragBar({
   const fillPct = (predicted / maxValue) * 100
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-stretch gap-4">
-        <div className="flex flex-col items-center">
+    <div className="min-w-0 space-y-4">
+      <div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-stretch">
+        <div className="flex shrink-0 flex-col items-center">
           <span className="mb-1 text-xs text-slate-500">{maxValue} m</span>
           <div
             ref={trackRef}
@@ -83,8 +83,8 @@ export default function MaxHeightDragBar({
           <span className="mt-1 text-xs text-slate-500">0 m</span>
         </div>
 
-        <div className="flex flex-1 flex-col gap-2">
-          <div className="rounded-lg bg-purple-50 px-3 py-2 text-sm font-semibold text-purple-700">
+        <div className="flex min-w-0 flex-1 flex-col gap-2">
+          <div className="break-words rounded-lg bg-purple-50 px-3 py-2 text-sm font-semibold text-purple-700">
             Your guess: {predicted} m
           </div>
           <CannonCanvas

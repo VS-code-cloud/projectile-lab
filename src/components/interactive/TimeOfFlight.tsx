@@ -35,7 +35,7 @@ export default function TimeOfFlight({
   }
 
   return (
-    <div className="space-y-4">
+    <div className="min-w-0 space-y-4">
       <CannonCanvas shots={shots} fireToken={fireToken} />
       <label className="block text-sm font-medium text-slate-700">
         Time to return to start (s)

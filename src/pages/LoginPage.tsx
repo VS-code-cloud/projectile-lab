@@ -64,7 +64,7 @@ export default function LoginPage() {
         initial={{ opacity: 0, y: 18, scale: 0.98 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ type: 'spring', stiffness: 140, damping: 20, mass: 0.6 }}
-        className="card relative w-full max-w-sm overflow-hidden p-8 text-center"
+        className="card relative w-full max-w-sm overflow-hidden p-6 text-center sm:p-8"
       >
         <div
           className="absolute inset-x-0 top-0 h-1.5"
@@ -98,10 +98,10 @@ export default function LoginPage() {
           </p>
         )}
 
-        <div className="mt-6 flex items-center justify-center gap-2 text-xs font-medium text-slate-400">
-          <span className="h-px w-8 bg-slate-200" />
+        <div className="mt-6 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-xs font-medium text-slate-400">
+          <span className="hidden h-px w-8 bg-slate-200 sm:block" />
           No account needed beyond Google
-          <span className="h-px w-8 bg-slate-200" />
+          <span className="hidden h-px w-8 bg-slate-200 sm:block" />
         </div>
       </motion.div>
 

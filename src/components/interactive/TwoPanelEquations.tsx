@@ -42,7 +42,7 @@ export default function TwoPanelEquations({ step }: StepComponentProps) {
   }, [v])
 
   return (
-    <div className="space-y-4">
+    <div className="min-w-0 space-y-4">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="space-y-2">
           <p className="text-center font-mono text-sm text-slate-700">

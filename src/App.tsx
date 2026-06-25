@@ -40,7 +40,7 @@ function PageTransition({ children }: { children: ReactNode }) {
 function RouteFallback() {
   return (
     <ImmersiveBackground contentClassName="flex min-h-svh items-center justify-center px-4">
-      <div className="card-glass flex flex-col items-center gap-4 px-10 py-8">
+      <div className="card-glass flex w-full max-w-xs flex-col items-center gap-4 px-6 py-8 sm:max-w-none sm:px-10">
         <BrandMark size={44} className="animate-float" />
         <div className="h-2 w-40 animate-shimmer rounded-full" />
         <p className="text-sm font-medium text-slate-500">Loading…</p>

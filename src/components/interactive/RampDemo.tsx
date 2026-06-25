@@ -113,7 +113,7 @@ export default function RampDemo({ step }: StepComponentProps) {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="min-w-0 space-y-4">
       <SceneCanvas
         draw={draw}
         playToken={playToken}
@@ -121,7 +121,7 @@ export default function RampDemo({ step }: StepComponentProps) {
         redrawKey={`${angleDeg}`}
         heightClass="h-60"
       />
-      <div className="rounded-lg bg-slate-50 px-3 py-2 text-sm">
+      <div className="break-words rounded-lg bg-slate-50 px-3 py-2 text-sm">
         <span className="text-slate-500">Acceleration down ramp</span>{' '}
         <span className="num font-semibold text-slate-800">
           a = g·sinθ = {accel.toFixed(2)} m/s²
@@ -136,7 +136,7 @@ export default function RampDemo({ step }: StepComponentProps) {
           step={1}
           value={angleDeg}
           onChange={(e) => setAngleDeg(Number.parseFloat(e.target.value))}
-          className="mt-1 w-full"
+          className="mt-1 w-full touch-manipulation"
         />
       </label>
       <button

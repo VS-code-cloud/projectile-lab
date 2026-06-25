@@ -1,6 +1,6 @@
 import { useRef } from 'react'
 import { SceneCanvas } from './shared/SceneCanvas'
-import { drawArrow, drawLabel } from './shared/draw'
+import { drawArrow, drawLabel, fitLabelFontSize } from './shared/draw'
 import { PredictGauge } from './shared/PredictGauge'
 import { niceGaugeMax } from './shared/gauge'
 import type { StepComponentProps } from '../../lessons/types'
@@ -114,7 +114,15 @@ export default function OrbitQuestion({
         ? `a = ${accelGiven} m/s\u00B2    r = ${radius} m`
         : `v = ${speed} m/s    r = ${radius} m` +
           (mass !== undefined ? `    m = ${mass} kg` : '')
-    drawLabel(ctx, given, 14, 18, '#475569')
+    drawLabel(
+      ctx,
+      given,
+      14,
+      18,
+      '#475569',
+      'left',
+      fitLabelFontSize(ctx, given, w - 28),
+    )
 
     const cx = w / 2
     const cy = h / 2 + 8
@@ -227,7 +235,7 @@ export default function OrbitQuestion({
   }
 
   return (
-    <div className="space-y-4">
+    <div className="min-w-0 space-y-4">
       <SceneCanvas draw={draw} loop heightClass="h-52" />
       <PredictGauge
         label={cfg.label}

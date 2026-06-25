@@ -441,7 +441,7 @@ export function CannonCanvas({
   return (
     <div
       ref={containerRef}
-      className={`w-full ${heightClass} elev-1 overflow-hidden rounded-xl border border-slate-200`}
+      className={`min-w-0 w-full ${heightClass} elev-1 overflow-hidden rounded-xl border border-slate-200`}
     >
       <canvas ref={canvasRef} className="block h-full w-full" />
     </div>

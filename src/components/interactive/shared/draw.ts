@@ -62,12 +62,37 @@ export function drawLabel(
   y: number,
   color: string,
   align: CanvasTextAlign = 'left',
+  fontSize = 12,
 ): void {
   ctx.fillStyle = color
-  ctx.font = '12px ui-monospace, monospace'
+  ctx.font = `${fontSize}px ui-monospace, monospace`
   ctx.textAlign = align
   ctx.textBaseline = 'middle'
   ctx.fillText(text, x, y)
+}
+
+/**
+ * Picks a monospace font size so `text` fits within `maxWidth` (px).
+ * @param ctx Canvas 2D context (used for measurement only).
+ * @param text Label text.
+ * @param maxWidth Maximum width in CSS pixels.
+ * @param base Starting font size. Defaults to 12.
+ * @param min Smallest allowed font size. Defaults to 9.
+ */
+export function fitLabelFontSize(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  maxWidth: number,
+  base = 12,
+  min = 9,
+): number {
+  let size = base
+  while (size > min) {
+    ctx.font = `${size}px ui-monospace, monospace`
+    if (ctx.measureText(text).width <= maxWidth) return size
+    size -= 1
+  }
+  return min
 }
 
 /** Options for {@link drawThemedBackdrop}. */

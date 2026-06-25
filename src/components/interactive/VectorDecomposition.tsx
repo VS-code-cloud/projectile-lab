@@ -27,7 +27,7 @@ export default function VectorDecomposition({
   }
 
   return (
-    <div className="space-y-4">
+    <div className="min-w-0 space-y-4">
       <svg viewBox="0 0 250 180" className="mx-auto h-44 w-full max-w-sm">
         <polygon
           points="40,150 200,150 200,30"

@@ -31,7 +31,7 @@ export default function ThreeCannons({ step }: StepComponentProps) {
   )
 
   return (
-    <div className="space-y-4">
+    <div className="min-w-0 space-y-4">
       <CannonCanvas shots={shots} fireToken={fireToken} heightClass="h-72" />
       <div className="flex flex-wrap items-center gap-3 text-sm">
         {ANGLES.map(({ theta, color }) => (

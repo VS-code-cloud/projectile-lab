@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { SceneCanvas } from './shared/SceneCanvas'
-import { drawArrow, drawLabel } from './shared/draw'
+import { drawArrow, drawLabel, fitLabelFontSize } from './shared/draw'
 import { PredictGauge } from './shared/PredictGauge'
 import { niceGaugeMax } from './shared/gauge'
 import type { StepComponentProps } from '../../lessons/types'
@@ -71,7 +71,16 @@ export default function ForceQuestion({
     if (mass !== undefined && variant !== 'mass') given.push(`m = ${mass} kg`)
     if (step.params?.accel !== undefined && variant !== 'accel')
       given.push(`a = ${step.params.accel} m/s\u00B2`)
-    drawLabel(ctx, given.join('    '), 14, 18, '#475569')
+    const header = given.join('    ')
+    drawLabel(
+      ctx,
+      header,
+      14,
+      18,
+      '#475569',
+      'left',
+      fitLabelFontSize(ctx, header, w - 28),
+    )
 
     const floorY = h * 0.74
     const startX = 96
@@ -117,7 +126,7 @@ export default function ForceQuestion({
   }
 
   return (
-    <div className="space-y-4">
+    <div className="min-w-0 space-y-4">
       <SceneCanvas
         draw={draw}
         playToken={playToken}

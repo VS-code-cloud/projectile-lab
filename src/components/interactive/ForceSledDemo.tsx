@@ -87,7 +87,7 @@ export default function ForceSledDemo({ step }: StepComponentProps) {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="min-w-0 space-y-4">
       <SceneCanvas
         draw={draw}
         playToken={playToken}
@@ -95,7 +95,7 @@ export default function ForceSledDemo({ step }: StepComponentProps) {
         redrawKey={`${force}-${mass}`}
         heightClass="h-52"
       />
-      <div className="rounded-lg bg-slate-50 px-3 py-2 text-sm">
+      <div className="break-words rounded-lg bg-slate-50 px-3 py-2 text-sm">
         <span className="text-slate-500">Acceleration</span>{' '}
         <span className="num font-semibold text-slate-800">
           a = F/m = {accel.toFixed(2)} m/s²
@@ -111,7 +111,7 @@ export default function ForceSledDemo({ step }: StepComponentProps) {
             step={1}
             value={force}
             onChange={(e) => setForce(Number.parseFloat(e.target.value))}
-            className="mt-1 w-full"
+            className="mt-1 w-full touch-manipulation"
           />
         </label>
         <label className="block text-sm font-medium text-slate-700">
@@ -123,7 +123,7 @@ export default function ForceSledDemo({ step }: StepComponentProps) {
             step={1}
             value={mass}
             onChange={(e) => setMass(Number.parseFloat(e.target.value))}
-            className="mt-1 w-full"
+            className="mt-1 w-full touch-manipulation"
           />
         </label>
       </div>

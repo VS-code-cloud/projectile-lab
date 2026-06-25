@@ -67,7 +67,7 @@ function MotionControl() {
         <div
           role="menu"
           aria-label="Motion preference"
-          className="card absolute right-0 z-30 mt-2 w-56 overflow-hidden p-1.5"
+          className="card absolute right-0 z-30 mt-2 w-56 max-w-[calc(100vw-1.5rem)] overflow-hidden p-1.5"
         >
           <p className="px-2.5 pb-1 pt-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
             Motion
@@ -127,7 +127,7 @@ function MotionControl() {
 function StreakBadge({ streak }: { streak: number }) {
   return (
     <div
-      className="chip bg-amber-50 text-amber-700 ring-1 ring-amber-200/70"
+      className="chip shrink-0 bg-amber-50 px-2 text-amber-700 ring-1 ring-amber-200/70 sm:px-3"
       title={`${streak}-day streak`}
       aria-label={`${streak}-day streak`}
     >
@@ -159,22 +159,22 @@ export function Header() {
       className="glass sticky top-0 z-20 border-b border-white/40"
       style={{ background: '#ffffff' }}
     >
-      <div className="relative mx-auto flex max-w-6xl items-center justify-between px-4 py-2.5">
+      <div className="relative mx-auto flex max-w-6xl items-center justify-between gap-2 px-3 py-2.5 sm:px-4">
         <Link
           to="/"
-          className="group flex min-h-11 items-center gap-2.5"
+          className="group flex min-h-11 min-w-0 items-center gap-1.5 sm:gap-2.5"
           aria-label="ProjectileLab home"
         >
           <BrandMark
             size={32}
-            className="transition-transform duration-300 group-hover:-rotate-6 group-hover:scale-105"
+            className="shrink-0 transition-transform duration-300 group-hover:-rotate-6 group-hover:scale-105"
           />
-          <span className="font-display text-lg font-bold tracking-tight text-slate-900">
+          <span className="font-display truncate text-base font-bold tracking-tight text-slate-900 sm:text-lg">
             Projectile<span className="text-gradient">Lab</span>
           </span>
         </Link>
 
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-1 sm:gap-2">
           {user && streak !== null && <StreakBadge streak={streak} />}
 
           <MotionControl />
@@ -183,12 +183,12 @@ export function Header() {
             <button
               type="button"
               onClick={handleSignOut}
-              className="btn-ghost min-h-11 py-1.5"
+              className="btn-ghost min-h-11 px-2.5 py-1.5 sm:px-4"
             >
               Sign out
             </button>
           ) : (
-            <Link to="/login" className="btn-primary min-h-11 py-1.5">
+            <Link to="/login" className="btn-primary min-h-11 px-3 py-1.5 sm:px-4">
               Log in
             </Link>
           )}

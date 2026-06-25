@@ -54,7 +54,7 @@ export default function CliffLanding({
   const fillPct = (predicted / maxValue) * 100
 
   return (
-    <div className="space-y-4">
+    <div className="min-w-0 space-y-4">
       <CannonCanvas
         shots={shots}
         cliffHeight={h0}
@@ -65,12 +65,12 @@ export default function CliffLanding({
         heightClass="h-64"
       />
 
-      <div className="space-y-1">
-        <div className="rounded-lg bg-purple-50 px-3 py-2 text-sm font-semibold text-purple-700">
+      <div className="min-w-0 space-y-1">
+        <div className="break-words rounded-lg bg-purple-50 px-3 py-2 text-sm font-semibold text-purple-700">
           Your guess: {predicted} m from the cliff base
         </div>
-        <div className="flex items-center gap-2 text-xs text-slate-500">
-          <span>0 m</span>
+        <div className="flex min-w-0 items-center gap-2">
+          <span className="num shrink-0 text-xs text-slate-500">0 m</span>
           <div
             ref={trackRef}
             onPointerDown={(e) => {
@@ -82,7 +82,7 @@ export default function CliffLanding({
               if (answered || e.buttons === 0) return
               updateFromPointer(e.clientX)
             }}
-            className="relative h-8 flex-1 cursor-ew-resize touch-none rounded-full bg-slate-200"
+            className="relative h-10 min-w-0 flex-1 cursor-ew-resize touch-none rounded-full bg-slate-200 sm:h-8"
           >
             <div
               className="absolute left-0 top-0 h-full rounded-full bg-purple-500"
@@ -93,7 +93,7 @@ export default function CliffLanding({
               style={{ left: `calc(${fillPct}% - 3px)` }}
             />
           </div>
-          <span>{maxValue} m</span>
+          <span className="num shrink-0 text-xs text-slate-500">{maxValue} m</span>
         </div>
       </div>
 

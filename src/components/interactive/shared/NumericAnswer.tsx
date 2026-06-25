@@ -43,14 +43,14 @@ export function NumericAnswer({
     <div className="mt-4 space-y-3">
       <label className="block text-sm font-medium text-slate-700">
         {label}
-        <div className="mt-1 flex items-center gap-2">
+        <div className="mt-1 flex min-w-0 flex-wrap items-center gap-2">
           <input
             type="number"
             inputMode="decimal"
             value={value}
             disabled={answered}
             onChange={(e) => setValue(e.target.value)}
-            className="num w-40 rounded-lg border border-slate-300 px-3 py-2 disabled:bg-slate-100"
+            className="num w-full max-w-[10rem] rounded-lg border border-slate-300 px-3 py-2 sm:w-40 sm:max-w-none disabled:bg-slate-100"
           />
           {unit && <span className="text-sm text-slate-500">{unit}</span>}
         </div>

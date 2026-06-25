@@ -87,13 +87,13 @@ export function PredictGauge({
   }
 
   const prediction = (
-    <div className="rounded-lg bg-brand-50 px-3 py-2 text-sm font-semibold text-brand-700">
+    <div className="rounded-lg bg-brand-50 px-3 py-2 text-sm font-semibold break-words text-brand-700">
       Your prediction:{' '}
       <span className="num">{predicted.toFixed(decimals)}</span> {unit}
     </div>
   )
   const answer = answered && (
-    <div className="rounded-lg bg-teal-50 px-3 py-2 text-sm font-semibold text-accent-600">
+    <div className="rounded-lg bg-teal-50 px-3 py-2 text-sm font-semibold break-words text-accent-600">
       Actual answer:{' '}
       <span className="num">{trueValue.toFixed(decimals)}</span> {unit}
     </div>
@@ -110,16 +110,16 @@ export function PredictGauge({
 
   if (horizontal) {
     return (
-      <div className="flex flex-col gap-2">
+      <div className="min-w-0 flex flex-col gap-2">
         <p className="text-sm font-medium text-slate-700">{label}</p>
         {prediction}
         {answer}
-        <div className="mt-1 flex items-center gap-3">
-          <span className="num text-xs text-slate-400">0</span>
+        <div className="mt-1 flex min-w-0 items-center gap-2 sm:gap-3">
+          <span className="num shrink-0 text-xs text-slate-400">0</span>
           <div
             ref={trackRef}
             {...sliderProps}
-            className="relative h-10 flex-1 cursor-ew-resize touch-none rounded-full bg-slate-200 shadow-inner"
+            className="relative h-10 min-w-0 flex-1 cursor-ew-resize touch-none rounded-full bg-slate-200 shadow-inner"
           >
             <div
               className="absolute left-0 h-full rounded-full bg-brand-500"
@@ -136,7 +136,7 @@ export function PredictGauge({
               />
             )}
           </div>
-          <span className="num text-xs text-slate-400">{round(max)}</span>
+          <span className="num shrink-0 text-xs text-slate-400">{round(max)}</span>
         </div>
         {submit}
       </div>
@@ -144,8 +144,8 @@ export function PredictGauge({
   }
 
   return (
-    <div className="flex items-stretch gap-4">
-      <div className="flex flex-col items-center">
+    <div className="flex min-w-0 items-stretch gap-3 sm:gap-4">
+      <div className="flex shrink-0 flex-col items-center">
         <span className="num mb-1 text-xs text-slate-400">{round(max)}</span>
         <div
           ref={trackRef}
@@ -170,7 +170,7 @@ export function PredictGauge({
         <span className="num mt-1 text-xs text-slate-400">0</span>
       </div>
 
-      <div className="flex flex-1 flex-col gap-2">
+      <div className="flex min-w-0 flex-1 flex-col gap-2">
         <p className="text-sm font-medium text-slate-700">{label}</p>
         {prediction}
         {answer}

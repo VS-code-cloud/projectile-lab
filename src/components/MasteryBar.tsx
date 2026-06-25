@@ -42,14 +42,14 @@ export function MasteryBar({
 
   return (
     <div className="space-y-2">
-      <div className="flex items-center justify-between gap-2 text-sm">
-        <span className="font-medium text-slate-600">
+      <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-0.5 text-sm">
+        <span className="min-w-0 font-medium text-slate-600">
           <span className="num font-semibold text-slate-900">
             {stepsCompleted}/{totalSteps}
           </span>{' '}
           steps
         </span>
-        <span className="font-medium text-slate-600">
+        <span className="shrink-0 font-medium text-slate-600">
           <span className="num font-semibold text-brand-600">{masteryPct}%</span>{' '}
           mastery
         </span>

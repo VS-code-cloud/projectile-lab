@@ -42,7 +42,7 @@ export function AnswerFeedback({ correct, explanation }: AnswerFeedbackProps) {
             <path d="M20 6 9 17l-5-5" />
           </svg>
         </span>
-        <div>
+        <div className="min-w-0">
           <p className="font-display font-semibold text-emerald-900">
             Great work!
           </p>
@@ -78,11 +78,11 @@ export function AnswerFeedback({ correct, explanation }: AnswerFeedbackProps) {
           <path d="M18 6 6 18M6 6l12 12" />
         </svg>
       </span>
-      <div>
+      <div className="min-w-0">
         <p className="font-display font-semibold text-rose-900">
           Here's the correct solution and why
         </p>
-        <p className="mt-1 text-sm leading-relaxed text-rose-700">
+        <p className="mt-1 break-words text-sm leading-relaxed text-rose-700">
           {explanation}
         </p>
       </div>

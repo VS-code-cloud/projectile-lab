@@ -20,17 +20,17 @@ export function InteractiveStep(props: StepComponentProps) {
   }
 
   return (
-    <div className="relative rounded-2xl border border-brand-100 bg-brand-50/40 p-2 elev-1">
+    <div className="relative min-w-0 overflow-hidden rounded-2xl border border-brand-100 bg-brand-50/40 p-1.5 elev-1 sm:p-2">
       {/* Soft accent halo framing the interactive area. */}
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 rounded-2xl ring-1 ring-inset ring-brand-300/30 bg-halo"
       />
-      <div className="relative rounded-xl">
+      <div className="relative min-w-0 rounded-xl">
         <Suspense
           fallback={
-            <div className="space-y-3 p-1">
-              <div className="h-56 w-full animate-shimmer rounded-xl border border-slate-200" />
+            <div className="min-w-0 space-y-3 p-0.5 sm:p-1">
+              <div className="h-56 min-w-0 w-full max-w-full animate-shimmer rounded-xl border border-slate-200" />
               <div className="flex items-center justify-center gap-2 text-xs font-medium text-slate-400">
                 <span className="h-2 w-2 animate-shimmer rounded-full" />
                 Loading interactive…

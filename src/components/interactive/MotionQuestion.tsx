@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { SceneCanvas } from './shared/SceneCanvas'
-import { drawArrow, drawLabel } from './shared/draw'
+import { drawArrow, drawLabel, fitLabelFontSize } from './shared/draw'
 import { PredictGauge } from './shared/PredictGauge'
 import { NumericAnswer } from './shared/NumericAnswer'
 import { niceGaugeMax } from './shared/gauge'
@@ -61,12 +61,15 @@ export default function MotionQuestion({
     h: number,
     time: number,
   ) => {
+    const header = `v\u2080 = ${v0} m/s    a = ${a} m/s\u00B2`
     drawLabel(
       ctx,
-      `v\u2080 = ${v0} m/s    a = ${a} m/s\u00B2`,
+      header,
       14,
       18,
       '#475569',
+      'left',
+      fitLabelFontSize(ctx, header, w - 28),
     )
 
     const left = 44
@@ -123,7 +126,7 @@ export default function MotionQuestion({
   }
 
   return (
-    <div className="space-y-4">
+    <div className="min-w-0 space-y-4">
       <SceneCanvas
         draw={draw}
         playToken={playToken}

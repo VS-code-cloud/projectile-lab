@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { SceneCanvas } from './shared/SceneCanvas'
-import { drawLabel } from './shared/draw'
+import { drawLabel, fitLabelFontSize } from './shared/draw'
 import { NumericAnswer } from './shared/NumericAnswer'
 import { GRAVITY } from '../../physics/kinematics'
 import type { StepComponentProps } from '../../lessons/types'
@@ -70,12 +70,15 @@ export default function RampQuestion({
     h: number,
     time: number,
   ) => {
+    const header = `\u03B8 = ${angleDeg}\u00B0    m = ${mass} kg    L = ${lengthM} m`
     drawLabel(
       ctx,
-      `\u03B8 = ${angleDeg}\u00B0    m = ${mass} kg    L = ${lengthM} m`,
+      header,
       14,
       18,
       '#475569',
+      'left',
+      fitLabelFontSize(ctx, header, w - 28),
     )
 
     const baseY = h * 0.84
@@ -124,7 +127,7 @@ export default function RampQuestion({
   }
 
   return (
-    <div className="space-y-4">
+    <div className="min-w-0 space-y-4">
       <SceneCanvas
         draw={draw}
         playToken={playToken}

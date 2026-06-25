@@ -17,7 +17,7 @@ export default function IntroDemo() {
   }, [])
 
   return (
-    <div className="space-y-4">
+    <div className="min-w-0 space-y-4">
       <CannonCanvas shots={SHOTS} fireToken={fireToken} />
       <ul className="space-y-1 text-sm text-slate-600">
         <li>Decompose a launch velocity into horizontal and vertical parts.</li>
