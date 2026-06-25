@@ -1,9 +1,12 @@
 import { Link } from 'react-router-dom'
 import type { ReactNode } from 'react'
+import { motion } from 'framer-motion'
+import type { Variants } from 'framer-motion'
 import { Header } from '../components/layout/Header'
 import { MasteryBar } from '../components/MasteryBar'
 import { BrandMark } from '../components/BrandMark'
 import { LessonGlyph } from '../components/LessonGlyph'
+import ShaderBackdrop from '../components/visual/ShaderBackdrop'
 import { getLessonTheme } from '../lib/lessonTheme'
 import { allLessons } from '../lessons'
 import { countQuestions } from '../lessons/types'
@@ -11,21 +14,20 @@ import type { Lesson } from '../lessons/types'
 import { useAuth } from '../hooks/useAuth'
 import { useLessonProgress } from '../hooks/useLessonProgress'
 
-/** Decorative drifting glow blobs layered behind immersive sections. */
-function GlowBlobs() {
-  return (
-    <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
-      <div className="animate-float absolute -top-24 -left-16 h-72 w-72 rounded-full bg-brand-500/30 blur-3xl" />
-      <div
-        className="animate-float absolute -right-12 top-12 h-64 w-64 rounded-full bg-accent-500/20 blur-3xl"
-        style={{ animationDelay: '1.5s' }}
-      />
-      <div
-        className="animate-float absolute bottom-0 left-1/3 h-56 w-56 rounded-full bg-violet-500/20 blur-3xl"
-        style={{ animationDelay: '3s' }}
-      />
-    </div>
-  )
+/** Parent variant: staggers the reveal of its motion children. */
+const staggerContainer: Variants = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.08, delayChildren: 0.04 } },
+}
+
+/** Child variant: a subtle ease-out rise into place. */
+const riseItem: Variants = {
+  hidden: { opacity: 0, y: 16 },
+  show: {
+    opacity: 1,
+    y: 0,
+    transition: { type: 'spring', stiffness: 140, damping: 20, mass: 0.6 },
+  },
 }
 
 /** Decorative parabolic trajectory motif used in the logged-out hero. */
@@ -120,18 +122,17 @@ function StatCard({ value, label }: { value: string; label: string }) {
  * A single lesson card showing its accent glyph, title, description, mastery
  * progress, and an action to open the lesson.
  * @param props.lesson The lesson to display.
- * @param props.index Position used to stagger the entrance animation.
  */
-function LessonCard({ lesson, index }: { lesson: Lesson; index: number }) {
+function LessonCard({ lesson }: { lesson: Lesson }) {
   const { progress } = useLessonProgress(lesson.uid)
   const totalQuestions = countQuestions(lesson)
   const started = progress.numStepsCompleted > 0
   const theme = getLessonTheme(lesson.uid)
 
   return (
-    <div
-      className={`card lift animate-rise group flex flex-col p-5 ${theme.hoverBorder}`}
-      style={{ animationDelay: `${index * 70}ms` }}
+    <motion.div
+      variants={riseItem}
+      className={`card lift group flex flex-col p-5 ${theme.hoverBorder}`}
     >
       <Link to={`/lesson/${lesson.uid}`} className="block">
         <div className="flex items-start gap-4">
@@ -172,7 +173,7 @@ function LessonCard({ lesson, index }: { lesson: Lesson; index: number }) {
           </span>
         </Link>
       </div>
-    </div>
+    </motion.div>
   )
 }
 
@@ -224,21 +225,34 @@ export default function HomePage() {
                 <StatCard value={String(totalSteps)} label="Interactive steps" />
               </div>
             </div>
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {allLessons.map((lesson, i) => (
-                <LessonCard key={lesson.uid} lesson={lesson} index={i} />
+            <motion.div
+              className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
+              variants={staggerContainer}
+              initial="hidden"
+              animate="show"
+            >
+              {allLessons.map((lesson) => (
+                <LessonCard key={lesson.uid} lesson={lesson} />
               ))}
-            </div>
+            </motion.div>
           </>
         ) : (
-          <section className="bg-immersive animate-rise relative overflow-hidden rounded-3xl px-6 py-10 text-center shadow-xl ring-1 ring-white/10 sm:px-10 sm:py-12 lg:text-left">
+          <section className="bg-immersive relative overflow-hidden rounded-3xl px-6 py-10 text-center shadow-xl ring-1 ring-white/10 sm:px-10 sm:py-12 lg:text-left">
             <div className="bg-grid-dark absolute inset-0 opacity-40" aria-hidden="true" />
-            <GlowBlobs />
-            <div className="relative">
-              <div className="flex justify-center lg:justify-start">
+            <ShaderBackdrop />
+            <motion.div
+              className="relative"
+              variants={staggerContainer}
+              initial="hidden"
+              animate="show"
+            >
+              <motion.div variants={riseItem} className="flex justify-center lg:justify-start">
                 <BrandMark size={60} />
-              </div>
-              <div className="mt-6 lg:mt-5 lg:grid lg:grid-cols-2 lg:items-center lg:gap-10">
+              </motion.div>
+              <motion.div
+                variants={riseItem}
+                className="mt-6 lg:mt-5 lg:grid lg:grid-cols-2 lg:items-center lg:gap-10"
+              >
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-[0.2em] text-accent-400">
                     Interactive physics, done right
@@ -259,8 +273,8 @@ export default function HomePage() {
                 <div className="mt-8 flex items-center justify-center lg:mt-0">
                   <TrajectoryArt />
                 </div>
-              </div>
-              <div className="mt-8 grid gap-3 sm:grid-cols-3">
+              </motion.div>
+              <motion.div variants={riseItem} className="mt-8 grid gap-3 sm:grid-cols-3">
                 <HeroFeature
                   icon={
                     <svg {...iconProps}>
@@ -296,8 +310,8 @@ export default function HomePage() {
                   title="Five topics"
                   body="Projectiles, kinematics, forces, ramps, and circular motion."
                 />
-              </div>
-            </div>
+              </motion.div>
+            </motion.div>
           </section>
         )}
       </main>

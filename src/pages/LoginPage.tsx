@@ -1,8 +1,10 @@
 import { useState } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
+import { motion } from 'framer-motion'
 import { useAuth } from '../hooks/useAuth'
 import { signInWithGoogle } from '../firebase/auth'
 import { BrandMark } from '../components/BrandMark'
+import ShaderBackdrop from '../components/visual/ShaderBackdrop'
 
 /** The multi-color Google "G" logo, used inside the sign-in button. */
 function GoogleIcon() {
@@ -59,19 +61,14 @@ export default function LoginPage() {
   return (
     <div className="bg-immersive relative flex min-h-svh flex-col items-center justify-center overflow-hidden px-4 py-10">
       <div className="bg-grid-dark absolute inset-0 opacity-40" aria-hidden="true" />
-      <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
-        <div className="animate-float absolute -top-20 -left-16 h-72 w-72 rounded-full bg-brand-500/30 blur-3xl" />
-        <div
-          className="animate-float absolute -right-12 top-24 h-64 w-64 rounded-full bg-accent-500/20 blur-3xl"
-          style={{ animationDelay: '1.5s' }}
-        />
-        <div
-          className="animate-float absolute bottom-0 left-1/4 h-56 w-56 rounded-full bg-violet-500/20 blur-3xl"
-          style={{ animationDelay: '3s' }}
-        />
-      </div>
+      <ShaderBackdrop />
 
-      <div className="animate-rise card relative w-full max-w-sm overflow-hidden p-8 text-center">
+      <motion.div
+        initial={{ opacity: 0, y: 18, scale: 0.98 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ type: 'spring', stiffness: 140, damping: 20, mass: 0.6 }}
+        className="card relative w-full max-w-sm overflow-hidden p-8 text-center"
+      >
         <div
           className="absolute inset-x-0 top-0 h-1.5"
           style={{
@@ -109,7 +106,7 @@ export default function LoginPage() {
           No account needed beyond Google
           <span className="h-px w-8 bg-slate-200" />
         </div>
-      </div>
+      </motion.div>
 
       <p className="relative mt-6 text-xs text-slate-300">
         Decompose velocities &middot; apply the equations &middot; predict the arc

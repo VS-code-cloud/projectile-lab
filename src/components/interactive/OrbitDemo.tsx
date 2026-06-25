@@ -1,7 +1,11 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { SceneCanvas } from './shared/SceneCanvas'
 import { drawArrow, drawLabel } from './shared/draw'
 import type { StepComponentProps } from '../../lessons/types'
+
+/** Radius slider bounds (m); shared with the circle-size mapping. */
+const RADIUS_MIN = 2
+const RADIUS_MAX = 8
 
 /**
  * Demonstration of uniform circular motion. Adjust speed and radius to see the
@@ -16,6 +20,13 @@ export default function OrbitDemo({ step }: StepComponentProps) {
 
   const accel = (speed * speed) / radius
 
+  // Accumulated orbital angle. Integrating angular velocity over time (rather
+  // than recomputing theta = omega * t) keeps the ball at its current spot when
+  // the speed/radius changes — it simply starts turning faster or slower from
+  // there instead of jumping to a new point on the circle.
+  const phaseRef = useRef(0)
+  const lastTimeRef = useRef<number | null>(null)
+
   const draw = (
     ctx: CanvasRenderingContext2D,
     w: number,
@@ -24,9 +35,21 @@ export default function OrbitDemo({ step }: StepComponentProps) {
   ) => {
     const cx = w / 2
     const cy = h / 2
-    const rPx = Math.min(20 + radius * 14, Math.min(w, h) * 0.36)
+    // Map radius across its full range to a span of pixel sizes so every step
+    // from 2–8 m is visibly larger than the last (the old linear+clamp formula
+    // saturated past ~5 m, making larger circles look identical).
+    const maxR = Math.min(w, h) * 0.36
+    const minR = maxR * 0.42
+    const rFrac = (radius - RADIUS_MIN) / (RADIUS_MAX - RADIUS_MIN)
+    const rPx = minR + (maxR - minR) * Math.max(0, Math.min(1, rFrac))
     const omega = speed / radius
-    const theta = omega * time
+
+    if (lastTimeRef.current === null) lastTimeRef.current = time
+    const dt = time - lastTimeRef.current
+    lastTimeRef.current = time
+    // Clamp dt so a backgrounded tab (paused rAF) doesn't jump the phase.
+    phaseRef.current += omega * Math.min(Math.max(dt, 0), 0.05)
+    const theta = phaseRef.current
 
     // Orbit path.
     ctx.strokeStyle = '#e2e8f0'

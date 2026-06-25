@@ -13,6 +13,12 @@ export interface Shot {
   color?: string
   /** Optional label drawn near the landing point. */
   label?: string
+  /**
+   * Render purely horizontal, constant-velocity motion (gravity ignored) at a
+   * fixed height of `h0`, used to visualize only the horizontal velocity
+   * component. The path stays level and is centered vertically in the plot.
+   */
+  straight?: boolean
 }
 
 /** A point of interest annotated on the scene. */
@@ -76,6 +82,16 @@ function sampleTrajectory(shot: Shot): Trajectory {
   const h0 = shot.h0 ?? 0
   const totalTime = Math.max(timeToGround(shot.v, shot.thetaDeg, h0), 0.0001)
   const points: TrajPoint[] = []
+  if (shot.straight) {
+    // Constant-velocity horizontal motion: gravity is intentionally ignored so
+    // the path stays level (visualizing the horizontal component on its own).
+    const vx = shot.v * Math.cos((shot.thetaDeg * Math.PI) / 180)
+    for (let i = 0; i <= SAMPLES; i++) {
+      const t = (totalTime * i) / SAMPLES
+      points.push({ t, x: vx * t, y: h0 })
+    }
+    return { shot, totalTime, points }
+  }
   for (let i = 0; i <= SAMPLES; i++) {
     const t = (totalTime * i) / SAMPLES
     const p = positionAt(shot.v, shot.thetaDeg, t, h0)
@@ -137,6 +153,14 @@ export function CannonCanvas({
     if (xMax - xMin < 1e-3) {
       xMin = -yMax * 0.4
       xMax = yMax * 0.4
+    }
+    // Center constant-height "straight" shots by reserving equal headroom above
+    // the launch line so it sits in the vertical middle rather than the top.
+    for (const traj of trajectories) {
+      if (traj.shot.straight) {
+        const sh0 = traj.shot.h0 ?? 0
+        if (sh0 * 2 > yMax) yMax = sh0 * 2
+      }
     }
     xMax *= 1.08
     yMax *= 1.12
@@ -407,7 +431,7 @@ export function CannonCanvas({
   return (
     <div
       ref={containerRef}
-      className={`w-full ${heightClass} overflow-hidden rounded-xl border border-slate-200`}
+      className={`w-full ${heightClass} elev-1 overflow-hidden rounded-xl border border-slate-200`}
     >
       <canvas ref={canvasRef} className="block h-full w-full" />
     </div>

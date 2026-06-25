@@ -1,3 +1,6 @@
+import { motion } from 'framer-motion'
+import { useMotionPreference } from '../hooks/useMotionPreference'
+
 /** Props for {@link MasteryBar}. */
 interface MasteryBarProps {
   /** Number of steps whose required interaction has been finished. */
@@ -8,6 +11,11 @@ interface MasteryBarProps {
   numCorrect: number
   /** Total number of question steps in the lesson. */
   totalQuestions: number
+  /**
+   * Optional themed gradient class pair for the progress fill
+   * (e.g. 'from-indigo-500 to-violet-500'). Defaults to the brand gradient.
+   */
+  accentBar?: string
 }
 
 /**
@@ -21,11 +29,16 @@ export function MasteryBar({
   totalSteps,
   numCorrect,
   totalQuestions,
+  accentBar,
 }: MasteryBarProps) {
+  const { animationsEnabled } = useMotionPreference()
   const stepPct =
     totalSteps > 0 ? Math.round((stepsCompleted / totalSteps) * 100) : 0
   const masteryPct =
     totalQuestions > 0 ? Math.round((numCorrect / totalQuestions) * 100) : 0
+
+  // Milestone: every question answered correctly. Used for a celebratory glow.
+  const milestone = totalQuestions > 0 && masteryPct >= 100
 
   return (
     <div className="space-y-2">
@@ -42,19 +55,40 @@ export function MasteryBar({
         </span>
       </div>
       <div
-        className="h-3 w-full overflow-hidden rounded-full bg-slate-200/80 shadow-inner"
+        className={`h-3 w-full overflow-hidden rounded-full bg-slate-200/80 shadow-inner transition-shadow duration-500 ${
+          milestone ? 'glow-accent' : ''
+        }`}
         role="progressbar"
         aria-valuenow={stepPct}
         aria-valuemin={0}
         aria-valuemax={100}
         aria-label="Lesson progress"
       >
-        <div
-          className="h-full rounded-full transition-[width] duration-500 ease-out"
-          style={{
+        <motion.div
+          className={`h-full rounded-full ${
+            accentBar ? `bg-gradient-to-r ${accentBar}` : ''
+          }`}
+          style={
+            accentBar
+              ? undefined
+              : {
+                  backgroundImage:
+                    'linear-gradient(to right, #4f46e5 0%, #7c3aed 60%, #14b8a6 130%)',
+                }
+          }
+          initial={{ width: 0 }}
+          animate={{
             width: `${stepPct}%`,
-            backgroundImage:
-              'linear-gradient(to right, #4f46e5 0%, #7c3aed 60%, #14b8a6 130%)',
+            // Subtle breathing pulse once the lesson is fully mastered; only
+            // loops when continuous decorative motion is enabled.
+            opacity: milestone && animationsEnabled ? [1, 0.7, 1] : 1,
+          }}
+          transition={{
+            width: { duration: 0.6, ease: 'easeOut' },
+            opacity:
+              milestone && animationsEnabled
+                ? { duration: 1.6, repeat: Infinity, ease: 'easeInOut' }
+                : { duration: 0.2 },
           }}
         />
       </div>

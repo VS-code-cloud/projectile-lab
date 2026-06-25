@@ -6,20 +6,11 @@
     {
       "uid": "step-0-intro",
       "stepType": "demo",
-      "displayText": "An object moving in a circle at constant speed is still accelerating, because its direction keeps changing. Watch the blue velocity arrow stay tangent to the circle while the orange acceleration arrow always points toward the center.",
+      "displayText": "An object moving in a circle at constant speed is still accelerating, because its direction keeps changing. Watch the blue velocity arrow stay tangent to the circle while the orange acceleration arrow always points toward the center. Adjust the speed and radius: a faster object or a tighter circle needs a larger inward (centripetal) acceleration to keep turning, following a = v²/r.",
       "interactiveComponent": "OrbitDemo",
       "expected": [0],
       "explanation": "",
       "params": { "speed": 8, "radius": 5 }
-    },
-    {
-      "uid": "step-1-explore",
-      "stepType": "demo",
-      "displayText": "Adjust the speed and radius. A faster object or a tighter circle needs a larger inward (centripetal) acceleration to keep turning. The relationship is a = v²/r.",
-      "interactiveComponent": "OrbitDemo",
-      "expected": [0],
-      "explanation": "",
-      "params": { "speed": 10, "radius": 4 }
     },
     {
       "uid": "step-2-equations",
@@ -55,6 +46,17 @@
       "tolerance": [1],
       "variant": "accel",
       "params": { "speed": 12, "radius": 8 }
+    },
+    {
+      "uid": "step-velocity-from-accel",
+      "stepType": "question",
+      "displayText": "An object circles with radius r = 5 m and a centripetal acceleration a = 20 m/s\u00B2. Drag the gauge to predict its speed (m/s), then lock it in and watch what happens the instant the centripetal force disappears.",
+      "interactiveComponent": "OrbitQuestion",
+      "expected": [10],
+      "explanation": "Rearrange a = v\u00B2/r to v = \u221A(a\u00B7r) = \u221A(20\u00B75) = \u221A100 = 10 m/s. With no centripetal force, the object keeps its velocity and flies off in a straight line tangent to the circle (Newton's first law).",
+      "tolerance": [1],
+      "variant": "velocity",
+      "params": { "accel": 20, "radius": 5 }
     },
     {
       "uid": "step-5-period",

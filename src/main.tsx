@@ -4,13 +4,21 @@ import { BrowserRouter } from 'react-router-dom'
 import './index.css'
 import App from './App.tsx'
 import { AuthProvider } from './context/AuthProvider.tsx'
+import {
+  MotionPreferenceProvider,
+  MotionRoot,
+} from './context/MotionPreferenceProvider.tsx'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <AuthProvider>
-      <BrowserRouter>
-        <App />
-      </BrowserRouter>
-    </AuthProvider>
+    <MotionPreferenceProvider>
+      <AuthProvider>
+        <BrowserRouter>
+          <MotionRoot>
+            <App />
+          </MotionRoot>
+        </BrowserRouter>
+      </AuthProvider>
+    </MotionPreferenceProvider>
   </StrictMode>,
 )

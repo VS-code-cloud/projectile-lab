@@ -3,7 +3,7 @@ import { CannonCanvas } from '../CannonCanvas'
 import type { Shot } from '../CannonCanvas'
 import type { StepComponentProps } from '../../lessons/types'
 
-/** Launch height (m) used so the horizontal cannon visibly travels before landing. */
+/** Launch height (m) for the horizontal panel; it sits at the vertical center. */
 const HORIZONTAL_LAUNCH_HEIGHT = 20
 
 /**
@@ -21,7 +21,15 @@ export default function TwoPanelEquations({ step }: StepComponentProps) {
     [v],
   )
   const horizontalShots = useMemo<Shot[]>(
-    () => [{ v, thetaDeg: 0, h0: HORIZONTAL_LAUNCH_HEIGHT, color: '#16a34a' }],
+    () => [
+      {
+        v,
+        thetaDeg: 0,
+        h0: HORIZONTAL_LAUNCH_HEIGHT,
+        color: '#16a34a',
+        straight: true,
+      },
+    ],
     [v],
   )
 

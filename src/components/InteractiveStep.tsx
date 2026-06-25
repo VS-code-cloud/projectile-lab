@@ -20,15 +20,28 @@ export function InteractiveStep(props: StepComponentProps) {
   }
 
   return (
-    <Suspense
-      fallback={
-        <div className="py-10 text-center text-sm text-slate-400">
-          Loading interactive...
-        </div>
-      }
-    >
-      {/* eslint-disable-next-line react-hooks/static-components */}
-      <Component {...props} />
-    </Suspense>
+    <div className="relative rounded-2xl border border-brand-100 bg-brand-50/40 p-2 elev-1">
+      {/* Soft accent halo framing the interactive area. */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 rounded-2xl ring-1 ring-inset ring-brand-300/30 bg-halo"
+      />
+      <div className="relative rounded-xl">
+        <Suspense
+          fallback={
+            <div className="space-y-3 p-1">
+              <div className="h-56 w-full animate-shimmer rounded-xl border border-slate-200" />
+              <div className="flex items-center justify-center gap-2 text-xs font-medium text-slate-400">
+                <span className="h-2 w-2 animate-shimmer rounded-full" />
+                Loading interactive…
+              </div>
+            </div>
+          }
+        >
+          {/* eslint-disable-next-line react-hooks/static-components */}
+          <Component {...props} />
+        </Suspense>
+      </div>
+    </div>
   )
 }

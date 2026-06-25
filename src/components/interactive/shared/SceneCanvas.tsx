@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react'
+import { useMotionPreference } from '../../../hooks/useMotionPreference'
 
 /** Props for {@link SceneCanvas}. */
 interface SceneCanvasProps {
@@ -25,6 +26,13 @@ interface SceneCanvasProps {
   redrawKey?: unknown
   /** Tailwind height class for the canvas container. Defaults to h-56. */
   heightClass?: string
+  /**
+   * Representative time (seconds) to render as a single static frame when the
+   * scene would otherwise `loop` but the user's motion preference is
+   * `reduced`/`off`. Chosen so the scene looks complete rather than blank.
+   * Defaults to 1.5.
+   */
+  reducedStaticT?: number
 }
 
 /**
@@ -41,7 +49,9 @@ export function SceneCanvas({
   staticT = 0,
   redrawKey,
   heightClass = 'h-56',
+  reducedStaticT = 1.5,
 }: SceneCanvasProps) {
+  const { animationsEnabled } = useMotionPreference()
   const containerRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const drawRef = useRef(draw)
@@ -80,13 +90,17 @@ export function SceneCanvas({
       rafRef.current = null
     }
 
-    if (loop) {
+    if (loop && animationsEnabled) {
       const start = performance.now()
       const tick = (now: number) => {
         render((now - start) / 1000)
         rafRef.current = requestAnimationFrame(tick)
       }
       rafRef.current = requestAnimationFrame(tick)
+    } else if (loop) {
+      // Reduced/off motion: skip the continuous rAF loop and show a single
+      // representative frame so the decorative scene still looks complete.
+      render(reducedStaticT)
     } else if (playToken > 0) {
       const start = performance.now()
       const tick = (now: number) => {
@@ -113,12 +127,12 @@ export function SceneCanvas({
         rafRef.current = null
       }
     }
-  }, [loop, playToken, duration, staticT, redrawKey])
+  }, [loop, playToken, duration, staticT, redrawKey, animationsEnabled, reducedStaticT])
 
   return (
     <div
       ref={containerRef}
-      className={`w-full ${heightClass} overflow-hidden rounded-xl border border-slate-200`}
+      className={`w-full ${heightClass} elev-1 overflow-hidden rounded-xl border border-slate-200`}
     >
       <canvas ref={canvasRef} className="block h-full w-full" />
     </div>

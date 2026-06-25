@@ -48,6 +48,9 @@
   --elev-brand:
     0 1px 2px rgba(79, 70, 229, 0.25),
     0 10px 28px -10px rgba(124, 58, 237, 0.5);
+  --elev-4:
+    0 8px 16px rgba(15, 23, 42, 0.06),
+    0 30px 70px -28px rgba(15, 23, 42, 0.3);
 
   --radius: 16px;
 }
@@ -180,6 +183,23 @@ canvas {
   .elev-1 { box-shadow: var(--elev-1); }
   .elev-2 { box-shadow: var(--elev-2); }
   .elev-3 { box-shadow: var(--elev-3); }
+  .elev-4 { box-shadow: var(--elev-4); }
+
+  /* Soft accent halo for focal/teal surfaces (e.g. celebrations, accent CTAs). */
+  .glow-accent {
+    box-shadow:
+      0 0 0 1px rgba(20, 184, 166, 0.22),
+      0 14px 50px -14px rgba(20, 184, 166, 0.55);
+  }
+
+  /* Tunable focal halo driven by a per-lesson accent (set --halo inline). */
+  .bg-halo {
+    background: radial-gradient(
+      60% 55% at 50% 0%,
+      var(--halo, rgba(99, 102, 241, 0.14)) 0%,
+      transparent 70%
+    );
+  }
 
   /* Tactile lift on hover (depth + slight rise). Transform-only for perf. */
   .lift {
@@ -276,6 +296,39 @@ canvas {
   .lift:hover {
     transform: none;
   }
+}
+
+/*
+ * Global motion-preference gating (driven by <html data-motion>).
+ * - reduced: stop continuous/ambient loops, keep brief one-shot reveals.
+ * - off: suppress all decorative animation + transitions entirely.
+ */
+html[data-motion='reduced'] .animate-float,
+html[data-motion='reduced'] .animate-shimmer,
+html[data-motion='off'] .animate-float,
+html[data-motion='off'] .animate-shimmer,
+html[data-motion='off'] .animate-rise,
+html[data-motion='off'] .animate-fade {
+  animation: none !important;
+}
+
+/* The GPU shader hero is decorative; hide it unless full motion is allowed. */
+html[data-motion='reduced'] .shader-backdrop,
+html[data-motion='off'] .shader-backdrop {
+  display: none !important;
+}
+
+html[data-motion='off'] *,
+html[data-motion='off'] *::before,
+html[data-motion='off'] *::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+  scroll-behavior: auto !important;
+}
+
+html[data-motion='off'] .lift:hover {
+  transform: none;
 }
 
 @layer components {
