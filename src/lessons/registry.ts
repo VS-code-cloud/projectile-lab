@@ -39,6 +39,9 @@ export const interactiveRegistry: Record<
   EquationReference: lazy(
     () => import('../components/interactive/EquationReference'),
   ),
+  ConceptPretrieval: lazy(
+    () => import('../components/interactive/ConceptPretrieval'),
+  ),
 }
 
 /**

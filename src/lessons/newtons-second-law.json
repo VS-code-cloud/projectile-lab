@@ -2,6 +2,22 @@
   "uid": "newtons-second-law",
   "displayName": "Newton's Second Law",
   "text": "Connect force, mass, and acceleration through F = m·a, the single equation at the heart of classical mechanics.",
+  "pretrieval": [
+    {
+      "uid": "pretrieval-0-force-mass-accel",
+      "stepType": "pretrieval",
+      "displayText": "Before the lesson, make a hunch: if two blocks feel the same net force but one has more mass, what should happen?",
+      "interactiveComponent": "ConceptPretrieval",
+      "expected": [0],
+      "explanation": "The lesson will connect force, mass, and acceleration so you can predict which quantity changes when the other two are fixed.",
+      "options": [
+        "The heavier block accelerates more because it has more matter to push.",
+        "Both blocks accelerate the same because the force is the same.",
+        "The heavier block accelerates less because the same force is spread across more mass.",
+        "Neither block accelerates unless the force is greater than its weight."
+      ]
+    }
+  ],
   "steps": [
     {
       "uid": "step-0-intro",
@@ -41,6 +57,7 @@
       "interactiveComponent": "ForceQuestion",
       "expected": [5],
       "explanation": "Use a = F/m = 20/4 = 5 m/s^2.",
+      "hint": "Newton's second law solved for acceleration: a = F/m. Divide the net force by the mass.",
       "tolerance": [1],
       "variant": "accel",
       "params": { "force": 20, "mass": 4 }
@@ -52,6 +69,7 @@
       "interactiveComponent": "ForceQuestion",
       "expected": [6],
       "explanation": "Use a = F/m = 30/5 = 6 m/s^2.",
+      "hint": "Use a = F/m: divide the net force by the mass.",
       "tolerance": [1],
       "variant": "accel",
       "params": { "force": 30, "mass": 5 }
@@ -63,6 +81,7 @@
       "interactiveComponent": "ForceQuestion",
       "expected": [6],
       "explanation": "Use F = m*a = 3*2 = 6 N.",
+      "hint": "Rearrange to F = m*a: multiply the mass by the acceleration.",
       "tolerance": [1],
       "variant": "force",
       "params": { "mass": 3, "accel": 2 }
@@ -74,9 +93,72 @@
       "interactiveComponent": "ForceQuestion",
       "expected": [6],
       "explanation": "Rearrange F = m*a to m = F/a = 18/3 = 6 kg.",
+      "hint": "Rearrange F = m*a to m = F/a: divide the force by the acceleration.",
       "tolerance": [1],
       "variant": "mass",
       "params": { "force": 18, "accel": 3 }
+    }
+  ],
+  "retrieval": [
+    {
+      "uid": "retrieval-1-acceleration",
+      "stepType": "question",
+      "displayText": "Retrieval practice: a net force of F = 24 N acts on a block of mass m = 6 kg. Predict its acceleration (m/s^2).",
+      "interactiveComponent": "ForceQuestion",
+      "expected": [4],
+      "explanation": "Use a = F/m = 24/6 = 4 m/s^2.",
+      "hint": "Use a = F/m.",
+      "tolerance": [1],
+      "variant": "accel",
+      "params": { "force": 24, "mass": 6 }
+    },
+    {
+      "uid": "retrieval-2-acceleration",
+      "stepType": "question",
+      "displayText": "Retrieval practice: a net force of F = 45 N acts on a cart of mass m = 5 kg. Predict its acceleration (m/s^2).",
+      "interactiveComponent": "ForceQuestion",
+      "expected": [9],
+      "explanation": "Use a = F/m = 45/5 = 9 m/s^2.",
+      "hint": "Use a = F/m.",
+      "tolerance": [1],
+      "variant": "accel",
+      "params": { "force": 45, "mass": 5 }
+    },
+    {
+      "uid": "retrieval-3-force",
+      "stepType": "question",
+      "displayText": "Retrieval practice: a crate of mass m = 8 kg accelerates at a = 3 m/s^2. Predict the net force (N).",
+      "interactiveComponent": "ForceQuestion",
+      "expected": [24],
+      "explanation": "Use F = m*a = 8*3 = 24 N.",
+      "hint": "Use F = m*a.",
+      "tolerance": [1],
+      "variant": "force",
+      "params": { "mass": 8, "accel": 3 }
+    },
+    {
+      "uid": "retrieval-4-mass",
+      "stepType": "question",
+      "displayText": "Retrieval practice: a net force of F = 30 N gives an object an acceleration of a = 5 m/s^2. Predict the object's mass (kg).",
+      "interactiveComponent": "ForceQuestion",
+      "expected": [6],
+      "explanation": "Rearrange F = m*a to m = F/a = 30/5 = 6 kg.",
+      "hint": "Use m = F/a.",
+      "tolerance": [1],
+      "variant": "mass",
+      "params": { "force": 30, "accel": 5 }
+    },
+    {
+      "uid": "retrieval-5-small-acceleration",
+      "stepType": "question",
+      "displayText": "Retrieval practice: a net force of F = 16 N acts on a block of mass m = 8 kg. Predict its acceleration (m/s^2).",
+      "interactiveComponent": "ForceQuestion",
+      "expected": [2],
+      "explanation": "Use a = F/m = 16/8 = 2 m/s^2.",
+      "hint": "Use a = F/m.",
+      "tolerance": [1],
+      "variant": "accel",
+      "params": { "force": 16, "mass": 8 }
     }
   ]
 }

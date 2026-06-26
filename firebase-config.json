@@ -1,0 +1,15 @@
+{
+  "version": "2",
+  "projectNumber": "${VITE_FIREBASE_PROJECT_NUMBER}",
+  "projectId": "${VITE_FIREBASE_PROJECT_ID}",
+  "appId": "${VITE_FIREBASE_APP_ID}",
+  "realtimeDatabaseInstanceUri": "${VITE_FIREBASE_REALTIME_DATABASE_INSTANCE_URI}",
+  "realtimeDatabaseUrl": "${VITE_FIREBASE_REALTIME_DATABASE_URL}",
+  "storageBucket": "${VITE_FIREBASE_STORAGE_BUCKET}",
+  "locationId": "${VITE_FIREBASE_LOCATION_ID}",
+  "apiKey": "${VITE_FIREBASE_API_KEY}",
+  "authDomain": "${VITE_FIREBASE_AUTH_DOMAIN}",
+  "messagingSenderId": "${VITE_FIREBASE_MESSAGING_SENDER_ID}",
+  "measurementId": "${VITE_FIREBASE_MEASUREMENT_ID}",
+  "recaptchaSiteKey": "${VITE_FIREBASE_RECAPTCHA_SITE_KEY}"
+}

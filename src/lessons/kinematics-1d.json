@@ -2,6 +2,22 @@
   "uid": "kinematics-1d",
   "displayName": "1D Kinematics",
   "text": "Build the foundation: describe motion in a straight line with velocity and acceleration, then master the equations that predict position and speed.",
+  "pretrieval": [
+    {
+      "uid": "pretrieval-0-motion-hunch",
+      "stepType": "pretrieval",
+      "displayText": "Before the lesson, make a hunch: if a cart has constant acceleration, what changes about its motion from second to second?",
+      "interactiveComponent": "ConceptPretrieval",
+      "expected": [0],
+      "explanation": "During the lesson, watch for the difference between equal position changes (constant velocity) and growing position changes (acceleration).",
+      "options": [
+        "It covers the same distance every second because acceleration is constant.",
+        "Its velocity changes by the same amount each second, so its position changes grow or shrink.",
+        "It only moves if the acceleration is positive.",
+        "Its final velocity depends on distance, but not on time."
+      ]
+    }
+  ],
   "steps": [
     {
       "uid": "step-0-intro",
@@ -41,6 +57,7 @@
       "interactiveComponent": "MotionQuestion",
       "expected": [17],
       "explanation": "Use v = v0 + a*t = 5 + 3*4 = 5 + 12 = 17 m/s.",
+      "hint": "Final velocity comes from v = v0 + a*t. Add the velocity gained (a times t) to the starting velocity.",
       "tolerance": [1],
       "variant": "velocity",
       "params": { "v0": 5, "a": 3, "t": 4 }
@@ -52,6 +69,7 @@
       "interactiveComponent": "MotionQuestion",
       "expected": [65],
       "explanation": "Use x = v0*t + (1/2)*a*t^2 = 8*5 + 0.5*2*5^2 = 40 + 25 = 65 m.",
+      "hint": "Distance uses x = v0*t + (1/2)*a*t^2. Add the steady part (v0 times t) to the acceleration part.",
       "tolerance": [3],
       "variant": "distance",
       "params": { "v0": 8, "a": 2, "t": 5 }
@@ -63,6 +81,7 @@
       "interactiveComponent": "MotionQuestion",
       "expected": [21],
       "explanation": "Use v = v0 + a*t = 12 + 1.5*6 = 12 + 9 = 21 m/s.",
+      "hint": "Use v = v0 + a*t again: start from v0 and add a times t.",
       "tolerance": [1],
       "variant": "velocity",
       "params": { "v0": 12, "a": 1.5, "t": 6 }
@@ -74,9 +93,72 @@
       "interactiveComponent": "MotionQuestion",
       "expected": [40],
       "explanation": "With v = 0: 0 = v0^2 + 2*a*x, so x = -v0^2/(2*a) = -(20^2)/(2*-5) = 400/10 = 40 m.",
+      "hint": "It stops, so the final velocity is 0. Use v^2 = v0^2 + 2*a*x and solve for x (remember a is negative).",
       "tolerance": [2],
       "variant": "distance",
       "params": { "v0": 20, "a": -5, "t": 4 }
+    }
+  ],
+  "retrieval": [
+    {
+      "uid": "retrieval-1-final-velocity",
+      "stepType": "question",
+      "displayText": "Retrieval practice: a cart starts at v0 = 3 m/s and accelerates at a = 2 m/s^2 for t = 6 s. Predict its final velocity (m/s).",
+      "interactiveComponent": "MotionQuestion",
+      "expected": [15],
+      "explanation": "Use v = v0 + a*t = 3 + 2*6 = 15 m/s.",
+      "hint": "Use v = v0 + a*t.",
+      "tolerance": [1],
+      "variant": "velocity",
+      "params": { "v0": 3, "a": 2, "t": 6 }
+    },
+    {
+      "uid": "retrieval-2-displacement",
+      "stepType": "question",
+      "displayText": "Retrieval practice: a cart starts at v0 = 4 m/s and accelerates at a = 3 m/s^2 for t = 4 s. Calculate how far it travels (m).",
+      "interactiveComponent": "MotionQuestion",
+      "expected": [40],
+      "explanation": "Use x = v0*t + (1/2)*a*t^2 = 4*4 + 0.5*3*4^2 = 16 + 24 = 40 m.",
+      "hint": "Use x = v0*t + (1/2)*a*t^2.",
+      "tolerance": [2],
+      "variant": "distance",
+      "params": { "v0": 4, "a": 3, "t": 4 }
+    },
+    {
+      "uid": "retrieval-3-slowing-down",
+      "stepType": "question",
+      "displayText": "Retrieval practice: a cyclist travels at v0 = 18 m/s and accelerates at a = -2 m/s^2 for t = 5 s. Predict the final velocity (m/s).",
+      "interactiveComponent": "MotionQuestion",
+      "expected": [8],
+      "explanation": "Use v = v0 + a*t = 18 + (-2)*5 = 8 m/s.",
+      "hint": "Use v = v0 + a*t; here a is negative, so the speed drops.",
+      "tolerance": [1],
+      "variant": "velocity",
+      "params": { "v0": 18, "a": -2, "t": 5 }
+    },
+    {
+      "uid": "retrieval-4-from-rest",
+      "stepType": "question",
+      "displayText": "Retrieval practice: a cart starts from rest and accelerates at a = 5 m/s^2 for t = 3 s. Calculate its displacement, rounded to the nearest tenth (m).",
+      "interactiveComponent": "MotionQuestion",
+      "expected": [22.5],
+      "explanation": "Use x = v0*t + (1/2)*a*t^2 = 0 + 0.5*5*3^2 = 22.5 m.",
+      "hint": "Starts from rest, so v0 = 0 and x = (1/2)*a*t^2.",
+      "tolerance": [1],
+      "variant": "distance",
+      "params": { "v0": 0, "a": 5, "t": 3 }
+    },
+    {
+      "uid": "retrieval-5-stopping-distance",
+      "stepType": "question",
+      "displayText": "Retrieval practice: a car traveling at v0 = 30 m/s brakes with a = -6 m/s^2 until it stops. Calculate the stopping distance (m).",
+      "interactiveComponent": "MotionQuestion",
+      "expected": [75],
+      "explanation": "With v = 0, use v^2 = v0^2 + 2*a*x, so x = -v0^2/(2*a) = -30^2/(2*-6) = 75 m.",
+      "hint": "Set the final velocity to 0 and use v^2 = v0^2 + 2*a*x, then solve for x.",
+      "tolerance": [3],
+      "variant": "distance",
+      "params": { "v0": 30, "a": -6, "t": 5 }
     }
   ]
 }

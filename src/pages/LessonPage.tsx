@@ -8,10 +8,11 @@ import { MasteryBar } from '../components/MasteryBar'
 import { AnswerFeedback } from '../components/AnswerFeedback'
 import { InteractiveStep } from '../components/InteractiveStep'
 import { allLessons, getLesson } from '../lessons'
-import { countQuestions } from '../lessons/types'
+import { countQuestions, getLessonFlow } from '../lessons/types'
 import { useLessonProgress } from '../hooks/useLessonProgress'
 import { useMotionPreference } from '../hooks/useMotionPreference'
 import { checkAnswer } from '../lib/checkAnswer'
+import { canAccessLesson } from '../lib/lessonCompletion'
 import { getLessonTheme } from '../lib/lessonTheme'
 
 /** Direction-aware variants for the step paging transition. */
@@ -63,6 +64,59 @@ function ConfettiBurst({ colors }: { colors: string[] }) {
 }
 
 /**
+ * Reveal-on-demand hint for a question step. Lives in its own component so it
+ * remounts (and resets to collapsed) whenever the parent rerenders it with a
+ * new `key`, i.e. when the learner moves to a different step.
+ */
+function StepHint({ hint }: { hint: string }) {
+  const [open, setOpen] = useState(false)
+
+  return (
+    <div className="mt-3">
+      <button
+        type="button"
+        onClick={() => setOpen((value) => !value)}
+        aria-expanded={open}
+        className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-700 transition hover:bg-amber-100"
+      >
+        <svg
+          width="14"
+          height="14"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden="true"
+        >
+          <path d="M9 18h6" />
+          <path d="M10 22h4" />
+          <path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14" />
+        </svg>
+        {open ? 'Hide hint' : 'Show hint'}
+      </button>
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.div
+            key="hint"
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.2, ease: 'easeOut' }}
+            className="overflow-hidden"
+          >
+            <p className="mt-2 max-w-[68ch] rounded-xl border border-amber-300 bg-amber-50 px-3.5 py-2.5 text-sm leading-relaxed text-amber-900 shadow-sm">
+              {hint}
+            </p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  )
+}
+
+/**
  * Lesson player: walks the learner through each step, renders the referenced
  * interactive component, records progress, and shows answer feedback. After the
  * final step it recommends the next lesson (or notes that more are coming if
@@ -73,6 +127,11 @@ export default function LessonPage() {
   const lesson = getLesson(lessonUid)
   const { progress, loading, completeStep, recordAnswer, resetLesson } =
     useLessonProgress(lessonUid)
+  const lessonOrder = lesson ? allLessons.findIndex((l) => l.uid === lesson.uid) : -1
+  const previousLesson = lessonOrder > 0 ? allLessons[lessonOrder - 1] : undefined
+  const { progress: previousProgress, loading: previousLoading } =
+    useLessonProgress(previousLesson?.uid ?? lessonUid)
+  const lessonAccessible = canAccessLesson(previousLesson, previousProgress)
   const { animationsEnabled } = useMotionPreference()
   const theme = getLessonTheme(lessonUid)
 
@@ -81,37 +140,53 @@ export default function LessonPage() {
   const [direction, setDirection] = useState(1)
   const initialized = useRef(false)
 
+  const totalQuestions = useMemo(
+    () => (lesson ? countQuestions(lesson) : 0),
+    [lesson],
+  )
+  const lessonSteps = useMemo(
+    () => (lesson ? getLessonFlow(lesson) : []),
+    [lesson],
+  )
+  const firstIncompleteIndex = lessonSteps.findIndex(
+    (s) => !progress.completedStepUids.includes(s.uid),
+  )
+  const reachableMaxIndex =
+    firstIncompleteIndex === -1 ? lessonSteps.length - 1 : firstIncompleteIndex
+  const step = lessonSteps[index]
+
   /** Navigates to a step, recording the direction for the paging animation. */
   function goTo(target: number) {
-    const max = lesson ? lesson.steps.length - 1 : 0
+    const max = Math.max(0, reachableMaxIndex)
     const clamped = Math.max(0, Math.min(max, target))
     setDirection(clamped >= index ? 1 : -1)
     setIndex(clamped)
   }
 
-  const totalQuestions = useMemo(
-    () => (lesson ? countQuestions(lesson) : 0),
-    [lesson],
-  )
-  const step = lesson?.steps[index]
-
   // Resume at the first incomplete step once progress has loaded.
   useEffect(() => {
-    if (!lesson || loading || initialized.current) return
+    if (
+      !lesson ||
+      !lessonAccessible ||
+      loading ||
+      initialized.current ||
+      lessonSteps.length === 0
+    )
+      return
     initialized.current = true
-    const firstIncomplete = lesson.steps.findIndex(
+    const firstIncomplete = lessonSteps.findIndex(
       (s) => !progress.completedStepUids.includes(s.uid),
     )
-    setIndex(firstIncomplete === -1 ? lesson.steps.length - 1 : firstIncomplete)
-  }, [lesson, loading, progress.completedStepUids])
+    setIndex(firstIncomplete === -1 ? lessonSteps.length - 1 : firstIncomplete)
+  }, [lesson, lessonAccessible, lessonSteps, loading, progress.completedStepUids])
 
   // Demonstration steps complete simply by being viewed (once progress loaded).
   useEffect(() => {
-    if (loading) return
+    if (loading || !lessonAccessible) return
     if (step && step.stepType === 'demo') {
       completeStep(step.uid)
     }
-  }, [step, completeStep, loading])
+  }, [step, completeStep, loading, lessonAccessible])
 
   if (!lesson || !step) {
     return (
@@ -134,15 +209,54 @@ export default function LessonPage() {
     )
   }
 
+  if (previousLesson && previousLoading) {
+    return (
+      <ImmersiveBackground>
+        <Header />
+        <main className="mx-auto max-w-3xl px-3 py-6 sm:px-4 sm:py-8">
+          <div className="card h-64 animate-shimmer" />
+        </main>
+      </ImmersiveBackground>
+    )
+  }
+
+  if (!lessonAccessible) {
+    return (
+      <ImmersiveBackground>
+        <Header />
+        <main className="mx-auto max-w-2xl px-3 py-16 text-center sm:px-4">
+          <div className="card animate-rise mx-auto max-w-md p-6 sm:p-8">
+            <p className="font-display text-lg font-semibold text-slate-900">
+              Lesson locked
+            </p>
+            <p className="mt-1 text-sm leading-relaxed text-slate-500">
+              Complete {previousLesson?.displayName} before starting this lesson.
+            </p>
+            <Link to="/" className="btn-primary mt-5">
+              Back to lessons
+            </Link>
+          </div>
+        </main>
+      </ImmersiveBackground>
+    )
+  }
+
   const answer = progress.answers[step.uid]
   const answered = Boolean(answer)
-  const isLastStep = index === lesson.steps.length - 1
+  const isLastStep = index === lessonSteps.length - 1
   const currentCompleted = progress.completedStepUids.includes(step.uid)
-
-  /** Checks and records a question answer, giving instant feedback. */
+  const completedLessonSteps = lessonSteps.filter((s) =>
+    progress.completedStepUids.includes(s.uid),
+  ).length
+  const lessonCorrect = lessonSteps.filter(
+    (s) =>
+      s.stepType === 'question' && progress.answers[s.uid]?.correct === true,
+  ).length
+  /** Records an interactive response, grading only real question steps. */
   function handleSubmit(values: number[]) {
     if (!step) return
-    const correct = checkAnswer(step, values)
+    const correct =
+      step.stepType === 'question' ? checkAnswer(step, values) : null
     recordAnswer(step.uid, values, correct)
   }
 
@@ -154,7 +268,22 @@ export default function LessonPage() {
   }
 
   const isQuestion = step.stepType === 'question'
-  const lessonOrder = allLessons.findIndex((l) => l.uid === lesson.uid)
+  const isPretrieval = step.stepType === 'pretrieval'
+  const stepKindLabel = isPretrieval
+    ? 'Pretrieval'
+    : isQuestion
+      ? 'Question'
+      : 'Demonstration'
+  const stepChipClass = isPretrieval
+    ? 'bg-amber-50 text-amber-700'
+    : isQuestion
+      ? 'bg-brand-50 text-brand-700'
+      : 'bg-teal-50 text-accent-600'
+  const stepDotClass = isPretrieval
+    ? 'bg-amber-500'
+    : isQuestion
+      ? 'bg-brand-500'
+      : 'bg-accent-500'
   const nextLesson =
     lessonOrder === -1 ? undefined : allLessons[lessonOrder + 1]
 
@@ -197,26 +326,28 @@ export default function LessonPage() {
             </h1>
             <div className="mt-3">
               <MasteryBar
-                stepsCompleted={progress.numStepsCompleted}
-                totalSteps={lesson.steps.length}
-                numCorrect={progress.numCorrect}
+                stepsCompleted={completedLessonSteps}
+                totalSteps={lessonSteps.length}
+                numCorrect={lessonCorrect}
                 totalQuestions={totalQuestions}
                 accentBar={theme.accentBar}
               />
             </div>
             {/* Step indicator: one dot per step, current highlighted. */}
             <div className="mt-4 flex items-center gap-1 sm:gap-1.5">
-              {lesson.steps.map((s, i) => {
+              {lessonSteps.map((s, i) => {
                 const done = progress.completedStepUids.includes(s.uid)
                 const current = i === index
+                const locked = i > reachableMaxIndex
                 return (
                   <button
                     key={s.uid}
                     type="button"
                     onClick={() => goTo(i)}
+                    disabled={locked}
                     aria-label={`Go to step ${i + 1}`}
                     aria-current={current ? 'step' : undefined}
-                    className="group flex h-6 flex-1 items-center justify-center rounded-full transition"
+                    className="group flex h-6 flex-1 items-center justify-center rounded-full transition disabled:cursor-not-allowed"
                   >
                     <span
                       className={`h-2 w-full rounded-full transition ${
@@ -224,7 +355,9 @@ export default function LessonPage() {
                           ? 'bg-brand-600 shadow-[0_0_0_3px_rgba(99,102,241,0.18)]'
                           : done
                             ? 'bg-brand-300 group-hover:bg-brand-500'
-                            : 'bg-slate-200 group-hover:bg-slate-300'
+                            : locked
+                              ? 'bg-slate-100'
+                              : 'bg-slate-200 group-hover:bg-slate-300'
                       }`}
                     />
                   </button>
@@ -246,24 +379,16 @@ export default function LessonPage() {
           >
             {/* Step header: kind chip + counter. */}
             <div className="mt-6 flex flex-wrap items-center gap-x-2.5 gap-y-1">
-              <span
-                className={`chip ${
-                  isQuestion
-                    ? 'bg-brand-50 text-brand-700'
-                    : 'bg-teal-50 text-accent-600'
-                }`}
-              >
+              <span className={`chip ${stepChipClass}`}>
                 <span
-                  className={`h-1.5 w-1.5 rounded-full ${
-                    isQuestion ? 'bg-brand-500' : 'bg-accent-500'
-                  }`}
+                  className={`h-1.5 w-1.5 rounded-full ${stepDotClass}`}
                   aria-hidden="true"
                 />
-                {isQuestion ? 'Question' : 'Demonstration'}
+                {stepKindLabel}
               </span>
               <span className="text-xs font-semibold uppercase tracking-wide text-slate-300">
                 Step <span className="num">{index + 1}</span> of{' '}
-                <span className="num">{lesson.steps.length}</span>
+                <span className="num">{lessonSteps.length}</span>
               </span>
             </div>
             <p className="mt-3 max-w-[68ch] text-base leading-relaxed text-slate-100 sm:text-lg">
@@ -283,7 +408,11 @@ export default function LessonPage() {
               />
             </div>
 
-            {answered && (
+            {isQuestion && step.hint && !answered && (
+              <StepHint key={step.uid} hint={step.hint} />
+            )}
+
+            {answered && isQuestion && (
               <div className="mt-4">
                 <AnswerFeedback
                   correct={Boolean(answer?.correct)}
@@ -380,7 +509,7 @@ export default function LessonPage() {
           <button
             type="button"
             onClick={() => goTo(index + 1)}
-            disabled={isLastStep}
+            disabled={isLastStep || index >= reachableMaxIndex}
             className="btn-primary min-h-11"
           >
             Next &rarr;

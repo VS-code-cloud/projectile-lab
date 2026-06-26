@@ -19,10 +19,15 @@ interface UseLessonProgressResult {
    */
   completeStep: (stepUid: string) => void
   /**
-   * Records a question answer (one per step). Increments attempts, correct
-   * count, and completes the step.
+   * Records an interactive response (one per step). Graded responses increment
+   * attempts and correct count; neutral pretrieval responses only complete.
    */
-  recordAnswer: (stepUid: string, values: number[], correct: boolean) => void
+  recordAnswer: (
+    stepUid: string,
+    values: number[],
+    correct: boolean | null,
+    countsForProgress?: boolean,
+  ) => void
   /** Clears all progress for the lesson so it can be played again from scratch. */
   resetLesson: () => void
 }
@@ -107,19 +112,25 @@ export function useLessonProgress(
   )
 
   const recordAnswer = useCallback(
-    (stepUid: string, values: number[], correct: boolean) => {
+    (
+      stepUid: string,
+      values: number[],
+      correct: boolean | null,
+      countsForProgress = true,
+    ) => {
       apply((prev) => {
         if (prev.answers[stepUid]) return prev
         const alreadyCompleted = prev.completedStepUids.includes(stepUid)
+        const graded = correct !== null && countsForProgress
         return {
           ...prev,
           answers: { ...prev.answers, [stepUid]: { values, correct } },
-          numAttempts: prev.numAttempts + 1,
-          numCorrect: prev.numCorrect + (correct ? 1 : 0),
-          completedStepUids: alreadyCompleted
+          numAttempts: prev.numAttempts + (graded ? 1 : 0),
+          numCorrect: prev.numCorrect + (graded && correct === true ? 1 : 0),
+          completedStepUids: !countsForProgress || alreadyCompleted
             ? prev.completedStepUids
             : [...prev.completedStepUids, stepUid],
-          numStepsCompleted: alreadyCompleted
+          numStepsCompleted: !countsForProgress || alreadyCompleted
             ? prev.numStepsCompleted
             : prev.numStepsCompleted + 1,
         }

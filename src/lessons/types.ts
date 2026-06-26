@@ -1,5 +1,8 @@
-/** Whether a step is a passive demonstration or an interactive question. */
-export type StepType = 'demo' | 'question'
+/** Whether a step is a passive demonstration, graded question, or neutral prompt. */
+export type StepType = 'demo' | 'question' | 'pretrieval'
+
+/** Where a step appears in the lesson flow. */
+export type LessonSection = 'pretrieval' | 'lesson' | 'retrieval'
 
 /** A single lesson step, referencing an interactive component by name. */
 export interface Step {
@@ -13,8 +16,13 @@ export interface Step {
   interactiveComponent: string
   /** Expected answer values. Defaults to [0] for demonstrations. */
   expected: number[]
-  /** Explanation shown when an answer is wrong. Empty for demonstrations. */
+  /** Explanation or neutral note shown after a response. Empty for demonstrations. */
   explanation: string
+  /**
+   * Optional learner-facing hint for question steps, revealed on demand via the
+   * hint button. Should nudge toward the approach without giving the answer.
+   */
+  hint?: string
   /**
    * @deprecated Ignored by grading. Answers must match expected values exactly
    * after rounding to the same decimal precision.
@@ -35,6 +43,10 @@ export interface Step {
    * "velocity" vs "distance") so a single component can drive several steps.
    */
   variant?: string
+  /** Multiple-choice options used by neutral conceptual pretrieval prompts. */
+  options?: string[]
+  /** Flow section. Derived for authored `pretrieval` and `retrieval` arrays. */
+  section?: LessonSection
 }
 
 /** A structured lesson: an ordered array of steps plus display metadata. */
@@ -47,14 +59,46 @@ export interface Lesson {
   text: string
   /** Ordered steps. The array length is the total number of steps. */
   steps: Step[]
+  /** Neutral conceptual prompts shown before the core lesson. */
+  pretrieval?: Step[]
+  /** Extra practice problems shown after the core lesson. */
+  retrieval?: Step[]
+}
+
+/** Returns the required lesson sequence: pretrieval followed by core lesson steps. */
+export function getLessonFlow(lesson: Lesson): Step[] {
+  return [
+    ...(lesson.pretrieval ?? []).map((step) => ({
+      ...step,
+      section: 'pretrieval' as const,
+    })),
+    ...lesson.steps.map((step) => ({ ...step, section: 'lesson' as const })),
+  ]
+}
+
+/** Returns optional retrieval practice steps, separate from lesson completion. */
+export function getRetrievalPractice(lesson: Lesson): Step[] {
+  return (lesson.retrieval ?? []).map((step) => ({
+    ...step,
+    section: 'retrieval' as const,
+  }))
 }
 
 /**
- * Counts the number of question steps in a lesson.
+ * Counts required lesson steps, excluding optional retrieval practice.
+ * @param lesson The lesson to inspect.
+ */
+export function countLessonSteps(lesson: Lesson): number {
+  return getLessonFlow(lesson).length
+}
+
+/**
+ * Counts graded questions in the required lesson sequence.
  * @param lesson The lesson to inspect.
  */
 export function countQuestions(lesson: Lesson): number {
-  return lesson.steps.filter((step) => step.stepType === 'question').length
+  return getLessonFlow(lesson).filter((step) => step.stepType === 'question')
+    .length
 }
 
 /** Props passed to every interactive step component. */

@@ -9,6 +9,7 @@ import { ImmersiveBackground } from './components/visual/ImmersiveBackground'
 const HomePage = lazy(() => import('./pages/HomePage'))
 const LoginPage = lazy(() => import('./pages/LoginPage'))
 const LessonPage = lazy(() => import('./pages/LessonPage'))
+const PracticePage = lazy(() => import('./pages/PracticePage'))
 
 /**
  * Wraps the lesson player with a key on the lesson uid so navigating between
@@ -17,6 +18,12 @@ const LessonPage = lazy(() => import('./pages/LessonPage'))
 function LessonRoute() {
   const { lessonUid = '' } = useParams()
   return <LessonPage key={lessonUid} />
+}
+
+/** Remounts practice when navigating between lesson practice sets. */
+function PracticeRoute() {
+  const { lessonUid = '' } = useParams()
+  return <PracticePage key={lessonUid} />
 }
 
 /**
@@ -82,6 +89,16 @@ export default function App() {
               <PageTransition>
                 <ProtectedRoute>
                   <LessonRoute />
+                </ProtectedRoute>
+              </PageTransition>
+            }
+          />
+          <Route
+            path="/lesson/:lessonUid/practice"
+            element={
+              <PageTransition>
+                <ProtectedRoute>
+                  <PracticeRoute />
                 </ProtectedRoute>
               </PageTransition>
             }

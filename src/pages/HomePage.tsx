@@ -9,8 +9,13 @@ import { LessonGlyph } from '../components/LessonGlyph'
 import { ImmersiveBackground } from '../components/visual/ImmersiveBackground'
 import { getLessonTheme } from '../lib/lessonTheme'
 import { allLessons } from '../lessons'
-import { countQuestions } from '../lessons/types'
+import { countLessonSteps, countQuestions, getLessonFlow } from '../lessons/types'
 import type { Lesson } from '../lessons/types'
+import {
+  canAccessLesson,
+  canAccessRetrievalPractice,
+} from '../lib/lessonCompletion'
+import { getLessonPath, getPracticePath } from '../lib/lessonRoutes'
 import { useAuth } from '../hooks/useAuth'
 import { useCompletedLessonsCount } from '../hooks/useCompletedLessonsCount'
 import { useLessonProgress } from '../hooks/useLessonProgress'
@@ -123,56 +128,111 @@ function StatCard({ value, label }: { value: string; label: string }) {
  * A single lesson card showing its accent glyph, title, description, mastery
  * progress, and an action to open the lesson.
  * @param props.lesson The lesson to display.
+ * @param props.previousLesson The lesson immediately before this one.
  */
-function LessonCard({ lesson }: { lesson: Lesson }) {
+function LessonCard({
+  lesson,
+  previousLesson,
+}: {
+  lesson: Lesson
+  previousLesson: Lesson | undefined
+}) {
   const { progress } = useLessonProgress(lesson.uid)
+  const { progress: previousProgress } = useLessonProgress(
+    previousLesson?.uid ?? lesson.uid,
+  )
   const totalQuestions = countQuestions(lesson)
-  const started = progress.numStepsCompleted > 0
+  const totalSteps = countLessonSteps(lesson)
+  const lessonSteps = getLessonFlow(lesson)
+  const completedLessonSteps = lessonSteps.filter((step) =>
+    progress.completedStepUids.includes(step.uid),
+  ).length
+  const lessonCorrect = lessonSteps.filter(
+    (step) =>
+      step.stepType === 'question' &&
+      progress.answers[step.uid]?.correct === true,
+  ).length
+  const started = completedLessonSteps > 0
+  const lessonAccessible = canAccessLesson(previousLesson, previousProgress)
+  const practiceAvailable = canAccessRetrievalPractice(lesson, progress)
   const theme = getLessonTheme(lesson.uid)
+  const cardContent = (
+    <>
+      <div className="flex items-start gap-4">
+        <div
+          className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ${theme.tile} transition-transform duration-300 group-hover:scale-110`}
+        >
+          <LessonGlyph uid={lesson.uid} size={26} />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-start justify-between gap-x-2 gap-y-1">
+            <h2 className="font-display min-w-0 text-lg font-semibold leading-snug text-slate-900">
+              {lesson.displayName}
+            </h2>
+            <span className={`chip shrink-0 ${theme.chip}`}>
+              <span className="num">{totalSteps}</span> steps &middot;{' '}
+              <span className="num">{totalQuestions}</span>Q
+            </span>
+          </div>
+          <p className="mt-1.5 line-clamp-2 text-sm leading-relaxed text-slate-500">
+            {lesson.text}
+          </p>
+        </div>
+      </div>
+      <div className="mt-5">
+        <MasteryBar
+          stepsCompleted={completedLessonSteps}
+          totalSteps={totalSteps}
+          numCorrect={lessonCorrect}
+          totalQuestions={totalQuestions}
+        />
+      </div>
+    </>
+  )
 
   return (
     <motion.div
       variants={riseItem}
-      className={`card lift group flex flex-col p-5 ${theme.hoverBorder}`}
+      className={`card group flex flex-col p-5 ${lessonAccessible ? `lift ${theme.hoverBorder}` : 'opacity-70'}`}
     >
-      <Link to={`/lesson/${lesson.uid}`} className="block">
-        <div className="flex items-start gap-4">
-          <div
-            className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ${theme.tile} transition-transform duration-300 group-hover:scale-110`}
-          >
-            <LessonGlyph uid={lesson.uid} size={26} />
-          </div>
-          <div className="min-w-0 flex-1">
-            <div className="flex flex-wrap items-start justify-between gap-x-2 gap-y-1">
-              <h2 className="font-display min-w-0 text-lg font-semibold leading-snug text-slate-900">
-                {lesson.displayName}
-              </h2>
-              <span className={`chip shrink-0 ${theme.chip}`}>
-                <span className="num">{lesson.steps.length}</span> steps &middot;{' '}
-                <span className="num">{totalQuestions}</span>Q
-              </span>
-            </div>
-            <p className="mt-1.5 line-clamp-2 text-sm leading-relaxed text-slate-500">
-              {lesson.text}
-            </p>
-          </div>
-        </div>
-        <div className="mt-5">
-          <MasteryBar
-            stepsCompleted={progress.numStepsCompleted}
-            totalSteps={lesson.steps.length}
-            numCorrect={progress.numCorrect}
-            totalQuestions={totalQuestions}
-          />
-        </div>
-      </Link>
-      <div className="mt-5 border-t border-slate-100 pt-4">
-        <Link to={`/lesson/${lesson.uid}`} className="btn-primary w-full py-2.5">
-          {started ? 'Continue lesson' : 'Start lesson'}
-          <span className="transition-transform duration-300 group-hover:translate-x-0.5">
-            &rarr;
-          </span>
+      {lessonAccessible ? (
+        <Link to={getLessonPath(lesson.uid)} className="block">
+          {cardContent}
         </Link>
+      ) : (
+        <div className="block">{cardContent}</div>
+      )}
+      <div className="mt-5 space-y-2 border-t border-slate-100 pt-4">
+        {lessonAccessible ? (
+          <Link
+            to={getLessonPath(lesson.uid)}
+            className="btn-primary w-full py-2.5"
+          >
+            {started ? 'Continue lesson' : 'Start lesson'}
+            <span className="transition-transform duration-300 group-hover:translate-x-0.5">
+              &rarr;
+            </span>
+          </Link>
+        ) : (
+          <button
+            type="button"
+            disabled
+            className="btn-secondary w-full cursor-not-allowed py-2.5 opacity-70"
+          >
+            Complete previous lesson
+          </button>
+        )}
+        {lessonAccessible && practiceAvailable && (
+          <Link
+            to={getPracticePath(lesson.uid)}
+            className="btn-secondary w-full py-2.5"
+          >
+            Practice
+            <span className="transition-transform duration-300 group-hover:translate-x-0.5">
+              &rarr;
+            </span>
+          </Link>
+        )}
       </div>
     </motion.div>
   )
@@ -233,8 +293,12 @@ export default function HomePage() {
               initial="hidden"
               animate="show"
             >
-              {allLessons.map((lesson) => (
-                <LessonCard key={lesson.uid} lesson={lesson} />
+              {allLessons.map((lesson, index) => (
+                <LessonCard
+                  key={lesson.uid}
+                  lesson={lesson}
+                  previousLesson={allLessons[index - 1]}
+                />
               ))}
             </motion.div>
           </>

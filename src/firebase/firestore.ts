@@ -2,12 +2,12 @@ import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore'
 import type { User } from 'firebase/auth'
 import { db } from './config'
 
-/** A single recorded answer for a question step. */
+/** A single recorded response for an interactive step. */
 export interface StepAnswer {
   /** The numeric values the user submitted. */
   values: number[]
-  /** Whether the submission was judged correct. */
-  correct: boolean
+  /** Whether the submission was judged correct, or null for ungraded prompts. */
+  correct: boolean | null
 }
 
 /** Per-lesson progress tracked for a user. */

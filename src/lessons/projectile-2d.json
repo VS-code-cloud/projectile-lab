@@ -2,6 +2,22 @@
   "uid": "projectile-2d",
   "displayName": "2D Projectile Motion",
   "text": "Combine the 1D kinematic equations you already know to predict where a launched projectile goes in two dimensions.",
+  "pretrieval": [
+    {
+      "uid": "pretrieval-0-independent-motion",
+      "stepType": "pretrieval",
+      "displayText": "Before the lesson, make a hunch: when a projectile is in the air, which part of its motion does gravity directly change?",
+      "interactiveComponent": "ConceptPretrieval",
+      "expected": [0],
+      "explanation": "The lesson will separate horizontal and vertical motion so you can use the right equation for each direction.",
+      "options": [
+        "Gravity directly changes only the horizontal velocity.",
+        "Gravity directly changes only the vertical velocity while horizontal velocity stays constant.",
+        "Gravity changes horizontal and vertical velocity by the same amount.",
+        "Gravity has no effect after launch because the projectile already has speed."
+      ]
+    }
+  ],
   "steps": [
     {
       "uid": "step-0-intro",
@@ -36,6 +52,7 @@
       "interactiveComponent": "VectorDecomposition",
       "expected": [21.2, 21.2],
       "explanation": "Decompose the velocity along the triangle: vx = v*cos(theta) = 30*cos(45 degrees) = 21.2 m/s and vy = v*sin(theta) = 30*sin(45 degrees) = 21.2 m/s. At 45 degrees the components are equal.",
+      "hint": "Split the velocity with the right triangle: vx = v*cos(theta) and vy = v*sin(theta).",
       "tolerance": [0.1, 0.1],
       "params": { "v": 30, "theta": 45 }
     },
@@ -46,6 +63,7 @@
       "interactiveComponent": "TimeOfFlight",
       "expected": [2.0],
       "explanation": "Set the vertical displacement to zero: 0 = vy*t - (1/2)g*t^2, so t = 2*vy/g. With vy = 20*sin(30 degrees) = 10 m/s and g = 9.8, t = 2*10/9.8 = 2.0 s.",
+      "hint": "Only vertical motion sets the time. Find vy = v*sin(theta), then t = 2*vy/g for a same-height landing.",
       "tolerance": [0.1],
       "params": { "v": 20, "theta": 30 }
     },
@@ -56,6 +74,7 @@
       "interactiveComponent": "MaxHeightDragBar",
       "expected": [15],
       "explanation": "At the top, vertical velocity is zero. Using vy^2 = 2*g*H, H = vy^2/(2g). With vy = 20*sin(60 degrees) = 17.3 m/s, H = 17.3^2/(2*9.8) = 15 m.",
+      "hint": "At the top, vertical velocity is 0. Find vy = v*sin(theta), then H = vy^2/(2*g).",
       "tolerance": [1],
       "params": { "v": 20, "theta": 60 }
     },
@@ -66,8 +85,66 @@
       "interactiveComponent": "CliffLanding",
       "expected": [58],
       "explanation": "First find time to land: 0 = 25 + vy*t - (1/2)g*t^2 with vy = 20*sin(45 degrees) = 14.1 m/s gives t = 4.12 s. Then x = vx*t = 14.1*4.12 = 58 m.",
+      "hint": "Vertical motion sets the time, horizontal sets the distance. Solve 0 = h0 + vy*t - (1/2)g*t^2 for t, then x = vx*t.",
       "tolerance": [1],
       "params": { "v": 20, "theta": 45, "h0": 25 }
+    }
+  ],
+  "retrieval": [
+    {
+      "uid": "retrieval-1-decompose",
+      "stepType": "question",
+      "displayText": "Retrieval practice: a cannon fires at theta = 30 degrees with speed v = 40 m/s. Enter the horizontal and vertical velocity components, rounded to the nearest tenth (m/s).",
+      "interactiveComponent": "VectorDecomposition",
+      "expected": [34.6, 20],
+      "explanation": "Use vx = v*cos(theta) = 40*cos(30 degrees) = 34.6 m/s and vy = v*sin(theta) = 40*sin(30 degrees) = 20.0 m/s.",
+      "hint": "Use vx = v*cos(theta) and vy = v*sin(theta).",
+      "tolerance": [0.1, 0.1],
+      "params": { "v": 40, "theta": 30 }
+    },
+    {
+      "uid": "retrieval-2-time",
+      "stepType": "question",
+      "displayText": "Retrieval practice: a cannonball is fired at theta = 30 degrees with speed v = 30 m/s. How long until it returns to its starting elevation? Round to the nearest tenth (s).",
+      "interactiveComponent": "TimeOfFlight",
+      "expected": [3.1],
+      "explanation": "The vertical speed is vy = 30*sin(30 degrees) = 15 m/s. For a same-height landing, t = 2*vy/g = 30/9.8 = 3.1 s.",
+      "hint": "Find vy = v*sin(theta), then t = 2*vy/g.",
+      "tolerance": [0.1],
+      "params": { "v": 30, "theta": 30 }
+    },
+    {
+      "uid": "retrieval-3-max-height",
+      "stepType": "question",
+      "displayText": "Retrieval practice: a cannonball is fired at theta = 30 degrees with speed v = 24 m/s. Predict its maximum height, rounded to the nearest meter.",
+      "interactiveComponent": "MaxHeightDragBar",
+      "expected": [7],
+      "explanation": "The vertical speed is vy = 24*sin(30 degrees) = 12 m/s. At the top, H = vy^2/(2g) = 144/19.6 = 7.3 m, so about 7 m.",
+      "hint": "Find vy = v*sin(theta), then H = vy^2/(2*g).",
+      "tolerance": [1],
+      "params": { "v": 24, "theta": 30 }
+    },
+    {
+      "uid": "retrieval-4-cliff",
+      "stepType": "question",
+      "displayText": "Retrieval practice: a cannon on a 20 m cliff fires at theta = 37 degrees with speed v = 25 m/s. Predict how far from the cliff base it lands, rounded to the nearest meter.",
+      "interactiveComponent": "CliffLanding",
+      "expected": [81],
+      "explanation": "The vertical equation gives a flight time of about 4.1 s. The horizontal speed is vx = 25*cos(37 degrees) = 20.0 m/s, so x = vx*t = 20.0*4.1 = 81 m.",
+      "hint": "Solve the vertical equation for the flight time, then x = vx*t.",
+      "tolerance": [1],
+      "params": { "v": 25, "theta": 37, "h0": 20 }
+    },
+    {
+      "uid": "retrieval-5-high-angle-time",
+      "stepType": "question",
+      "displayText": "Retrieval practice: a cannonball is fired at theta = 60 degrees with speed v = 18 m/s. How long until it returns to its starting elevation? Round to the nearest tenth (s).",
+      "interactiveComponent": "TimeOfFlight",
+      "expected": [3.2],
+      "explanation": "The vertical speed is vy = 18*sin(60 degrees) = 15.6 m/s. For a same-height landing, t = 2*vy/g = 31.2/9.8 = 3.2 s.",
+      "hint": "Find vy = v*sin(theta), then t = 2*vy/g.",
+      "tolerance": [0.1],
+      "params": { "v": 18, "theta": 60 }
     }
   ]
 }

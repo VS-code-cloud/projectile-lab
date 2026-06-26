@@ -2,6 +2,22 @@
   "uid": "inclined-planes",
   "displayName": "Inclined Planes",
   "text": "Tilt the world. Resolve gravity into components along and into a ramp to predict how blocks slide, press, and accelerate.",
+  "pretrieval": [
+    {
+      "uid": "pretrieval-0-gravity-components",
+      "stepType": "pretrieval",
+      "displayText": "Before the lesson, make a hunch: as a ramp gets steeper, what happens to gravity's pull along the ramp?",
+      "interactiveComponent": "ConceptPretrieval",
+      "expected": [0],
+      "explanation": "The lesson will split gravity into along-ramp and into-ramp components, then use those pieces to predict motion and forces.",
+      "options": [
+        "The along-ramp pull gets smaller because the block is higher up.",
+        "The along-ramp pull stays the same because gravity is constant.",
+        "The along-ramp pull gets larger, while the into-ramp pressing component gets smaller.",
+        "The normal force gets larger, so the block always slides faster."
+      ]
+    }
+  ],
   "steps": [
     {
       "uid": "step-0-intro",
@@ -42,6 +58,7 @@
       "interactiveComponent": "RampQuestion",
       "expected": [4.9],
       "explanation": "Only the along-ramp component of gravity accelerates the block: a = g·sinθ = 9.8·sin(30°) = 9.8·0.5 = 4.9 m/s^2.",
+      "hint": "Only the along-ramp slice of gravity speeds it up: a = g*sin(theta).",
       "tolerance": [0.3],
       "variant": "accel",
       "params": { "angleDeg": 30, "mass": 2, "length": 10 }
@@ -53,6 +70,7 @@
       "interactiveComponent": "RampQuestion",
       "expected": [17],
       "explanation": "The normal force balances the into-ramp component of gravity: N = m·g·cosθ = 2·9.8·cos(30°) = 19.6·0.866 = 17.0 N.",
+      "hint": "The normal force balances the into-ramp slice of gravity: N = m*g*cos(theta).",
       "tolerance": [1],
       "variant": "normal",
       "params": { "angleDeg": 30, "mass": 2, "length": 10 }
@@ -64,6 +82,7 @@
       "interactiveComponent": "RampQuestion",
       "expected": [9.8],
       "explanation": "The along-ramp pull is F = m·g·sinθ = 2·9.8·sin(30°) = 19.6·0.5 = 9.8 N.",
+      "hint": "The along-ramp pull is F = m*g*sin(theta).",
       "tolerance": [0.5],
       "variant": "gravityParallel",
       "params": { "angleDeg": 30, "mass": 2, "length": 10 }
@@ -75,9 +94,72 @@
       "interactiveComponent": "RampQuestion",
       "expected": [9.9],
       "explanation": "First a = g·sinθ = 4.9 m/s^2. Then v = sqrt(2·a·L) = sqrt(2·4.9·10) = sqrt(98) = 9.9 m/s.",
+      "hint": "First find a = g*sin(theta), then use v = sqrt(2*a*L) for a start from rest.",
       "tolerance": [0.5],
       "variant": "speed",
       "params": { "angleDeg": 30, "mass": 2, "length": 10 }
+    }
+  ],
+  "retrieval": [
+    {
+      "uid": "retrieval-1-acceleration-45",
+      "stepType": "question",
+      "displayText": "Retrieval practice: a block is released on a frictionless ramp tilted at theta = 45 degrees. Use g = 9.8 m/s^2. Calculate its acceleration down the ramp, rounded to the nearest tenth (m/s^2).",
+      "interactiveComponent": "RampQuestion",
+      "expected": [6.9],
+      "explanation": "Use a = g*sin(theta) = 9.8*sin(45 degrees) = 9.8*0.707 = 6.9 m/s^2.",
+      "hint": "Use a = g*sin(theta).",
+      "tolerance": [0.3],
+      "variant": "accel",
+      "params": { "angleDeg": 45, "mass": 2, "length": 10 }
+    },
+    {
+      "uid": "retrieval-2-normal-force",
+      "stepType": "question",
+      "displayText": "Retrieval practice: a 3 kg block rests on a ramp at theta = 60 degrees. Use g = 9.8 m/s^2. Calculate the normal force, rounded to the nearest newton.",
+      "interactiveComponent": "RampQuestion",
+      "expected": [15],
+      "explanation": "Use N = m*g*cos(theta) = 3*9.8*cos(60 degrees) = 29.4*0.5 = 14.7 N, so about 15 N.",
+      "hint": "Use N = m*g*cos(theta).",
+      "tolerance": [1],
+      "variant": "normal",
+      "params": { "angleDeg": 60, "mass": 3, "length": 10 }
+    },
+    {
+      "uid": "retrieval-3-gravity-component",
+      "stepType": "question",
+      "displayText": "Retrieval practice: a 4 kg block sits on a theta = 30 degree ramp. Use g = 9.8 m/s^2. Calculate the component of gravity pulling it along the ramp (N).",
+      "interactiveComponent": "RampQuestion",
+      "expected": [19.6],
+      "explanation": "Use F_parallel = m*g*sin(theta) = 4*9.8*sin(30 degrees) = 39.2*0.5 = 19.6 N.",
+      "hint": "Use F = m*g*sin(theta) for the along-ramp pull.",
+      "tolerance": [0.5],
+      "variant": "gravityParallel",
+      "params": { "angleDeg": 30, "mass": 4, "length": 10 }
+    },
+    {
+      "uid": "retrieval-4-speed",
+      "stepType": "question",
+      "displayText": "Retrieval practice: a block slides from rest down L = 20 m of a frictionless theta = 30 degree ramp. Calculate its speed at the bottom, rounded to the nearest tenth (m/s).",
+      "interactiveComponent": "RampQuestion",
+      "expected": [14],
+      "explanation": "First a = g*sin(30 degrees) = 4.9 m/s^2. Then v = sqrt(2*a*L) = sqrt(2*4.9*20) = sqrt(196) = 14.0 m/s.",
+      "hint": "Find a = g*sin(theta), then v = sqrt(2*a*L).",
+      "tolerance": [0.5],
+      "variant": "speed",
+      "params": { "angleDeg": 30, "mass": 2, "length": 20 }
+    },
+    {
+      "uid": "retrieval-5-shallow-ramp",
+      "stepType": "question",
+      "displayText": "Retrieval practice: a block is released on a frictionless ramp tilted at theta = 15 degrees. Use g = 9.8 m/s^2. Calculate its acceleration down the ramp, rounded to the nearest tenth (m/s^2).",
+      "interactiveComponent": "RampQuestion",
+      "expected": [2.5],
+      "explanation": "Use a = g*sin(theta) = 9.8*sin(15 degrees) = 9.8*0.259 = 2.5 m/s^2.",
+      "hint": "Use a = g*sin(theta); a small angle gives a small acceleration.",
+      "tolerance": [0.3],
+      "variant": "accel",
+      "params": { "angleDeg": 15, "mass": 2, "length": 10 }
     }
   ]
 }

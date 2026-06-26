@@ -2,6 +2,22 @@
   "uid": "uniform-circular-motion",
   "displayName": "Uniform Circular Motion",
   "text": "Move in a circle at constant speed yet always accelerate. Discover centripetal acceleration, period, and the force that keeps objects turning.",
+  "pretrieval": [
+    {
+      "uid": "pretrieval-0-inward-acceleration",
+      "stepType": "pretrieval",
+      "displayText": "Before the lesson, make a hunch: an object moving in a circle at constant speed is still accelerating. Which direction should that acceleration point?",
+      "interactiveComponent": "ConceptPretrieval",
+      "expected": [0],
+      "explanation": "The lesson will separate speed from velocity direction, then connect the inward acceleration to circular motion.",
+      "options": [
+        "Forward, tangent to the circle, because the object is moving that way.",
+        "Outward, away from the center, because the object wants to fly away.",
+        "Inward, toward the center, because the velocity direction is constantly turning.",
+        "Nowhere, because constant speed means zero acceleration."
+      ]
+    }
+  ],
   "steps": [
     {
       "uid": "step-0-intro",
@@ -32,6 +48,7 @@
       "interactiveComponent": "OrbitQuestion",
       "expected": [20],
       "explanation": "Use a = v^2/r = (10^2)/5 = 100/5 = 20 m/s^2, directed toward the center.",
+      "hint": "Centripetal acceleration is a = v^2/r. Square the speed, then divide by the radius.",
       "tolerance": [1],
       "variant": "accel",
       "params": { "speed": 10, "radius": 5 }
@@ -43,6 +60,7 @@
       "interactiveComponent": "OrbitQuestion",
       "expected": [18],
       "explanation": "Use a = v^2/r = (12^2)/8 = 144/8 = 18 m/s^2, directed toward the center.",
+      "hint": "Use a = v^2/r: square the speed, then divide by the radius.",
       "tolerance": [1],
       "variant": "accel",
       "params": { "speed": 12, "radius": 8 }
@@ -54,6 +72,7 @@
       "interactiveComponent": "OrbitQuestion",
       "expected": [10],
       "explanation": "Rearrange a = v\u00B2/r to v = \u221A(a\u00B7r) = \u221A(20\u00B75) = \u221A100 = 10 m/s. With no centripetal force, the object keeps its velocity and flies off in a straight line tangent to the circle (Newton's first law).",
+      "hint": "Rearrange a = v^2/r to v = sqrt(a*r).",
       "tolerance": [1],
       "variant": "velocity",
       "params": { "accel": 20, "radius": 5 }
@@ -65,6 +84,7 @@
       "interactiveComponent": "OrbitQuestion",
       "expected": [3.1],
       "explanation": "One revolution covers a distance of 2*pi*r, so T = 2*pi*r/v = 2*pi*5/10 = pi = 3.1 s.",
+      "hint": "One lap covers a distance of 2*pi*r, so T = 2*pi*r/v.",
       "tolerance": [0.3],
       "variant": "period",
       "params": { "speed": 10, "radius": 5 }
@@ -76,9 +96,72 @@
       "interactiveComponent": "OrbitQuestion",
       "expected": [20],
       "explanation": "The orbital radius is measured from the Moon's center: r = 1,737,400 m + 200 m = 1,737,600 m. Then F = m*v^2/r = 12 * 1700^2 / 1,737,600 = 12 * 2,890,000 / 1,737,600 \u2248 20 N, directed toward the Moon's center.",
+      "hint": "Use F = m*v^2/r, but measure r from the Moon's center: add its surface radius to the altitude.",
       "tolerance": [2],
       "variant": "force",
       "params": { "speed": 1700, "radius": 1737600, "mass": 12, "moon": 1 }
+    }
+  ],
+  "retrieval": [
+    {
+      "uid": "retrieval-1-centripetal-accel",
+      "stepType": "question",
+      "displayText": "Retrieval practice: an object moves in a circle of radius r = 5 m at speed v = 15 m/s. Predict its centripetal acceleration (m/s^2).",
+      "interactiveComponent": "OrbitQuestion",
+      "expected": [45],
+      "explanation": "Use a = v^2/r = 15^2/5 = 225/5 = 45 m/s^2.",
+      "hint": "Use a = v^2/r.",
+      "tolerance": [1],
+      "variant": "accel",
+      "params": { "speed": 15, "radius": 5 }
+    },
+    {
+      "uid": "retrieval-2-period",
+      "stepType": "question",
+      "displayText": "Retrieval practice: an object moves in a circle of radius r = 6 m at speed v = 12 m/s. Predict the period of one full revolution, rounded to the nearest tenth (s).",
+      "interactiveComponent": "OrbitQuestion",
+      "expected": [3.1],
+      "explanation": "Use T = 2*pi*r/v = 2*pi*6/12 = pi = 3.1 s.",
+      "hint": "Use T = 2*pi*r/v.",
+      "tolerance": [0.3],
+      "variant": "period",
+      "params": { "speed": 12, "radius": 6 }
+    },
+    {
+      "uid": "retrieval-3-force",
+      "stepType": "question",
+      "displayText": "Retrieval practice: a 4 kg object moves in a circle of radius r = 8 m at speed v = 10 m/s. Predict the centripetal force required (N).",
+      "interactiveComponent": "OrbitQuestion",
+      "expected": [50],
+      "explanation": "Use F = m*v^2/r = 4*10^2/8 = 400/8 = 50 N.",
+      "hint": "Use F = m*v^2/r.",
+      "tolerance": [2],
+      "variant": "force",
+      "params": { "speed": 10, "radius": 8, "mass": 4 }
+    },
+    {
+      "uid": "retrieval-4-speed",
+      "stepType": "question",
+      "displayText": "Retrieval practice: an object circles with radius r = 8 m and centripetal acceleration a = 18 m/s^2. Predict its speed (m/s).",
+      "interactiveComponent": "OrbitQuestion",
+      "expected": [12],
+      "explanation": "Rearrange a = v^2/r to v = sqrt(a*r) = sqrt(18*8) = sqrt(144) = 12 m/s.",
+      "hint": "Rearrange a = v^2/r to v = sqrt(a*r).",
+      "tolerance": [1],
+      "variant": "velocity",
+      "params": { "accel": 18, "radius": 8 }
+    },
+    {
+      "uid": "retrieval-5-tight-circle",
+      "stepType": "question",
+      "displayText": "Retrieval practice: an object moves in a tight circle of radius r = 2 m at speed v = 8 m/s. Predict its centripetal acceleration (m/s^2).",
+      "interactiveComponent": "OrbitQuestion",
+      "expected": [32],
+      "explanation": "Use a = v^2/r = 8^2/2 = 64/2 = 32 m/s^2.",
+      "hint": "Use a = v^2/r; a smaller radius gives a bigger acceleration.",
+      "tolerance": [1],
+      "variant": "accel",
+      "params": { "speed": 8, "radius": 2 }
     }
   ]
 }
