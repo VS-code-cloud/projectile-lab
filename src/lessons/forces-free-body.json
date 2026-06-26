@@ -1,0 +1,143 @@
+{
+  "uid": "forces-free-body",
+  "displayName": "Forces & Free-Body Diagrams",
+  "text": "See the forces. Learn to draw a free-body diagram, balance the weight against the normal force, and combine pushes into a net force that drives motion.",
+  "pretrieval": [
+    {
+      "uid": "pretrieval-0-normal-force",
+      "stepType": "pretrieval",
+      "displayText": "Before the lesson, make a hunch: a book rests on a table. Gravity pulls it down, yet it doesn't fall through. What is going on?",
+      "interactiveComponent": "ConceptPretrieval",
+      "expected": [0],
+      "explanation": "The table pushes up on the book with a normal force. On level ground that normal force equals the book's weight, so the forces balance (the net force is zero) and the book stays at rest.",
+      "options": [
+        "Nothing pushes back; the table is simply solid enough to stop it.",
+        "The table pushes up on the book with a force that balances its weight.",
+        "Gravity doesn't apply when an object is being supported.",
+        "The book pushes down harder than gravity, which cancels the fall."
+      ]
+    }
+  ],
+  "steps": [
+    {
+      "uid": "step-0-fbd-basics",
+      "stepType": "demo",
+      "displayText": "Every object is acted on by forces. A free-body diagram strips away everything except the forces on one object, drawn as arrows from its center. This resting block feels its weight (mg, pulling down) and a force (N, pushing up) from the ground called the normal force. Notice they are equal and opposite.",
+      "interactiveComponent": "FreeBodyDemo",
+      "expected": [0],
+      "explanation": "",
+      "variant": "equilibrium",
+      "params": { "mass": 4 }
+    },
+    {
+      "uid": "step-1-fbd-applied",
+      "stepType": "demo",
+      "displayText": "Now add a horizontal push. Drag the slider to change the applied force, then press Push the block. The up and down forces still cancel, but the sideways push is unbalanced, so the block accelerates. With no friction, the net force is just the push (F_net = F), and a = F/m.",
+      "interactiveComponent": "FreeBodyDemo",
+      "expected": [0],
+      "explanation": "",
+      "variant": "applied",
+      "params": { "mass": 4, "applied": 12 }
+    },
+    {
+      "uid": "step-2-equations",
+      "stepType": "demo",
+      "displayText": "These are the tools for this lesson. On level ground the normal force matches the weight; to find motion, add the forces into a single net force and apply Newton's second law.",
+      "interactiveComponent": "EquationReference",
+      "expected": [0],
+      "explanation": "",
+      "equations": [
+        { "formula": "W = mg", "label": "Weight: gravity's pull on a mass" },
+        { "formula": "N = mg", "label": "Normal force on flat ground balances the weight" },
+        { "formula": "F_net = \u03A3F", "label": "Net force: add every force, opposing ones subtract" },
+        { "formula": "a = F_net / m", "label": "Newton's second law: the net force sets the acceleration" }
+      ]
+    },
+    {
+      "uid": "step-3-weight",
+      "stepType": "question",
+      "displayText": "A block of mass m = 5 kg rests on the ground. Use g = 9.8 m/s^2. What is its weight (N)? Round to the nearest newton.",
+      "interactiveComponent": "FreeBodyQuestion",
+      "expected": [49],
+      "explanation": "Weight is gravity's pull on the mass: W = mg = 5 * 9.8 = 49 N.",
+      "hint": "Weight is W = mg. Multiply the mass by g = 9.8.",
+      "tolerance": [1],
+      "variant": "weight",
+      "params": { "mass": 5 }
+    },
+    {
+      "uid": "step-4-normal",
+      "stepType": "question",
+      "displayText": "The same 5 kg block sits on flat ground while someone presses straight down on it with an extra 20 N. Use g = 9.8 m/s^2. What is the normal force from the ground (N)?",
+      "interactiveComponent": "FreeBodyQuestion",
+      "expected": [69],
+      "explanation": "On level ground the normal force supports everything pushing down: N = mg + push = 49 + 20 = 69 N.",
+      "hint": "The ground must support the weight plus the extra downward push: N = mg + push.",
+      "tolerance": [1],
+      "variant": "normal",
+      "params": { "mass": 5, "pushDown": 20 }
+    },
+    {
+      "uid": "step-5-netforce",
+      "stepType": "question",
+      "displayText": "Two horizontal forces act on a block: 30 N to the right and 12 N to the left. Taking rightward as positive, what is the net force (N)?",
+      "interactiveComponent": "FreeBodyQuestion",
+      "expected": [18],
+      "explanation": "Add the forces with sign: F_net = 30 - 12 = 18 N to the right.",
+      "hint": "Net force adds the forces; opposing ones subtract: F_net = 30 - 12.",
+      "tolerance": [1],
+      "variant": "netforce",
+      "params": { "forceRight": 30, "forceLeft": 12 }
+    },
+    {
+      "uid": "step-6-accel",
+      "stepType": "question",
+      "displayText": "A net force of F_net = 20 N acts on a 4 kg block on a frictionless floor. What is its acceleration (m/s^2)?",
+      "interactiveComponent": "FreeBodyQuestion",
+      "expected": [5],
+      "explanation": "Newton's second law: a = F_net / m = 20 / 4 = 5 m/s^2.",
+      "hint": "Use a = F_net / m: divide the net force by the mass.",
+      "tolerance": [1],
+      "variant": "accel",
+      "params": { "mass": 4, "net": 20 }
+    }
+  ],
+  "retrieval": [
+    {
+      "uid": "retrieval-1-weight",
+      "stepType": "question",
+      "displayText": "Retrieval practice: a 10 kg block rests on the ground. Use g = 9.8 m/s^2. What is its weight (N)?",
+      "interactiveComponent": "FreeBodyQuestion",
+      "expected": [98],
+      "explanation": "W = mg = 10 * 9.8 = 98 N.",
+      "hint": "Use W = mg.",
+      "tolerance": [1],
+      "variant": "weight",
+      "params": { "mass": 10 }
+    },
+    {
+      "uid": "retrieval-2-netforce",
+      "stepType": "question",
+      "displayText": "Retrieval practice: a block feels 40 N to the right and 25 N to the left. Taking rightward as positive, what is the net force (N)?",
+      "interactiveComponent": "FreeBodyQuestion",
+      "expected": [15],
+      "explanation": "F_net = 40 - 25 = 15 N to the right.",
+      "hint": "Use F_net = 40 - 25.",
+      "tolerance": [1],
+      "variant": "netforce",
+      "params": { "forceRight": 40, "forceLeft": 25 }
+    },
+    {
+      "uid": "retrieval-3-accel",
+      "stepType": "question",
+      "displayText": "Retrieval practice: a 30 N net force acts on a 5 kg block on a frictionless floor. What is its acceleration (m/s^2)?",
+      "interactiveComponent": "FreeBodyQuestion",
+      "expected": [6],
+      "explanation": "a = F_net / m = 30 / 5 = 6 m/s^2.",
+      "hint": "Use a = F_net / m.",
+      "tolerance": [1],
+      "variant": "accel",
+      "params": { "mass": 5, "net": 30 }
+    }
+  ]
+}

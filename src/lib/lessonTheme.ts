@@ -52,6 +52,16 @@ const THEMES: Record<string, LessonTheme> = {
     accentBar: 'from-violet-500 to-fuchsia-500',
     confetti: ['#8b5cf6', '#a855f7', '#d946ef'],
   },
+  'forces-free-body': {
+    tile: 'bg-gradient-to-br from-rose-50 to-rose-100 text-rose-600 ring-1 ring-rose-200/70',
+    hoverBorder: 'hover:border-rose-300',
+    chip: 'bg-rose-50 text-rose-700',
+    halo: 'rgba(244, 63, 94, 0.18)',
+    accentText: 'text-rose-700',
+    accentBorder: 'border-rose-200',
+    accentBar: 'from-rose-500 to-pink-500',
+    confetti: ['#f43f5e', '#fb7185', '#ec4899'],
+  },
   'inclined-planes': {
     tile: 'bg-gradient-to-br from-amber-50 to-amber-100 text-amber-600 ring-1 ring-amber-200/70',
     hoverBorder: 'hover:border-amber-300',

@@ -22,33 +22,33 @@
     {
       "uid": "step-0-intro",
       "stepType": "demo",
-      "displayText": "On a ramp, gravity still points straight down, but it is easier to split it into a piece along the surface and a piece pressing into it. Drag the angle slider and press Release to see how a steeper ramp makes the block slide faster.",
+      "displayText": "This is a free-body diagram on a ramp. Gravity still points straight down, but we resolve it with the right triangle into a piece along the surface (mg\u00B7sin\u03B8, what makes the block slide) and a piece pressing into it (mg\u00B7cos\u03B8, balanced by the normal force). Drag the angle slider and press Release: a steeper ramp grows the sliding component, so the block slides faster.",
       "interactiveComponent": "RampDemo",
       "expected": [0],
       "explanation": "",
-      "params": { "angleDeg": 30, "mass": 2 }
+      "params": { "angleDeg": 35, "mass": 2 }
     },
     {
-      "uid": "step-1-decompose",
+      "uid": "step-1-derive-speed",
       "stepType": "demo",
-      "displayText": "The weight mg (gray) splits into mg·sinθ along the ramp (red, what makes the block slide) and mg·cosθ into the ramp (green, balanced by the normal force). As the angle grows, the sliding component grows and the pressing component shrinks.",
-      "interactiveComponent": "RampDemo",
+      "displayText": "Where does the speed-at-the-bottom formula come from? You already met v\u00B2 = v\u2080\u00B2 + 2a\u0394x in 1D Kinematics. A block released from rest on the ramp starts at v\u2080 = 0, accelerates at a = g\u00B7sin\u03B8, and slides the ramp length \u0394x = L, giving v\u00B2 = 2aL. Release the block and watch the graph: its speed grows with the square root of the distance covered, reaching v = \u221A(2aL) at the bottom. Change the angle to see a steeper ramp arrive faster \u2014 and notice the result never depends on the block's mass.",
+      "interactiveComponent": "RampSpeedDemo",
       "expected": [0],
       "explanation": "",
-      "params": { "angleDeg": 40, "mass": 2 }
+      "params": { "angleDeg": 30, "length": 10 }
     },
     {
       "uid": "step-2-equations",
       "stepType": "demo",
-      "displayText": "On a ramp, gravity splits into components. These equations capture the resulting motion and forces, so review them before solving the problems that follow.",
+      "displayText": "Here are the ramp results in one place. The normal force and along-ramp pull are nothing new: they are just gravity (mg) split with the right triangle, exactly the decomposition from the free-body lesson. Review them before solving the problems that follow.",
       "interactiveComponent": "EquationReference",
       "expected": [0],
       "explanation": "",
       "equations": [
         { "formula": "a = g\u00B7sin\u03B8", "label": "Acceleration down a frictionless ramp" },
-        { "formula": "N = m\u00B7g\u00B7cos\u03B8", "label": "Normal force from the ramp surface" },
-        { "formula": "F\u2225 = m\u00B7g\u00B7sin\u03B8", "label": "Gravity component along the ramp" },
-        { "formula": "v = \u221A(2aL)", "label": "Speed after sliding distance L from rest" }
+        { "formula": "N = m\u00B7g\u00B7cos\u03B8", "label": "Normal force: the into-ramp slice of gravity (mg resolved with the right triangle)" },
+        { "formula": "F\u2225 = m\u00B7g\u00B7sin\u03B8", "label": "Along-ramp pull: the down-ramp slice of the same triangle" },
+        { "formula": "v = \u221A(2aL)", "label": "Speed after sliding L from rest (derived in the previous step)" }
       ]
     },
     {

@@ -192,6 +192,45 @@ const PRACTICE_TOPICS_BY_LESSON: Record<string, PracticeTopic[]> = {
       unitSuggestions: ['m'],
     },
   ],
+  'forces-free-body': [
+    {
+      id: 'weight',
+      name: 'Weight',
+      focus: 'Find the weight of an object from its mass using g = 9.8 m/s^2.',
+      hint: 'Start with W = m*g.',
+      unitSuggestions: ['N'],
+    },
+    {
+      id: 'normal-force',
+      name: 'Normal force',
+      focus:
+        'Find the normal force on an object on flat ground, including an extra vertical push.',
+      hint: 'On level ground N = m*g, plus any downward push.',
+      unitSuggestions: ['N'],
+    },
+    {
+      id: 'net-force',
+      name: 'Net force',
+      focus: 'Combine opposing horizontal forces into a single net force.',
+      hint: 'Add the forces with sign; opposing forces subtract.',
+      unitSuggestions: ['N'],
+    },
+    {
+      id: 'acceleration',
+      name: 'Acceleration from net force',
+      focus: 'Find acceleration from a net force and mass with Newton\'s second law.',
+      hint: 'Start with a = F_net / m.',
+      unitSuggestions: ['m/s^2'],
+    },
+    {
+      id: 'balanced-forces',
+      name: 'Balanced forces',
+      focus:
+        'Find the missing force that keeps an object in equilibrium (net force zero).',
+      hint: 'For balance the forces must sum to zero.',
+      unitSuggestions: ['N'],
+    },
+  ],
 }
 
 export function getPracticeTopics(lessonUid: string): PracticeTopic[] {

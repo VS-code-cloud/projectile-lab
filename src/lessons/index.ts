@@ -2,6 +2,7 @@ import type { Lesson } from './types'
 import projectile2d from './projectile-2d.json'
 import kinematics1d from './kinematics-1d.json'
 import newtonsSecondLaw from './newtons-second-law.json'
+import forcesFreeBody from './forces-free-body.json'
 import inclinedPlanes from './inclined-planes.json'
 import uniformCircularMotion from './uniform-circular-motion.json'
 
@@ -13,6 +14,7 @@ export const allLessons: Lesson[] = [
   kinematics1d as unknown as Lesson,
   projectile2d as unknown as Lesson,
   newtonsSecondLaw as unknown as Lesson,
+  forcesFreeBody as unknown as Lesson,
   inclinedPlanes as unknown as Lesson,
   uniformCircularMotion as unknown as Lesson,
 ]

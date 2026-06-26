@@ -33,9 +33,14 @@ export const interactiveRegistry: Record<
   ForceSledDemo: lazy(() => import('../components/interactive/ForceSledDemo')),
   ForceQuestion: lazy(() => import('../components/interactive/ForceQuestion')),
   RampDemo: lazy(() => import('../components/interactive/RampDemo')),
+  RampSpeedDemo: lazy(() => import('../components/interactive/RampSpeedDemo')),
   RampQuestion: lazy(() => import('../components/interactive/RampQuestion')),
   OrbitDemo: lazy(() => import('../components/interactive/OrbitDemo')),
   OrbitQuestion: lazy(() => import('../components/interactive/OrbitQuestion')),
+  FreeBodyDemo: lazy(() => import('../components/interactive/FreeBodyDemo')),
+  FreeBodyQuestion: lazy(
+    () => import('../components/interactive/FreeBodyQuestion'),
+  ),
   EquationReference: lazy(
     () => import('../components/interactive/EquationReference'),
   ),
