@@ -15,6 +15,14 @@ export default defineConfig({
             if (id.includes('firebase') || id.includes('@firebase')) return 'firebase'
             if (id.includes('framer-motion') || id.includes('motion-dom') || id.includes('motion-utils'))
               return 'framer-motion'
+            // Keep three.js + R3F in one shared vendor chunk so the six 3D
+            // mini-games load it once instead of duplicating it per component.
+            if (
+              id.includes('/three/') ||
+              id.includes('three-stdlib') ||
+              id.includes('@react-three')
+            )
+              return 'three'
           }
         },
       },

@@ -47,6 +47,20 @@ export const interactiveRegistry: Record<
   ConceptPretrieval: lazy(
     () => import('../components/interactive/ConceptPretrieval'),
   ),
+  CannonGame3D: lazy(() => import('../components/interactive/CannonGame3D')),
+  MoorStopGame3D: lazy(
+    () => import('../components/interactive/MoorStopGame3D'),
+  ),
+  JettisonGame3D: lazy(
+    () => import('../components/interactive/JettisonGame3D'),
+  ),
+  KedgeGame3D: lazy(() => import('../components/interactive/KedgeGame3D')),
+  HeelDeckGame3D: lazy(
+    () => import('../components/interactive/HeelDeckGame3D'),
+  ),
+  MaelstromGame3D: lazy(
+    () => import('../components/interactive/MaelstromGame3D'),
+  ),
 }
 
 /**

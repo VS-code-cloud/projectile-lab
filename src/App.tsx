@@ -10,6 +10,25 @@ const HomePage = lazy(() => import('./pages/HomePage'))
 const LoginPage = lazy(() => import('./pages/LoginPage'))
 const LessonPage = lazy(() => import('./pages/LessonPage'))
 const PracticePage = lazy(() => import('./pages/PracticePage'))
+// Dev-only harness routes for the 3D mini-games (tree-shaken from prod).
+const CannonHarness = import.meta.env.DEV
+  ? lazy(() => import('./pages/CannonHarness'))
+  : null
+const MoorStopHarness = import.meta.env.DEV
+  ? lazy(() => import('./pages/MoorStopHarness'))
+  : null
+const JettisonHarness = import.meta.env.DEV
+  ? lazy(() => import('./pages/JettisonHarness'))
+  : null
+const KedgeHarness = import.meta.env.DEV
+  ? lazy(() => import('./pages/KedgeHarness'))
+  : null
+const HeelDeckHarness = import.meta.env.DEV
+  ? lazy(() => import('./pages/HeelDeckHarness'))
+  : null
+const MaelstromHarness = import.meta.env.DEV
+  ? lazy(() => import('./pages/MaelstromHarness'))
+  : null
 
 /**
  * Wraps the lesson player with a key on the lesson uid so navigating between
@@ -103,6 +122,24 @@ export default function App() {
               </PageTransition>
             }
           />
+          {CannonHarness && (
+            <Route path="/dev/cannon" element={<CannonHarness />} />
+          )}
+          {MoorStopHarness && (
+            <Route path="/dev/moor-stop" element={<MoorStopHarness />} />
+          )}
+          {JettisonHarness && (
+            <Route path="/dev/jettison" element={<JettisonHarness />} />
+          )}
+          {KedgeHarness && (
+            <Route path="/dev/kedge" element={<KedgeHarness />} />
+          )}
+          {HeelDeckHarness && (
+            <Route path="/dev/heel-deck" element={<HeelDeckHarness />} />
+          )}
+          {MaelstromHarness && (
+            <Route path="/dev/maelstrom" element={<MaelstromHarness />} />
+          )}
         </Routes>
       </AnimatePresence>
     </Suspense>

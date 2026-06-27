@@ -97,6 +97,15 @@
       "tolerance": [2],
       "variant": "distance",
       "params": { "v0": 20, "a": -5, "t": 4 }
+    },
+    {
+      "uid": "step-7-dead-in-water",
+      "stepType": "question",
+      "displayText": "Capstone: man overboard! You're making way at v₀ = 20 m/s when you cut the sails; drag then slows you at a = 2 m/s². Enter the distance you'll glide before going dead in the water so the helm cuts sail with the swimmer exactly that far off the bow. Try as many times as you like until you stop right alongside.",
+      "interactiveComponent": "MoorStopGame3D",
+      "expected": [100],
+      "explanation": "With final speed 0, v² = v₀² + 2a·x gives the coasting distance x = v₀²/(2a) = 20²/(2·2) = 400/4 = 100 m.",
+      "params": { "v0": 20, "a": 2, "target": 100, "tolerance": 5 }
     }
   ],
   "retrieval": [

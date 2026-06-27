@@ -98,6 +98,15 @@
       "tolerance": [0.5],
       "variant": "speed",
       "params": { "angleDeg": 30, "mass": 2, "length": 10 }
+    },
+    {
+      "uid": "step-7-heeling-deck",
+      "stepType": "question",
+      "displayText": "Capstone: heel the deck to run a shot to the lee gun. The ball rolls L = 5 m from the centerline to the gun port; the rammer can safely catch it at v = 7 m/s. Enter the heel angle θ (degrees) so the ball arrives at that speed. (g = 9.8 m/s².) Adjust the heel until it settles in the cradle.",
+      "interactiveComponent": "HeelDeckGame3D",
+      "expected": [7],
+      "explanation": "Down a frictionless incline a = g·sinθ, and from rest over length L the speed is v = √(2aL) = √(2·g·sinθ·L). Setting v = 7 with L = 5: 49 = 2·9.8·5·sinθ = 98·sinθ, so sinθ = 0.5 and θ = 30°.",
+      "params": { "length": 5, "target": 7, "tolerance": 0.4 }
     }
   ],
   "retrieval": [
