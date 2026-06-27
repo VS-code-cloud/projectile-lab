@@ -1,17 +1,13 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
-import { useAuth } from './useAuth'
-import {
-  emptyLessonProgress,
-  getUserDoc,
-  saveLessonProgress,
-} from '../firebase/firestore'
+import { useCallback, useMemo } from 'react'
+import { useUserData } from './useUserData'
+import { emptyLessonProgress } from '../firebase/firestore'
 import type { LessonProgress } from '../firebase/firestore'
 
 /** Return value of {@link useLessonProgress}. */
 interface UseLessonProgressResult {
   /** The current progress for the lesson. */
   progress: LessonProgress
-  /** True while progress is loading from Firestore. */
+  /** True while the user document is loading from Firestore. */
   loading: boolean
   /**
    * Marks a step's required interaction as finished (used by demo steps).
@@ -32,74 +28,27 @@ interface UseLessonProgressResult {
   resetLesson: () => void
 }
 
+/** Stable fallback so a not-yet-started lesson keeps a constant reference. */
+const EMPTY_PROGRESS = emptyLessonProgress()
+
 /**
- * Loads and mutates a user's progress for a single lesson, persisting every
- * change to Firestore so progress survives leaving and returning.
+ * Exposes one lesson's progress from the shared user document, plus mutations
+ * that persist through {@link UserDataProvider}. Reads no longer hit Firestore
+ * per lesson; the document is fetched once at the provider level.
  * @param lessonUid The lesson being played.
  */
 export function useLessonProgress(
   lessonUid: string,
 ): UseLessonProgressResult {
-  const { user } = useAuth()
-  const [progress, setProgress] = useState<LessonProgress>(
-    emptyLessonProgress(),
-  )
-  const [loading, setLoading] = useState(true)
-  const progressRef = useRef<LessonProgress>(progress)
-
-  useEffect(() => {
-    progressRef.current = progress
-  }, [progress])
-
-  useEffect(() => {
-    let active = true
-    void (async () => {
-      if (!user) {
-        if (active) {
-          setProgress(emptyLessonProgress())
-          setLoading(false)
-        }
-        return
-      }
-      setLoading(true)
-      const data = await getUserDoc(user.uid)
-      if (!active) return
-      const existing = data?.lessons?.[lessonUid]
-      setProgress(
-        existing
-          ? { ...emptyLessonProgress(), ...existing }
-          : emptyLessonProgress(),
-      )
-      setLoading(false)
-    })()
-    return () => {
-      active = false
-    }
-  }, [user, lessonUid])
-
-  /**
-   * Applies a pure update to the current progress, stores it, and persists it.
-   * @param updater Returns the next progress, or the same reference for no-op.
-   */
-  const apply = useCallback(
-    (updater: (prev: LessonProgress) => LessonProgress) => {
-      const prev = progressRef.current
-      const next = updater(prev)
-      if (next === prev) return
-      progressRef.current = next
-      setProgress(next)
-      if (user) {
-        void saveLessonProgress(user.uid, lessonUid, next).catch((error) =>
-          console.error('Failed to save lesson progress', error),
-        )
-      }
-    },
-    [user, lessonUid],
+  const { lessons, loading, updateLessonProgress } = useUserData()
+  const progress = useMemo(
+    () => lessons[lessonUid] ?? EMPTY_PROGRESS,
+    [lessons, lessonUid],
   )
 
   const completeStep = useCallback(
     (stepUid: string) => {
-      apply((prev) => {
+      updateLessonProgress(lessonUid, (prev) => {
         if (prev.completedStepUids.includes(stepUid)) return prev
         return {
           ...prev,
@@ -108,7 +57,7 @@ export function useLessonProgress(
         }
       })
     },
-    [apply],
+    [lessonUid, updateLessonProgress],
   )
 
   const recordAnswer = useCallback(
@@ -118,7 +67,7 @@ export function useLessonProgress(
       correct: boolean | null,
       countsForProgress = true,
     ) => {
-      apply((prev) => {
+      updateLessonProgress(lessonUid, (prev) => {
         if (prev.answers[stepUid]) return prev
         const alreadyCompleted = prev.completedStepUids.includes(stepUid)
         const graded = correct !== null && countsForProgress
@@ -127,21 +76,23 @@ export function useLessonProgress(
           answers: { ...prev.answers, [stepUid]: { values, correct } },
           numAttempts: prev.numAttempts + (graded ? 1 : 0),
           numCorrect: prev.numCorrect + (graded && correct === true ? 1 : 0),
-          completedStepUids: !countsForProgress || alreadyCompleted
-            ? prev.completedStepUids
-            : [...prev.completedStepUids, stepUid],
-          numStepsCompleted: !countsForProgress || alreadyCompleted
-            ? prev.numStepsCompleted
-            : prev.numStepsCompleted + 1,
+          completedStepUids:
+            !countsForProgress || alreadyCompleted
+              ? prev.completedStepUids
+              : [...prev.completedStepUids, stepUid],
+          numStepsCompleted:
+            !countsForProgress || alreadyCompleted
+              ? prev.numStepsCompleted
+              : prev.numStepsCompleted + 1,
         }
       })
     },
-    [apply],
+    [lessonUid, updateLessonProgress],
   )
 
   const resetLesson = useCallback(() => {
-    apply(() => emptyLessonProgress())
-  }, [apply])
+    updateLessonProgress(lessonUid, () => emptyLessonProgress())
+  }, [lessonUid, updateLessonProgress])
 
   return { progress, loading, completeStep, recordAnswer, resetLesson }
 }

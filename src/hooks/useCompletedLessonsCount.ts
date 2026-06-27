@@ -1,6 +1,4 @@
-import { useEffect, useState } from 'react'
-import { useAuth } from './useAuth'
-import { getUserDoc } from '../firebase/firestore'
+import { useUserData } from './useUserData'
 import { allLessons } from '../lessons'
 import { countCompletedLessons } from '../lib/lessonCompletion'
 
@@ -8,41 +6,18 @@ import { countCompletedLessons } from '../lib/lessonCompletion'
 interface CompletedLessonsState {
   /** Number of fully completed lessons, or null before loaded. */
   count: number | null
-  /** True while progress is being read from Firestore. */
+  /** True while the user document is loading. */
   loading: boolean
 }
 
 /**
- * Loads the user's saved progress and returns how many lessons they have
- * finished (all steps completed).
+ * Returns how many lessons the user has fully completed, derived from the
+ * shared user document (no separate Firestore read).
  */
 export function useCompletedLessonsCount(): CompletedLessonsState {
-  const { user } = useAuth()
-  const [count, setCount] = useState<number | null>(null)
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    let active = true
-    void (async () => {
-      if (!user) {
-        if (active) {
-          setCount(null)
-          setLoading(false)
-        }
-        return
-      }
-
-      setLoading(true)
-      const data = await getUserDoc(user.uid)
-      if (!active) return
-      setCount(countCompletedLessons(allLessons, data?.lessons))
-      setLoading(false)
-    })()
-
-    return () => {
-      active = false
-    }
-  }, [user])
-
-  return { count, loading }
+  const { lessons, loading } = useUserData()
+  return {
+    count: loading ? null : countCompletedLessons(allLessons, lessons),
+    loading,
+  }
 }

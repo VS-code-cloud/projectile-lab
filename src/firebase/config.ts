@@ -1,5 +1,4 @@
 import { initializeApp } from 'firebase/app'
-import { getAI, GoogleAIBackend } from 'firebase/ai'
 import { getAuth, GoogleAuthProvider } from 'firebase/auth'
 import { getFirestore } from 'firebase/firestore'
 
@@ -23,9 +22,6 @@ export const auth = getAuth(app)
 
 /** Shared Firestore database instance. */
 export const db = getFirestore(app)
-
-/** Firebase AI Logic using the Gemini Developer API backend. */
-export const ai = getAI(app, { backend: new GoogleAIBackend() })
 
 /** Google sign-in provider used by the login flow. */
 export const googleProvider = new GoogleAuthProvider()

@@ -4,6 +4,7 @@ import { BrowserRouter } from 'react-router-dom'
 import './index.css'
 import App from './App.tsx'
 import { AuthProvider } from './context/AuthProvider.tsx'
+import { UserDataProvider } from './context/UserDataProvider.tsx'
 import {
   MotionPreferenceProvider,
   MotionRoot,
@@ -13,11 +14,13 @@ createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <MotionPreferenceProvider>
       <AuthProvider>
-        <BrowserRouter>
-          <MotionRoot>
-            <App />
-          </MotionRoot>
-        </BrowserRouter>
+        <UserDataProvider>
+          <BrowserRouter>
+            <MotionRoot>
+              <App />
+            </MotionRoot>
+          </BrowserRouter>
+        </UserDataProvider>
       </AuthProvider>
     </MotionPreferenceProvider>
   </StrictMode>,
