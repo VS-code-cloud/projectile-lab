@@ -58,10 +58,12 @@ export default async function handler(req: Request): Promise<Response> {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${apiKey}`,
       },
+      // Use only the basic chat completions feature (no response_format /
+      // JSON mode / structured outputs, which may be unavailable to this key).
+      // JSON is requested via the prompt and parsed leniently on the client.
       body: JSON.stringify({
         model,
         temperature: 0.35,
-        response_format: { type: 'json_object' },
         messages: [
           { role: 'system', content: SYSTEM_INSTRUCTION },
           { role: 'user', content: prompt },

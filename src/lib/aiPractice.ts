@@ -23,10 +23,19 @@ class PracticeOutputError extends Error {
   }
 }
 
+/** Returns the substring from the first `{` to the last `}`, or null. */
+function extractJsonObject(text: string): string | null {
+  const start = text.indexOf('{')
+  const end = text.lastIndexOf('}')
+  if (start === -1 || end === -1 || end <= start) return null
+  return text.slice(start, end + 1)
+}
+
 /**
- * Parses the model's text response into practice problems. Tolerates responses
- * wrapped in Markdown code fences and surfaces truncated/invalid JSON as a
- * {@link PracticeOutputError}.
+ * Parses the model's text response into practice problems. Because we only use
+ * the plain completions feature (no JSON mode), the model may wrap JSON in code
+ * fences or prose, so we strip fences and, failing that, extract the outermost
+ * JSON object before parsing.
  */
 function parsePracticeResponse(
   rawText: string,
@@ -38,13 +47,24 @@ function parsePracticeResponse(
     .replace(/\s*```$/i, '')
     .trim()
 
-  let parsed: PracticeResponse
-  try {
-    parsed = JSON.parse(cleaned) as PracticeResponse
-  } catch (error) {
+  let parsed: PracticeResponse | null = null
+  for (const candidate of [cleaned, extractJsonObject(cleaned)]) {
+    if (!candidate) continue
+    try {
+      parsed = JSON.parse(candidate) as PracticeResponse
+      break
+    } catch {
+      // Try the next candidate before giving up.
+    }
+  }
+
+  if (!parsed) {
     throw new PracticeOutputError(
-      'The model returned malformed or truncated JSON.',
-      { cause: error },
+      'The model did not return valid JSON. With only the basic chat ' +
+        'completions feature enabled, parseable output is not guaranteed — the ' +
+        'feature needed to fix this is JSON mode / Structured Outputs ' +
+        '(the `response_format` option), which requires a key/model that ' +
+        'supports it.',
     )
   }
 
