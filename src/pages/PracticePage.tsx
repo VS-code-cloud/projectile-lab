@@ -99,7 +99,7 @@ function ReviewBanner({
             <span className="font-semibold text-slate-900">
               {nextLesson.displayName}
             </span>
-            , complete a quick practice problem to refresh{' '}
+            , complete at least one quick practice problem to refresh{' '}
             <span className="font-semibold text-slate-900">
               {lesson.displayName}
             </span>

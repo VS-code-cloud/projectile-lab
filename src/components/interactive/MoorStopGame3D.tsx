@@ -65,8 +65,11 @@ function MoorStopScene({
   )
 
   const animate = !reducedMotion
+  // The ship always glides its true coasting distance; the swimmer sits at the
+  // distance the helm was told to cut sail (the learner's input), so a wrong
+  // call leaves a visible gap. Before the first shot, park the swimmer ahead.
   const targetX = ux(target)
-  const markX = ux(committedInput)
+  const swimmerX = ux(committedInput > 0 ? committedInput : target)
 
   useFrame((_, rawDelta) => {
     const delta = Math.min(rawDelta, 0.05)
@@ -111,30 +114,7 @@ function MoorStopScene({
     <>
       <NavalEnvironment sparkleSpeed={animate ? 0.35 : 0} />
 
-      <group position={[markX, 0, 9]}>
-        <mesh position={[0, 0.7, 0]}>
-          <cylinderGeometry args={[0.5, 0.7, 1.8, 12]} />
-          <meshStandardMaterial color="#38bdf8" transparent opacity={0.45} roughness={0.6} />
-        </mesh>
-        <mesh position={[0, 1.8, 0]}>
-          <sphereGeometry args={[0.5, 12, 12]} />
-          <meshStandardMaterial color="#7dd3fc" transparent opacity={0.45} roughness={0.5} />
-        </mesh>
-        <Text
-          position={[0, 0.3, 5]}
-          rotation={[-Math.PI / 2, 0, 0]}
-          fontSize={2.4}
-          color="#eaf6ff"
-          outlineWidth={0.08}
-          outlineColor="#0b3550"
-          anchorX="center"
-          anchorY="middle"
-        >
-          Your mark
-        </Text>
-      </group>
-
-      <group position={[targetX, 0, -6]}>
+      <group position={[swimmerX, 0, -6]}>
         <mesh position={[0, 0.5, 0]} castShadow>
           <sphereGeometry args={[0.55, 16, 16]} />
           <meshStandardMaterial color="#f97316" roughness={0.5} />
