@@ -9,6 +9,14 @@
 
 export const config = { runtime: 'edge' }
 
+// Read environment variables without depending on @types/node: Vercel's function
+// compiler doesn't always have the `process` global typed, so access it through
+// a narrowly-typed globalThis. `process.env` exists at runtime in both the Node
+// and Edge runtimes.
+const env =
+  (globalThis as { process?: { env?: Record<string, string | undefined> } })
+    .process?.env ?? {}
+
 const SYSTEM_INSTRUCTION =
   'You are a careful physics tutor generating short numeric retrieval-practice problems for an interactive lesson app. Use accurate physics, simple numbers, and exactly one numeric answer per problem. Respond with a single JSON object and nothing else.'
 
@@ -24,7 +32,7 @@ export default async function handler(req: Request): Promise<Response> {
     return json({ error: 'Method not allowed.' }, 405)
   }
 
-  const apiKey = process.env.OPENAI_API_KEY
+  const apiKey = env.OPENAI_API_KEY
   if (!apiKey) {
     return json({ error: 'Server is missing OPENAI_API_KEY.' }, 500)
   }
@@ -40,7 +48,7 @@ export default async function handler(req: Request): Promise<Response> {
     return json({ error: 'Invalid JSON body.' }, 400)
   }
 
-  const model = process.env.OPENAI_MODEL ?? 'gpt-4o-mini'
+  const model = env.OPENAI_MODEL ?? 'gpt-4o-mini'
 
   let openaiRes: Response
   try {
