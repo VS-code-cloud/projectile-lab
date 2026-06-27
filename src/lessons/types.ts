@@ -76,26 +76,12 @@ export function getLessonFlow(lesson: Lesson): Step[] {
   ]
 }
 
-/** Returns optional retrieval practice steps, separate from lesson completion. */
-export function getRetrievalPractice(lesson: Lesson): Step[] {
-  return (lesson.retrieval ?? []).map((step) => ({
-    ...step,
-    section: 'retrieval' as const,
-  }))
-}
-
-/**
- * Counts required lesson steps, excluding optional retrieval practice.
- * @param lesson The lesson to inspect.
- */
+/** Counts required lesson steps (pretrieval + core), excluding AI practice. */
 export function countLessonSteps(lesson: Lesson): number {
   return getLessonFlow(lesson).length
 }
 
-/**
- * Counts graded questions in the required lesson sequence.
- * @param lesson The lesson to inspect.
- */
+/** Counts graded questions in the required lesson sequence. */
 export function countQuestions(lesson: Lesson): number {
   return getLessonFlow(lesson).filter((step) => step.stepType === 'question')
     .length

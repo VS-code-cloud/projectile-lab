@@ -5,7 +5,9 @@ import { emptyLessonProgress } from '../firebase/firestore'
 import {
   canAccessLesson,
   canAccessRetrievalPractice,
+  hasCompletedPractice,
   isLessonComplete,
+  needsPreviousPracticeReview,
 } from '../lib/lessonCompletion'
 
 /** Builds a minimal lesson step for completion tests. */
@@ -26,6 +28,16 @@ function makeProgress(completedStepUids: string[]): LessonProgress {
     ...emptyLessonProgress(),
     numStepsCompleted: completedStepUids.length,
     completedStepUids,
+  }
+}
+
+/** Builds progress with the provided answer uids recorded. */
+function makeProgressWithAnswers(answerUids: string[]): LessonProgress {
+  return {
+    ...emptyLessonProgress(),
+    answers: Object.fromEntries(
+      answerUids.map((uid) => [uid, { values: [1], correct: true }]),
+    ),
   }
 }
 
@@ -99,6 +111,61 @@ describe('canAccessRetrievalPractice', () => {
     }
 
     expect(canAccessRetrievalPractice(lesson, makeProgress(['core']))).toBe(true)
+  })
+})
+
+describe('hasCompletedPractice', () => {
+  it('is false with no progress or no practice answers', () => {
+    expect(hasCompletedPractice('kinematics-1d', undefined)).toBe(false)
+    expect(hasCompletedPractice('kinematics-1d', makeProgress(['core']))).toBe(
+      false,
+    )
+  })
+
+  it('detects a recorded AI practice answer for the lesson', () => {
+    const progress = makeProgressWithAnswers([
+      'ai-practice-kinematics-1d-velocity-abc123',
+    ])
+    expect(hasCompletedPractice('kinematics-1d', progress)).toBe(true)
+  })
+
+  it('ignores authored lesson step answers and other lessons', () => {
+    const progress = makeProgressWithAnswers([
+      'step-velocity',
+      'ai-practice-projectile-2d-range-zzz999',
+    ])
+    expect(hasCompletedPractice('kinematics-1d', progress)).toBe(false)
+  })
+})
+
+describe('needsPreviousPracticeReview', () => {
+  const previous: Lesson = {
+    uid: 'previous',
+    displayName: 'Previous Lesson',
+    text: '',
+    steps: [makeStep('core')],
+  }
+
+  it('never requires review for the first lesson', () => {
+    expect(needsPreviousPracticeReview(undefined, undefined)).toBe(false)
+  })
+
+  it('does not require review until the previous lesson is complete', () => {
+    expect(needsPreviousPracticeReview(previous, makeProgress([]))).toBe(false)
+  })
+
+  it('requires review when the previous lesson is complete but unpracticed', () => {
+    expect(needsPreviousPracticeReview(previous, makeProgress(['core']))).toBe(
+      true,
+    )
+  })
+
+  it('does not require review once previous practice is done', () => {
+    const progress: LessonProgress = {
+      ...makeProgress(['core']),
+      answers: { 'ai-practice-previous-topic-abc': { values: [1], correct: true } },
+    }
+    expect(needsPreviousPracticeReview(previous, progress)).toBe(false)
   })
 })
 

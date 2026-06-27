@@ -32,6 +32,40 @@ export function canAccessRetrievalPractice(
 }
 
 /**
+ * True when the learner has completed at least one AI-generated retrieval
+ * practice problem for a lesson. Generated practice answers are keyed by uids of
+ * the form `ai-practice-{lessonUid}-{topicId}-{hash}` (see generatedPractice),
+ * which lets us distinguish them from authored lesson step answers.
+ * @param lessonUid The lesson to check practice for.
+ * @param progress Saved progress for that lesson, if any.
+ */
+export function hasCompletedPractice(
+  lessonUid: string,
+  progress: LessonProgress | undefined,
+): boolean {
+  if (!progress) return false
+  const prefix = `ai-practice-${lessonUid}-`
+  return Object.keys(progress.answers).some((uid) => uid.startsWith(prefix))
+}
+
+/**
+ * True when starting `nextLesson` should first route the learner through the
+ * previous lesson's AI retrieval practice. This happens once the previous
+ * lesson is complete but its generated practice has not yet been attempted.
+ * The first lesson (no previous) never requires review.
+ * @param previousLesson The lesson immediately before the one being started.
+ * @param previousProgress Saved progress for the previous lesson, if any.
+ */
+export function needsPreviousPracticeReview(
+  previousLesson: Lesson | undefined,
+  previousProgress: LessonProgress | undefined,
+): boolean {
+  if (!previousLesson) return false
+  if (!isLessonComplete(previousLesson, previousProgress)) return false
+  return !hasCompletedPractice(previousLesson.uid, previousProgress)
+}
+
+/**
  * True when a lesson is unlocked in the linear course sequence.
  * The first lesson has no prerequisite; every later lesson requires the
  * immediately previous lesson to be complete.

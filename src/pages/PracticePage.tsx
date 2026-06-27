@@ -1,12 +1,17 @@
 import { useEffect, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { Header } from '../components/layout/Header'
 import { ImmersiveBackground } from '../components/visual/ImmersiveBackground'
 import { AnswerFeedback } from '../components/AnswerFeedback'
 import { getLesson } from '../lessons'
+import type { Lesson } from '../lessons/types'
 import { useLessonProgress } from '../hooks/useLessonProgress'
-import { canAccessRetrievalPractice } from '../lib/lessonCompletion'
+import {
+  canAccessRetrievalPractice,
+  hasCompletedPractice,
+} from '../lib/lessonCompletion'
 import { getLessonPath } from '../lib/lessonRoutes'
+import { matchesExpected } from '../lib/checkAnswer'
 import { getLessonTheme } from '../lib/lessonTheme'
 import { loadGeneratedPracticeProblems } from '../lib/aiPractice'
 import {
@@ -25,15 +30,128 @@ function checkGeneratedAnswer(
   problem: GeneratedPracticeProblem,
   value: number,
 ): boolean {
-  return value === problem.expected[0]
+  return matchesExpected(problem.expected[0], value)
+}
+
+/** Back-to-lessons link shown at the top of every practice view. */
+function LessonsBackLink() {
+  return (
+    <Link
+      to="/"
+      className="inline-flex items-center gap-1.5 text-sm font-semibold text-slate-200 transition hover:text-white"
+    >
+      <svg
+        width="16"
+        height="16"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+      >
+        <path d="m15 18-6-6 6-6" />
+      </svg>
+      Lessons
+    </Link>
+  )
+}
+
+/**
+ * Bright callout shown when practice is acting as a review gate before the next
+ * lesson. Rendered both while questions generate and once they're ready.
+ */
+function ReviewBanner({
+  lesson,
+  nextLesson,
+  satisfied,
+}: {
+  lesson: Lesson
+  nextLesson: Lesson
+  satisfied: boolean
+}) {
+  return (
+    <div className="card mt-3 border border-brand-300 bg-gradient-to-br from-brand-100 to-accent-100 p-4 shadow-md shadow-brand-300/40 sm:p-5">
+      <span className="chip bg-white text-brand-700 shadow-sm">
+        <span
+          className="h-1.5 w-1.5 rounded-full bg-brand-500"
+          aria-hidden="true"
+        />
+        Reviewing old concepts
+      </span>
+      <p className="mt-3 max-w-[68ch] text-sm leading-relaxed text-slate-700">
+        {satisfied ? (
+          <>
+            Nice work&mdash;you&apos;ve reviewed{' '}
+            <span className="font-semibold text-slate-900">
+              {lesson.displayName}
+            </span>
+            . You&apos;re ready to start{' '}
+            <span className="font-semibold text-slate-900">
+              {nextLesson.displayName}
+            </span>
+            .
+          </>
+        ) : (
+          <>
+            Before starting{' '}
+            <span className="font-semibold text-slate-900">
+              {nextLesson.displayName}
+            </span>
+            , complete a quick practice problem to refresh{' '}
+            <span className="font-semibold text-slate-900">
+              {lesson.displayName}
+            </span>
+            .
+          </>
+        )}
+      </p>
+      {satisfied && (
+        <Link
+          to={getLessonPath(nextLesson.uid)}
+          className="btn-primary mt-4 max-w-full whitespace-normal"
+        >
+          Start {nextLesson.displayName} &rarr;
+        </Link>
+      )}
+    </div>
+  )
+}
+
+/** Placeholder card shown while AI practice questions are being generated. */
+function GeneratingNotice() {
+  return (
+    <div className="card mt-3 p-4 sm:p-5">
+      <div className="flex items-center gap-3">
+        <span
+          className="h-4 w-4 animate-spin rounded-full border-2 border-brand-200 border-t-brand-600"
+          aria-hidden="true"
+        />
+        <p className="text-sm font-semibold text-slate-700">
+          Generating questions&hellip;
+        </p>
+      </div>
+      <div className="mt-4 space-y-2" aria-hidden="true">
+        <div className="h-3 w-3/4 animate-pulse rounded-full bg-slate-200" />
+        <div className="h-3 w-1/2 animate-pulse rounded-full bg-slate-200" />
+      </div>
+    </div>
+  )
 }
 
 /** Post-lesson retrieval practice page generated with Firebase AI Logic. */
 export default function PracticePage() {
   const { lessonUid = '' } = useParams()
+  const [searchParams] = useSearchParams()
   const lesson = getLesson(lessonUid)
   const { progress, loading, recordAnswer } = useLessonProgress(lessonUid)
   const theme = getLessonTheme(lessonUid)
+  // Review mode: practice acts as a gate before the lesson named by `next`.
+  // Completing one practice problem satisfies the gate and reveals a continue CTA.
+  const nextLesson = getLesson(searchParams.get('next') ?? '')
+  const isReview = Boolean(nextLesson)
+  const reviewSatisfied = isReview && hasCompletedPractice(lessonUid, progress)
   const [index, setIndex] = useState(0)
   const [problems, setProblems] = useState<GeneratedPracticeProblem[]>([])
   const [practiceLoading, setPracticeLoading] = useState(true)
@@ -151,12 +269,25 @@ export default function PracticePage() {
     )
   }
 
+  const reviewBanner =
+    isReview && nextLesson ? (
+      <ReviewBanner
+        lesson={lesson}
+        nextLesson={nextLesson}
+        satisfied={reviewSatisfied}
+      />
+    ) : null
+
   if (loading || practiceLoading) {
     return (
       <ImmersiveBackground>
         <Header />
         <main className="mx-auto max-w-3xl px-3 py-6 sm:px-4 sm:py-8">
-          <div className="card h-64 animate-shimmer" />
+          <LessonsBackLink />
+          {/* Progress is known once lesson data has loaded; show the review
+              callout next to the generating notice while questions stream in. */}
+          {!loading && reviewBanner}
+          <GeneratingNotice />
         </main>
       </ImmersiveBackground>
     )
@@ -217,25 +348,9 @@ export default function PracticePage() {
     <ImmersiveBackground>
       <Header />
       <main className="mx-auto max-w-3xl px-3 py-6 sm:px-4 sm:py-8">
-        <Link
-          to="/"
-          className="inline-flex items-center gap-1.5 text-sm font-semibold text-slate-200 transition hover:text-white"
-        >
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden="true"
-          >
-            <path d="m15 18-6-6 6-6" />
-          </svg>
-          Lessons
-        </Link>
+        <LessonsBackLink />
+
+        {reviewBanner}
 
         <div className="card relative mt-3 p-4 sm:p-5">
           <div className="flex flex-wrap items-center justify-between gap-2">

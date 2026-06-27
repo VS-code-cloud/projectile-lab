@@ -14,8 +14,13 @@ import type { Lesson } from '../lessons/types'
 import {
   canAccessLesson,
   canAccessRetrievalPractice,
+  needsPreviousPracticeReview,
 } from '../lib/lessonCompletion'
-import { getLessonPath, getPracticePath } from '../lib/lessonRoutes'
+import {
+  getLessonPath,
+  getPracticePath,
+  getReviewPracticePath,
+} from '../lib/lessonRoutes'
 import { useAuth } from '../hooks/useAuth'
 import { useCompletedLessonsCount } from '../hooks/useCompletedLessonsCount'
 import { useLessonProgress } from '../hooks/useLessonProgress'
@@ -155,6 +160,18 @@ function LessonCard({
   const started = completedLessonSteps > 0
   const lessonAccessible = canAccessLesson(previousLesson, previousProgress)
   const practiceAvailable = canAccessRetrievalPractice(lesson, progress)
+  // Once a lesson is unlocked, entering it always routes through the previous
+  // lesson's AI practice ("reviewing old concepts") until it's been done. This
+  // mirrors the hard gate in LessonPage so the link target matches the
+  // enforced destination even for an already-started lesson.
+  const requiresReview = needsPreviousPracticeReview(
+    previousLesson,
+    previousProgress,
+  )
+  const startPath =
+    requiresReview && previousLesson
+      ? getReviewPracticePath(previousLesson.uid, lesson.uid)
+      : getLessonPath(lesson.uid)
   const theme = getLessonTheme(lesson.uid)
   const cardContent = (
     <>
@@ -196,7 +213,7 @@ function LessonCard({
       className={`card group flex flex-col p-5 ${lessonAccessible ? `lift ${theme.hoverBorder}` : 'opacity-70'}`}
     >
       {lessonAccessible ? (
-        <Link to={getLessonPath(lesson.uid)} className="block">
+        <Link to={startPath} className="block">
           {cardContent}
         </Link>
       ) : (
@@ -205,7 +222,7 @@ function LessonCard({
       <div className="mt-5 space-y-2 border-t border-slate-100 pt-4">
         {lessonAccessible ? (
           <Link
-            to={getLessonPath(lesson.uid)}
+            to={startPath}
             className="btn-primary w-full py-2.5"
           >
             {started ? 'Continue lesson' : 'Start lesson'}
@@ -371,8 +388,8 @@ export default function HomePage() {
                       <path d="M12 4 v3 M12 17 v3 M4 12 h3 M17 12 h3" />
                     </svg>
                   }
-                  title="Five topics"
-                  body="Projectiles, kinematics, forces, ramps, and circular motion."
+                  title="Six lessons"
+                  body="Kinematics, projectiles, forces, free-body diagrams, ramps, and circular motion."
                 />
               </motion.div>
             </motion.div>

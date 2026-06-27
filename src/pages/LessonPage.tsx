@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { CSSProperties } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { Link, useParams } from 'react-router-dom'
+import { Link, Navigate, useParams } from 'react-router-dom'
 import { Header } from '../components/layout/Header'
 import { ImmersiveBackground } from '../components/visual/ImmersiveBackground'
 import { MasteryBar } from '../components/MasteryBar'
@@ -12,7 +12,12 @@ import { countQuestions, getLessonFlow } from '../lessons/types'
 import { useLessonProgress } from '../hooks/useLessonProgress'
 import { useMotionPreference } from '../hooks/useMotionPreference'
 import { checkAnswer } from '../lib/checkAnswer'
-import { canAccessLesson } from '../lib/lessonCompletion'
+import {
+  canAccessLesson,
+  hasCompletedPractice,
+  needsPreviousPracticeReview,
+} from '../lib/lessonCompletion'
+import { getLessonPath, getReviewPracticePath } from '../lib/lessonRoutes'
 import { getLessonTheme } from '../lib/lessonTheme'
 
 /** Direction-aware variants for the step paging transition. */
@@ -132,6 +137,13 @@ export default function LessonPage() {
   const { progress: previousProgress, loading: previousLoading } =
     useLessonProgress(previousLesson?.uid ?? lessonUid)
   const lessonAccessible = canAccessLesson(previousLesson, previousProgress)
+  // Hard gate: even when the previous lesson is complete, the learner must
+  // complete at least one AI practice problem for it before starting this one.
+  // Until then we route them through the previous lesson's review practice.
+  const needsReview = needsPreviousPracticeReview(previousLesson, previousProgress)
+  // Block any progress side effects while the gate is undecided or active so we
+  // never mark this lesson's steps before redirecting to review practice.
+  const gateBlocked = previousLoading || needsReview
   const { animationsEnabled } = useMotionPreference()
   const theme = getLessonTheme(lessonUid)
 
@@ -168,6 +180,7 @@ export default function LessonPage() {
     if (
       !lesson ||
       !lessonAccessible ||
+      gateBlocked ||
       loading ||
       initialized.current ||
       lessonSteps.length === 0
@@ -178,15 +191,22 @@ export default function LessonPage() {
       (s) => !progress.completedStepUids.includes(s.uid),
     )
     setIndex(firstIncomplete === -1 ? lessonSteps.length - 1 : firstIncomplete)
-  }, [lesson, lessonAccessible, lessonSteps, loading, progress.completedStepUids])
+  }, [
+    lesson,
+    lessonAccessible,
+    gateBlocked,
+    lessonSteps,
+    loading,
+    progress.completedStepUids,
+  ])
 
   // Demonstration steps complete simply by being viewed (once progress loaded).
   useEffect(() => {
-    if (loading || !lessonAccessible) return
+    if (loading || !lessonAccessible || gateBlocked) return
     if (step && step.stepType === 'demo') {
       completeStep(step.uid)
     }
-  }, [step, completeStep, loading, lessonAccessible])
+  }, [step, completeStep, loading, lessonAccessible, gateBlocked])
 
   if (!lesson || !step) {
     return (
@@ -241,6 +261,17 @@ export default function LessonPage() {
     )
   }
 
+  // Gate: the previous lesson is complete but its AI practice hasn't been done
+  // yet, so send the learner to review it before they can start this lesson.
+  if (needsReview && previousLesson) {
+    return (
+      <Navigate
+        to={getReviewPracticePath(previousLesson.uid, lesson.uid)}
+        replace
+      />
+    )
+  }
+
   const answer = progress.answers[step.uid]
   const answered = Boolean(answer)
   const isLastStep = index === lessonSteps.length - 1
@@ -286,6 +317,13 @@ export default function LessonPage() {
       : 'bg-accent-500'
   const nextLesson =
     lessonOrder === -1 ? undefined : allLessons[lessonOrder + 1]
+  // Starting the next lesson first routes through this lesson's AI review
+  // practice ("reviewing old concepts") unless it's already been done.
+  const nextLessonStartPath = nextLesson
+    ? hasCompletedPractice(lesson.uid, progress)
+      ? getLessonPath(nextLesson.uid)
+      : getReviewPracticePath(lesson.uid, nextLesson.uid)
+    : undefined
 
   return (
     <ImmersiveBackground>
@@ -311,7 +349,6 @@ export default function LessonPage() {
           Lessons
         </Link>
 
-        {/* Progress overview: mastery bar + step dot navigation. */}
         <div className="relative mt-3">
           <div
             className="bg-halo pointer-events-none absolute -inset-x-3 -top-8 h-32 sm:-inset-x-6"
@@ -333,7 +370,6 @@ export default function LessonPage() {
                 accentBar={theme.accentBar}
               />
             </div>
-            {/* Step indicator: one dot per step, current highlighted. */}
             <div className="mt-4 flex items-center gap-1 sm:gap-1.5">
               {lessonSteps.map((s, i) => {
                 const done = progress.completedStepUids.includes(s.uid)
@@ -377,7 +413,6 @@ export default function LessonPage() {
             exit="exit"
             transition={{ duration: 0.28, ease: 'easeOut' }}
           >
-            {/* Step header: kind chip + counter. */}
             <div className="mt-6 flex flex-wrap items-center gap-x-2.5 gap-y-1">
               <span className={`chip ${stepChipClass}`}>
                 <span
@@ -466,7 +501,7 @@ export default function LessonPage() {
                   &mdash; {nextLesson.text}
                 </p>
                 <Link
-                  to={`/lesson/${nextLesson.uid}`}
+                  to={nextLessonStartPath ?? `/lesson/${nextLesson.uid}`}
                   className="btn-primary mt-5 max-w-full whitespace-normal"
                 >
                   Start {nextLesson.displayName} &rarr;

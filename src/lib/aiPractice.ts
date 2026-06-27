@@ -12,15 +12,19 @@ interface PracticeResponse {
 }
 
 /**
- * Models tried in order. The first is preferred; later entries are free-tier
- * fallbacks used when an earlier model is overloaded or rate limited. Keep the
- * strongest/most-preferred model first so healthy requests use it.
+ * Models tried in order. The first is preferred; later entries are fallbacks
+ * used when an earlier model is overloaded or rate limited.
+ *
+ * Practice generation is a short, latency-sensitive, structured-JSON task, so
+ * the primary is `gemini-3.1-flash-lite` — Google's fastest/cheapest Gemini 3
+ * model — with the heavier `gemini-3.5-flash` and the 2.5 Flash family as
+ * quality/availability fallbacks.
  */
 const PRACTICE_MODELS = [
+  'gemini-3.1-flash-lite',
   'gemini-3.5-flash',
   'gemini-2.5-flash',
   'gemini-2.5-flash-lite',
-  'gemini-2.0-flash',
 ] as const
 
 const practiceResponseSchema = Schema.object({
