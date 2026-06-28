@@ -30,3 +30,7 @@ skills-lock.json
 *.njsproj
 *.sln
 *.sw?
+
+# Readme file
+*.md
+!README.md
