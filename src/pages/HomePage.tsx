@@ -130,6 +130,55 @@ function StatCard({ value, label }: { value: string; label: string }) {
 }
 
 /**
+ * Capstone call-to-action shown once every lesson is complete. Routes to the
+ * "Sail the High Seas" game, which reuses each lesson's challenge as a verb.
+ */
+function HighSeasBanner() {
+  return (
+    <Link
+      to="/high-seas"
+      className="lift glass-dark group flex flex-col gap-4 overflow-hidden rounded-2xl p-5 sm:flex-row sm:items-center sm:justify-between"
+    >
+      <div className="flex items-start gap-4">
+        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-white/10 text-accent-400 ring-1 ring-white/15">
+          <svg
+            width="26"
+            height="26"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={1.8}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M3 15c1.5 1 3 1 4.5 0M12 4v9M12 13l7-2-7-3M5 13l7 8 7-8" />
+          </svg>
+        </div>
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-accent-400">
+            Capstone unlocked
+          </p>
+          <h2 className="font-display mt-1 text-xl font-bold text-white">
+            Sail the High Seas
+          </h2>
+          <p className="mt-1 max-w-md text-sm leading-relaxed text-slate-300">
+            Put every lesson to work: aim cannons, dump cargo to outrun the navy,
+            and trade your way to a fortune.
+          </p>
+        </div>
+      </div>
+      <span className="btn-primary glow-brand shrink-0 self-start px-5 py-2.5 sm:self-center">
+        Set sail
+        <span className="transition-transform duration-300 group-hover:translate-x-0.5">
+          &rarr;
+        </span>
+      </span>
+    </Link>
+  )
+}
+
+/**
  * A single lesson card showing its accent glyph, title, description, mastery
  * progress, and an action to open the lesson.
  * @param props.lesson The lesson to display.
@@ -304,6 +353,11 @@ export default function HomePage() {
                 />
               </div>
             </div>
+            {completedLessons === allLessons.length && (
+              <motion.div variants={riseItem} className="mb-5 lg:mb-6">
+                <HighSeasBanner />
+              </motion.div>
+            )}
             <motion.div
               className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
               variants={staggerContainer}

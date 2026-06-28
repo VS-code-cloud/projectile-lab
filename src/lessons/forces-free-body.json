@@ -104,7 +104,7 @@
     {
       "uid": "step-7-warp-berth",
       "stepType": "question",
-      "displayText": "Capstone: warp the captured prize into her berth. Taking 'toward the dock' as positive, the wind sets you at the rocks with −300 N while the current helps with +120 N. Enter the capstan haul (N, toward the dock) so the net force is a gentle +60 N into the berth. Haul again as needed.",
+      "displayText": "Capstone: pull your ship into the dock. Counting 'toward the dock' as positive, the wind pushes you toward the rocks at −300 N while the current helps you toward the dock at +120 N. Enter the rope pull (N, toward the dock) so the total (net) force is a gentle +60 N toward the dock. Try again as needed.",
       "interactiveComponent": "KedgeGame3D",
       "expected": [60],
       "explanation": "Net force adds every force with sign: F_net = F_wind + F_current + F_haul. For F_net = +60 with wind −300 and current +120: F_haul = 60 − (−300 + 120) = 60 + 180 = 240 N.",

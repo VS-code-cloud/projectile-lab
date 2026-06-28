@@ -176,6 +176,10 @@ export function NavalGameShell({
         ? 'bg-amber-100 text-amber-800 border-amber-300'
         : 'bg-slate-100 text-slate-700 border-slate-200'
 
+  // At rest with nothing to report the idle banner just repeats the intro, so
+  // only surface it once the shot is animating or an outcome exists.
+  const showBanner = phase === 'acting' || status !== null || answered
+
   const canCommit = parseInput(inputText) !== null && phase !== 'acting'
 
   // The scene receives deferred handlers (onProgress/onSettled) that it invokes
@@ -198,16 +202,18 @@ export function NavalGameShell({
         <p className="text-sm leading-relaxed text-slate-700">{intro}</p>
       </div>
 
-      <div
-        className={`rounded-xl border px-3 py-2 text-center text-base font-semibold ${bannerClass}`}
-        role="status"
-        aria-live="polite"
-      >
-        {banner.text}
-        {result && phase !== 'acting' && resultSuffix && (
-          <span className="ml-1 font-medium"> {resultSuffix(result)}</span>
-        )}
-      </div>
+      {showBanner && (
+        <div
+          className={`rounded-xl border px-3 py-2 text-center text-base font-semibold ${bannerClass}`}
+          role="status"
+          aria-live="polite"
+        >
+          {banner.text}
+          {result && phase !== 'acting' && resultSuffix && (
+            <span className="ml-1 font-medium"> {resultSuffix(result)}</span>
+          )}
+        </div>
+      )}
 
       {webglOk ? (
         <div className="h-72 w-full overflow-hidden rounded-xl border border-slate-200 sm:h-80">

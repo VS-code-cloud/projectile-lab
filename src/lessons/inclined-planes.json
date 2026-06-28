@@ -102,7 +102,7 @@
     {
       "uid": "step-7-heeling-deck",
       "stepType": "question",
-      "displayText": "Capstone: heel the deck to run a shot to the lee gun. The ball rolls L = 5 m from the centerline to the gun port; the rammer can safely catch it at v = 7 m/s. Enter the heel angle θ (degrees) so the ball arrives at that speed. (g = 9.8 m/s².) Adjust the heel until it settles in the cradle.",
+      "displayText": "Capstone: set the loading ramp's tilt so a powder keg rolls down to the gun crew. The keg rolls L = 5 m down the ramp; the crew can safely catch it if it arrives at v = 7 m/s. Enter the ramp angle θ (degrees) so the keg reaches that speed. (g = 9.8 m/s².) Adjust the tilt until it rolls in just right.",
       "interactiveComponent": "HeelDeckGame3D",
       "expected": [7],
       "explanation": "Down a frictionless incline a = g·sinθ, and from rest over length L the speed is v = √(2aL) = √(2·g·sinθ·L). Setting v = 7 with L = 5: 49 = 2·9.8·5·sinθ = 98·sinθ, so sinθ = 0.5 and θ = 30°.",

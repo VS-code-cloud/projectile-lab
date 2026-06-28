@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from 'react'
+import { useEffect, useRef } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import { Text } from '@react-three/drei'
 import * as THREE from 'three'
@@ -10,20 +10,73 @@ import {
   NavalGameShell,
   Ship,
   VectorArrow,
+  SHIP_DECK_Y,
 } from './naval'
 import type { NavalSceneProps } from './naval'
 
-const SCALE = 0.6
 const ACT_DURATION = 2
-const BALL_R = 0.35
+const KEG_RADIUS = 0.42
 const ARROW_SCALE = 3.2
-
-function ux(meters: number): number {
-  return meters * SCALE
-}
+const PREVIEW_DEG = 12
+// Starboard-side pivot on the main deck (cannon end, bow-ward).
+const PIVOT_X = 0.9
+const PIVOT_Y = SHIP_DECK_Y + 0.1
+const PIVOT_Z = 2.2
+const IDLE_CAMERA = new THREE.Vector3(-11, 10, 18)
+const IDLE_LOOK_AT = new THREE.Vector3(0, SHIP_DECK_Y + 1.5, 0)
+const RELOAD_CAMERA = new THREE.Vector3(-2.4, SHIP_DECK_Y + 1.85, PIVOT_Z + 3.6)
+const RELOAD_LOOK_AT = new THREE.Vector3(PIVOT_X, SHIP_DECK_Y + 0.3, PIVOT_Z - 1.4)
 
 function easeOutCubic(t: number): number {
   return 1 - (1 - t) ** 3
+}
+
+function isReloadPhase(phase: NavalSceneProps['phase']): boolean {
+  return phase === 'acting' || phase === 'result'
+}
+
+/** Thin wooden gangplank along local −z; pivot is at local origin (cannon end). */
+function RampPlank({ length }: { length: number }) {
+  return (
+    <group>
+      <mesh position={[0, 0, -length / 2]} castShadow receiveShadow>
+        <boxGeometry args={[1.3, 0.14, length]} />
+        <meshStandardMaterial color="#a0732a" roughness={0.85} />
+      </mesh>
+      <mesh position={[-0.62, 0.22, -length / 2]} castShadow>
+        <boxGeometry args={[0.12, 0.28, length]} />
+        <meshStandardMaterial color="#6b4a1e" roughness={0.9} />
+      </mesh>
+      <mesh position={[0.62, 0.22, -length / 2]} castShadow>
+        <boxGeometry args={[0.12, 0.28, length]} />
+        <meshStandardMaterial color="#6b4a1e" roughness={0.9} />
+      </mesh>
+    </group>
+  )
+}
+
+/** Deck cannon + gun crew at the pivot (low) end, aimed out over the starboard rail. */
+function GunCrewTarget() {
+  return (
+    <group rotation={[0, -Math.PI / 2, 0]}>
+      <mesh position={[0, 0.28, 0.55]} castShadow>
+        <cylinderGeometry args={[0.32, 0.36, 0.65, 12]} />
+        <meshStandardMaterial color="#46301a" roughness={0.9} />
+      </mesh>
+      <mesh position={[0, 0.28, -0.55]} castShadow>
+        <cylinderGeometry args={[0.32, 0.36, 0.65, 12]} />
+        <meshStandardMaterial color="#46301a" roughness={0.9} />
+      </mesh>
+      <mesh position={[0.55, 0.22, 0]} castShadow>
+        <boxGeometry args={[0.85, 0.45, 1]} />
+        <meshStandardMaterial color="#5c4326" roughness={0.9} />
+      </mesh>
+      <mesh position={[1.05, 0.38, 0]} rotation={[0, 0, -Math.PI / 2]} castShadow>
+        <cylinderGeometry args={[0.26, 0.32, 1.4, 14]} />
+        <meshStandardMaterial color="#1f2329" metalness={0.7} roughness={0.4} />
+      </mesh>
+    </group>
+  )
 }
 
 interface HeelDeckSceneParams {
@@ -40,18 +93,16 @@ function HeelDeckScene({
   onSettled,
 }: HeelDeckSceneParams & NavalSceneProps) {
   const { camera } = useThree()
-  const lookAt = useRef(new THREE.Vector3(0, 0, 0))
+  const lookAt = useRef(IDLE_LOOK_AT.clone())
   const simT = useRef(0)
   const done = useRef(false)
-  const heelRef = useRef<THREE.Group>(null)
-  const ballGroupRef = useRef<THREE.Group>(null)
+  const rampRef = useRef<THREE.Group>(null)
+  const kegRef = useRef<THREE.Mesh>(null)
 
   const phaseRef = useRef(phase)
   const inputRef = useRef(committedInput)
-  useEffect(() => {
-    phaseRef.current = phase
-    inputRef.current = committedInput
-  }, [phase, committedInput])
+  phaseRef.current = phase
+  inputRef.current = committedInput
 
   useEffect(() => {
     if (phase === 'acting') {
@@ -61,125 +112,108 @@ function HeelDeckScene({
   }, [phase, shotId])
 
   const animate = !reducedMotion
-  const deckLen = ux(length)
-  const idleCam = useMemo(() => new THREE.Vector3(-18, 16, 30), [])
-  const idleLook = useMemo(() => new THREE.Vector3(deckLen * 0.35, 0, 0), [deckLen])
+  const rampLen = length
+
+  /** Places the keg along the plank: t in [0,1] maps raised end → cannon. */
+  function setKeg(t: number) {
+    kegRef.current?.position.set(0, KEG_RADIUS + 0.08, -rampLen * (1 - t))
+  }
 
   useFrame((_, rawDelta) => {
     const delta = Math.min(rawDelta, 0.05)
-    const k = reducedMotion ? 40 : 3
+    const zoomed = isReloadPhase(phaseRef.current)
+    const k = reducedMotion ? 40 : zoomed ? 6 : 3
 
-    let desiredPos: THREE.Vector3
-    let desiredLook: THREE.Vector3
+    let rampDeg: number
+    let t: number
 
     if (phaseRef.current === 'acting' && !done.current) {
       simT.current += delta
       const progress = Math.min(simT.current / ACT_DURATION, 1)
       const eased = easeOutCubic(progress)
-      const heelDeg = inputRef.current * eased
-      const distM = length * eased
-      const ballX = ux(distM)
-      ballGroupRef.current?.position.set(ballX, BALL_R + 0.15, 0)
-      onProgress(distM)
-
-      heelRef.current?.rotation.set(0, 0, THREE.MathUtils.degToRad(heelDeg))
-      desiredLook = new THREE.Vector3(ballX * 0.6, 0, 0)
-      desiredPos = new THREE.Vector3(ballX - 10, 12, 22)
-
+      rampDeg = inputRef.current
+      t = eased
+      onProgress((inputRef.current === 0 ? 0 : 1) * progress * 5)
       if (progress >= 1 && !done.current) {
         done.current = true
         onSettled()
       }
     } else if (phaseRef.current === 'result') {
-      const heelDeg = inputRef.current
-      const ballX = deckLen
-      ballGroupRef.current?.position.set(ballX, BALL_R + 0.15, 0)
-      heelRef.current?.rotation.set(0, 0, THREE.MathUtils.degToRad(heelDeg))
-      desiredLook = new THREE.Vector3(ballX * 0.6, 0, 0)
-      desiredPos = new THREE.Vector3(ballX - 10, 12, 22)
+      rampDeg = inputRef.current
+      t = 1
     } else {
-      heelRef.current?.rotation.set(0, 0, 0)
-      ballGroupRef.current?.position.set(0, BALL_R + 0.15, 0)
-      desiredPos = idleCam
-      desiredLook = idleLook
+      rampDeg = PREVIEW_DEG
+      t = 0
     }
+
+    rampRef.current?.rotation.set(THREE.MathUtils.degToRad(rampDeg), 0, 0)
+    setKeg(t)
+
+    const desiredPos = zoomed ? RELOAD_CAMERA : IDLE_CAMERA
+    const desiredLook = zoomed ? RELOAD_LOOK_AT : IDLE_LOOK_AT
 
     dampVec3(camera.position, desiredPos, k, delta)
     dampVec3(lookAt.current, desiredLook, k, delta)
     camera.lookAt(lookAt.current)
   })
 
-  const thetaRad = THREE.MathUtils.degToRad(phase === 'idle' ? 0 : committedInput)
-  const sinLen = Math.max(0.4, Math.sin(thetaRad) * ARROW_SCALE)
-  const cosLen = Math.max(0.4, Math.cos(thetaRad) * ARROW_SCALE)
+  const thetaRad = THREE.MathUtils.degToRad(
+    phase === 'idle' ? PREVIEW_DEG : committedInput,
+  )
+  const sinLen = Math.max(0.5, Math.sin(thetaRad) * ARROW_SCALE)
+  const cosLen = Math.max(0.5, Math.cos(thetaRad) * ARROW_SCALE)
 
   return (
     <>
       <NavalEnvironment sparkleSpeed={animate ? 0.35 : 0} />
 
-      <group position={[0, 0.4, 0]}>
-        <Ship
-          rotation={[0, Math.PI / 2, 0]}
-          hullColor="#4a6fa5"
-          sailColor="#e8eef5"
-          flag={false}
-          float
-          animate={animate}
-        />
+      <Ship position={[0, 0, 0]} float={false} animate={animate} />
 
-        <group ref={heelRef} position={[0, 1.6, 0]}>
-          {/* Flat deck plank — ball rolls along +x to the lee gun port. */}
-          <mesh position={[deckLen / 2, 0, 0]} castShadow receiveShadow>
-            <boxGeometry args={[deckLen + 1.2, 0.18, 7]} />
-            <meshStandardMaterial color="#8b7355" roughness={0.85} />
-          </mesh>
+      {/* Gangplank pivots at the cannon end on the starboard main deck. */}
+      <group ref={rampRef} position={[PIVOT_X, PIVOT_Y, PIVOT_Z]}>
+        <RampPlank length={rampLen} />
+        <GunCrewTarget />
 
-          {/* Gun-port cradle at the lee edge. */}
-          <mesh position={[deckLen + 0.2, -0.05, 0]} castShadow>
-            <boxGeometry args={[0.7, 0.45, 1.4]} />
-            <meshStandardMaterial color="#5c5348" roughness={0.9} />
-          </mesh>
-          <Text
-            position={[deckLen + 0.2, 1.2, 0]}
-            fontSize={1.4}
-            color="#fde047"
-            outlineWidth={0.06}
-            outlineColor="#3a2a05"
-            anchorX="center"
-            anchorY="middle"
-          >
-            Lee gun
-          </Text>
+        <mesh ref={kegRef} castShadow>
+          <cylinderGeometry args={[KEG_RADIUS * 0.85, KEG_RADIUS, KEG_RADIUS * 1.6, 16]} />
+          <meshStandardMaterial
+            color="#46301a"
+            roughness={0.85}
+            emissive="#b45309"
+            emissiveIntensity={0.22}
+          />
+        </mesh>
 
-          {phase !== 'idle' && (
-            <group ref={ballGroupRef} position={[0, BALL_R + 0.15, 0]}>
-              <mesh castShadow>
-                <sphereGeometry args={[BALL_R, 20, 20]} />
-                <meshStandardMaterial
-                  color="#14181f"
-                  metalness={0.7}
-                  roughness={0.3}
-                  emissive="#b45309"
-                  emissiveIntensity={0.18}
-                />
-              </mesh>
-              <VectorArrow
-                origin={[0, 0, 0]}
-                dir={[1, 0, 0]}
-                length={sinLen}
-                color="#fbbf24"
-                label="mg·sinθ"
-              />
-              <VectorArrow
-                origin={[0, 0, 0]}
-                dir={[0, -1, 0]}
-                length={cosLen}
-                color="#60a5fa"
-                label="mg·cosθ"
-              />
-            </group>
-          )}
-        </group>
+        {phase !== 'idle' && (
+          <group position={[0, KEG_RADIUS + 0.35, -rampLen * 0.38]}>
+            <VectorArrow
+              origin={[0, 0, 0]}
+              dir={[0, 0, 1]}
+              length={sinLen}
+              color="#fbbf24"
+              label="mg·sinθ"
+            />
+            <VectorArrow
+              origin={[0, 0, 0]}
+              dir={[0, -1, 0]}
+              length={cosLen}
+              color="#60a5fa"
+              label="mg·cosθ"
+            />
+          </group>
+        )}
+
+        <Text
+          position={[-0.6, 1.6, 0.4]}
+          fontSize={0.55}
+          color="#fde047"
+          outlineWidth={0.03}
+          outlineColor="#3a2a05"
+          anchorX="center"
+          anchorY="middle"
+        >
+          Gun crew
+        </Text>
       </group>
     </>
   )
@@ -194,7 +228,7 @@ export default function HeelDeckGame3D({
   const target = step.params?.target ?? 7
   const tolerance = step.params?.tolerance ?? 0.4
 
-  const idleText = `Heel the deck to run a shot to the lee gun. The ball rolls L = ${length} m to the gun port; the rammer can catch it safely at v = ${target} m/s. Enter the heel angle θ.`
+  const idleText = `Set the loading ramp's tilt so a powder keg rolls down to the gun crew. The keg rolls L = ${length} m down the ramp; the crew can safely catch it at v = ${target} m/s. Enter the ramp angle θ.`
 
   return (
     <NavalGameShell
@@ -203,9 +237,9 @@ export default function HeelDeckGame3D({
       target={target}
       answered={answered}
       onSubmit={onSubmit}
-      inputLabel="Heel angle θ (degrees)"
-      actionLabel="Heel & release"
-      busyLabel="Heeling…"
+      inputLabel="Ramp angle θ (degrees)"
+      actionLabel="Set & release"
+      busyLabel="Rolling…"
       parseInput={(text) => {
         const n = Number(text)
         return Number.isFinite(n) && n >= 0 && n <= 90 ? Math.round(n) : null
@@ -214,12 +248,12 @@ export default function HeelDeckGame3D({
       statusText={{
         idle: idleText,
         acting: 'Rolling…',
-        hit: 'Right heel — the shot rolls into the cradle!',
-        short: 'Too shallow — the ball stalls before the gun port.',
-        far: 'Too steep — it arrives like a battering ram and stoves the port.',
+        hit: 'Just right — the keg reaches the gun crew at the perfect speed to reload!',
+        short: 'Too shallow — the keg stalls before it reaches the crew.',
+        far: 'Too steep — the keg slams in too fast and breaks apart.',
       }}
-      resultSuffix={(r) => `Ball reaches the port at ${r.value.toFixed(1)} m/s.`}
-      cameraInit={[-18, 16, 30]}
+      resultSuffix={(r) => `Keg reaches the gun crew at ${r.value.toFixed(1)} m/s.`}
+      cameraInit={[-11, 10, 18]}
       renderScene={(sceneProps) => (
         <HeelDeckScene length={length} {...sceneProps} />
       )}

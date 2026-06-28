@@ -27,7 +27,7 @@ export default function KedgeHarness() {
   return (
     <main className="mx-auto max-w-3xl px-4 py-8">
       <h1 className="font-display mb-4 text-lg font-semibold text-slate-900">
-        Warp into the Berth (dev harness)
+        Pull into the Dock (dev harness)
       </h1>
       <Suspense
         fallback={<div className="h-72 w-full animate-shimmer rounded-xl" />}

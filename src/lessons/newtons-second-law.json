@@ -101,10 +101,10 @@
     {
       "uid": "step-7-lighten-ship",
       "stepType": "question",
-      "displayText": "Capstone: a Navy frigate is overhauling you. Your sails drive the ship with a steady F = 4000 N, but laden at 1200 kg you're too slow to escape. Enter the mass (kg) to KEEP aboard so the ship reaches the escape acceleration a = 5 m/s\u00B2 — everything heavier goes over the side. Re-trim as often as you like.",
+      "displayText": "Capstone: a navy ship is catching up to you. Your sails drive the ship with a steady F = 4000 N, but loaded at 1200 kg you're too slow to escape. Enter the mass (kg) to KEEP aboard so the ship reaches the escape acceleration a = 5 m/s\u00B2 — everything heavier goes over the side. Re-trim as often as you like.",
       "interactiveComponent": "JettisonGame3D",
       "expected": [800],
-      "explanation": "Rearrange F = m\u00B7a to m = F/a = 4000/5 = 800 kg. Keeping 800 kg (jettisoning 400) gives a = F/m = 4000/800 = 5 m/s\u00B2.",
+      "explanation": "Rearrange F = m\u00B7a to m = F/a = 4000/5 = 800 kg. Keeping 800 kg (throwing 400 kg overboard) gives a = F/m = 4000/800 = 5 m/s\u00B2.",
       "params": { "force": 4000, "accelReq": 5, "ladenMass": 1200, "target": 800, "tolerance": 40 }
     }
   ],

@@ -12,12 +12,15 @@ import {
   VectorArrow,
 } from './naval'
 import type { NavalSceneProps } from './naval'
+import type { BandStatus } from '../../lib/navalChallenge'
 
 const ACT_DURATION = 2.5
 const ARROW_SCALE = 0.045
-const DOCK_X = 24
-const ROCKS_X = -24
-const PIER_X = 38
+// World x positions along the channel (+x = toward the dock / land).
+// The dock's seaward face is at x = 24; the ship is ~1.7 wide in x.
+const BERTH_X = 21 // docked neatly alongside, small gap (a hit)
+const DOCK_FACE_X = 22.5 // jammed against the dock face (a crash) — never past it
+const ROCKS_X = -26 // jagged rocks to leeward (a "too little" miss)
 
 function easeOutCubic(t: number): number {
   return 1 - (1 - t) ** 3
@@ -27,12 +30,35 @@ interface KedgeSceneParams {
   windForce: number
   currentForce: number
   targetNet: number
+  tolerance: number
+}
+
+/** Where the ship ends up, and how, for a given rope pull. */
+function outcomeFor(
+  haul: number,
+  windForce: number,
+  currentForce: number,
+  targetNet: number,
+  tolerance: number,
+): { x: number; status: BandStatus; crashed: boolean } {
+  const error = netForce(windForce, currentForce, haul) - targetNet
+  if (Math.abs(error) <= tolerance) {
+    return { x: BERTH_X, status: 'hit', crashed: false }
+  }
+  if (error < 0) {
+    // Too little pull: wind/current win and set you down onto the rocks.
+    const x = Math.max(ROCKS_X, ROCKS_X + 6 + error * 0.12)
+    return { x, status: 'short', crashed: false }
+  }
+  // Too much pull: you drive into the dock and stop hard (never through it).
+  return { x: DOCK_FACE_X, status: 'far', crashed: true }
 }
 
 function KedgeScene({
   windForce,
   currentForce,
   targetNet,
+  tolerance,
   phase,
   committedInput,
   shotId,
@@ -62,15 +88,12 @@ function KedgeScene({
 
   const animate = !reducedMotion
   const idleCam = useMemo(() => new THREE.Vector3(-26, 28, 54), [])
-  const idleLook = useMemo(() => new THREE.Vector3(4, 0, 0), [])
+  const idleLook = useMemo(() => new THREE.Vector3(6, 0, 0), [])
 
-  /** Map net force error to a berth position along the channel (+x = dock). */
-  function finalShipX(haul: number): number {
-    const n = netForce(windForce, currentForce, haul)
-    const error = n - targetNet
-    if (Math.abs(error) <= 20) return DOCK_X
-    if (error < -20) return ROCKS_X + error * 0.15
-    return DOCK_X + error * 0.35
+  /** Applies the resting pose: crashed ships jam against the dock at an angle. */
+  function poseShip(x: number, crashed: boolean) {
+    shipRef.current?.position.set(x, 0.4, 0)
+    shipRef.current?.rotation.set(0, crashed ? -0.22 : 0, crashed ? 0.16 : 0)
   }
 
   useFrame((_, rawDelta) => {
@@ -84,9 +107,22 @@ function KedgeScene({
       simT.current += delta
       const progress = Math.min(simT.current / ACT_DURATION, 1)
       const eased = easeOutCubic(progress)
-      const endX = finalShipX(haulRef.current)
+      const { x: endX, crashed } = outcomeFor(
+        haulRef.current,
+        windForce,
+        currentForce,
+        targetNet,
+        tolerance,
+      )
       const shipX = endX * eased
+      // Hold the ship level until the very end; a crash tilts on impact.
+      const crashing = crashed && progress > 0.85
       shipRef.current?.position.set(shipX, 0.4, 0)
+      shipRef.current?.rotation.set(
+        0,
+        crashing ? -0.22 : 0,
+        crashing ? 0.16 : 0,
+      )
       onProgress(Math.abs(shipX))
 
       desiredLook = new THREE.Vector3(shipX + 8, 0, 0)
@@ -97,12 +133,18 @@ function KedgeScene({
         onSettled()
       }
     } else if (phaseRef.current === 'result') {
-      const shipX = finalShipX(haulRef.current)
-      shipRef.current?.position.set(shipX, 0.4, 0)
-      desiredLook = new THREE.Vector3(shipX + 8, 0, 0)
-      desiredPos = new THREE.Vector3(shipX - 20, 26, 46)
+      const { x, crashed } = outcomeFor(
+        haulRef.current,
+        windForce,
+        currentForce,
+        targetNet,
+        tolerance,
+      )
+      poseShip(x, crashed)
+      desiredLook = new THREE.Vector3(x + 8, 0, 0)
+      desiredPos = new THREE.Vector3(x - 20, 26, 46)
     } else {
-      shipRef.current?.position.set(0, 0.4, 0)
+      poseShip(0, false)
       desiredPos = idleCam
       desiredLook = idleLook
     }
@@ -121,10 +163,10 @@ function KedgeScene({
 
   const rockPositions = useMemo(
     () => [
-      [-28, 0.8, -3],
-      [-30, 1.2, 2],
-      [-26, 0.6, 5],
-      [-32, 1.5, -1],
+      [ROCKS_X - 2, 0.8, -3],
+      [ROCKS_X - 4, 1.2, 2],
+      [ROCKS_X, 0.6, 5],
+      [ROCKS_X - 6, 1.5, -1],
     ],
     [],
   )
@@ -133,18 +175,37 @@ function KedgeScene({
     <>
       <NavalEnvironment sparkleSpeed={animate ? 0.35 : 0} />
 
-      {/* Stone pier / berth on the +x side. */}
-      <group position={[DOCK_X + 4, 0, 0]}>
-        <mesh position={[0, 2.5, 0]} castShadow receiveShadow>
-          <boxGeometry args={[8, 5, 28]} />
-          <meshStandardMaterial color="#8a8276" roughness={0.95} />
+      {/* Low, broad grassy coast behind the dock. It sits only just above the
+          waterline (top ≈ y=10) and runs far inland and along the shore so its
+          far/side edges dissolve into the fog — so it reads as continuous ground
+          stretching to the horizon, not a green wall. The seaward face stays at
+          x≈30, meeting the dock. */}
+      <group position={[830, 0, 0]}>
+        <mesh position={[0, -3, 0]} receiveShadow castShadow>
+          <boxGeometry args={[1600, 26, 2200]} />
+          <meshStandardMaterial color="#3c9446" roughness={1} />
         </mesh>
-        <mesh position={[0, 5.2, 0]} castShadow>
-          <boxGeometry args={[8.4, 0.6, 28.4]} />
-          <meshStandardMaterial color="#7c7468" roughness={0.95} />
+        {/* Sandy beach strip along the waterline at the seaward edge. */}
+        <mesh position={[-800.1, 1.4, 0]}>
+          <boxGeometry args={[3, 4, 2200]} />
+          <meshStandardMaterial color="#d8c79a" roughness={1} />
         </mesh>
+      </group>
+
+      {/* Wooden dock reaching out from the shore to the mooring spot. */}
+      <group position={[29, 0, 0]}>
+        <mesh position={[0, 1.1, 0]} castShadow receiveShadow>
+          <boxGeometry args={[10, 0.6, 14]} />
+          <meshStandardMaterial color="#9b7b4a" roughness={0.9} />
+        </mesh>
+        {[-6, -2, 2, 6].map((z) => (
+          <mesh key={z} position={[-4.4, 0.2, z]} castShadow>
+            <cylinderGeometry args={[0.35, 0.35, 2.2, 8]} />
+            <meshStandardMaterial color="#5c4326" roughness={0.95} />
+          </mesh>
+        ))}
         <Text
-          position={[0, 8, 0]}
+          position={[0, 3.4, 0]}
           fontSize={2.6}
           color="#fde047"
           outlineWidth={0.08}
@@ -152,11 +213,11 @@ function KedgeScene({
           anchorX="center"
           anchorY="middle"
         >
-          Berth
+          Dock
         </Text>
       </group>
 
-      {/* Jagged rocks on the −x side. */}
+      {/* Jagged rocks on the −x side (where too little pull sets you down). */}
       {rockPositions.map(([x, y, z], i) => (
         <mesh key={i} position={[x, y, z]} rotation={[0, i * 0.7, 0]} castShadow>
           <coneGeometry args={[2.2, y * 2.2, 5]} />
@@ -177,9 +238,6 @@ function KedgeScene({
 
       <group ref={shipRef} position={[0, 0.4, 0]}>
         <Ship
-          rotation={[0, Math.PI / 2, 0]}
-          hullColor="#4a6fa5"
-          sailColor="#e8eef5"
           flag={false}
           float
           animate={animate}
@@ -203,25 +261,17 @@ function KedgeScene({
           dir={[1, 0, 0]}
           length={haulLen}
           color="#fbbf24"
-          label={
-            phase === 'idle'
-              ? 'Haul ? N'
-              : `Haul +${committedInput} N`
-          }
+          label={phase === 'idle' ? 'Your pull ? N' : `Your pull +${committedInput} N`}
         />
       </group>
-
-      {/* Pier face marker for overshoot feedback. */}
-      <mesh position={[PIER_X, 3, 0]} castShadow>
-        <boxGeometry args={[1.5, 6, 20]} />
-        <meshStandardMaterial color="#6b6560" roughness={0.9} transparent opacity={0.35} />
-      </mesh>
     </>
   )
 }
 
-const IDLE_TEXT =
-  'Warp the prize into her berth. Toward the dock is positive: the wind sets you at the rocks (−300 N), the current helps (+120 N). Enter the capstan haul so the net force is a gentle +60 N into the berth.'
+/** Instruction copy built from the (now randomized) situation numbers. */
+function introText(windForce: number, currentForce: number, targetNet: number): string {
+  return `Pull your ship into the dock! Count 'toward the dock' as positive. The wind pushes you toward the rocks at ${windForce} N, and the current helps you toward the dock at +${currentForce} N. Set your rope pull so the total (net) force is a gentle +${targetNet} N toward the dock.`
+}
 
 export default function KedgeGame3D({
   step,
@@ -233,17 +283,18 @@ export default function KedgeGame3D({
   const targetNet = step.params?.targetNet ?? 60
   const tolerance = step.params?.tolerance ?? 20
   const target = step.params?.target ?? targetNet
+  const idleText = introText(windForce, currentForce, targetNet)
 
   return (
     <NavalGameShell
       hookKey="kedge"
-      intro={IDLE_TEXT}
+      intro={idleText}
       target={target}
       answered={answered}
       onSubmit={onSubmit}
-      inputLabel="Capstan haul (N)"
-      actionLabel="Haul"
-      busyLabel="Hauling…"
+      inputLabel="Rope pull (N)"
+      actionLabel="Pull"
+      busyLabel="Pulling…"
       parseInput={(text) => {
         const n = Number(text)
         return Number.isFinite(n) && n >= -500 && n <= 800 ? Math.round(n) : null
@@ -252,14 +303,14 @@ export default function KedgeGame3D({
         evaluateKedge(input, windForce, currentForce, targetNet, tolerance)
       }
       statusText={{
-        idle: IDLE_TEXT,
-        acting: 'Hauling…',
-        hit: 'Net force eased her alongside — moored!',
-        short: 'Too little haul — wind and current set you onto the rocks.',
-        far: 'Over-hauled — you ram the pier.',
+        idle: idleText,
+        acting: 'Pulling…',
+        hit: 'The forces balance — you glide in and dock safely!',
+        short: 'Too little pull — the wind and current push you onto the rocks.',
+        far: 'Too much pull — you crash into the dock!',
       }}
       resultSuffix={(r) =>
-        `Net force ${r.value >= 0 ? '+' : ''}${r.value} N toward the dock.`
+        `Total force ${r.value >= 0 ? '+' : ''}${r.value} N toward the dock.`
       }
       cameraInit={[-26, 28, 54]}
       renderScene={(sceneProps) => (
@@ -267,6 +318,7 @@ export default function KedgeGame3D({
           windForce={windForce}
           currentForce={currentForce}
           targetNet={targetNet}
+          tolerance={tolerance}
           {...sceneProps}
         />
       )}

@@ -21,7 +21,7 @@ export default function HeelDeckHarness() {
   return (
     <main className="mx-auto max-w-3xl px-4 py-8">
       <h1 className="font-display mb-4 text-lg font-semibold text-slate-900">
-        The Heeling Deck (dev harness)
+        Reload the Cannon (dev harness)
       </h1>
       <Suspense
         fallback={<div className="h-72 w-full animate-shimmer rounded-xl" />}

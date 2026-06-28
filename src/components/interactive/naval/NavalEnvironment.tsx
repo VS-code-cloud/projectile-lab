@@ -50,29 +50,29 @@ export function NavalEnvironment({
         <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} receiveShadow>
           <planeGeometry args={[seaSize, seaSize]} />
           <MeshReflectorMaterial
-            resolution={512}
-            mirror={0.55}
-            mixStrength={1.4}
-            blur={[300, 90]}
-            roughness={0.7}
-            depthScale={1.1}
-            minDepthThreshold={0.3}
-            maxDepthThreshold={1.2}
+            resolution={1024}
+            mirror={0.62}
+            mixStrength={1.8}
+            blur={[420, 110]}
+            roughness={0.58}
+            depthScale={1.65}
+            minDepthThreshold={0.18}
+            maxDepthThreshold={1.45}
             color={seaColor}
-            metalness={0.5}
+            metalness={0.42}
           />
         </mesh>
       )}
 
       {sparkles && (
         <Sparkles
-          count={70}
-          scale={[400, 8, 220]}
-          position={[120, 2.5, 0]}
-          size={3}
+          count={120}
+          scale={[520, 10, 280]}
+          position={[130, 2.5, 0]}
+          size={3.2}
           speed={sparkleSpeed}
           color="#ffffff"
-          opacity={0.5}
+          opacity={0.62}
         />
       )}
     </>

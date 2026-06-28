@@ -182,8 +182,6 @@ function JettisonScene({
       <group ref={playerRef} position={[0, 0.4, 0]}>
         <Ship
           rotation={[0, Math.PI / 2, 0]}
-          hullColor="#4a6fa5"
-          sailColor="#e8eef5"
           flag={false}
           float
           animate={animate}
@@ -215,7 +213,7 @@ export default function JettisonGame3D({
   const target = step.params?.target ?? 800
   const tolerance = step.params?.tolerance ?? 40
 
-  const idleText = `A Navy frigate is overhauling you. Your sails drive a steady F = ${force} N, but laden at ${ladenMass} kg you're too slow. Enter the mass to KEEP so you reach the escape acceleration a = ${accelReq} m/s² — the rest goes overboard.`
+  const idleText = `A navy ship is catching up to you. Your sails push with a steady F = ${force} N, but loaded at ${ladenMass} kg you're too slow. Enter the mass to KEEP so you reach the escape acceleration a = ${accelReq} m/s² — the rest goes overboard.`
 
   return (
     <NavalGameShell
@@ -225,7 +223,7 @@ export default function JettisonGame3D({
       answered={answered}
       onSubmit={onSubmit}
       inputLabel="Mass to keep (kg)"
-      actionLabel="Jettison"
+      actionLabel="Throw cargo"
       busyLabel="Lightening…"
       parseInput={(text) => {
         const n = Number(text)
@@ -235,9 +233,9 @@ export default function JettisonGame3D({
       statusText={{
         idle: idleText,
         acting: 'Lightening…',
-        hit: 'Light enough — you surge clear with the most gold still aboard!',
-        short: "You flung treasure you didn't need to lose.",
-        far: 'Still too heavy — the frigate runs you down.',
+        hit: 'Light enough — you speed away with the most gold still aboard!',
+        short: "You threw away cargo you didn't need to.",
+        far: 'Still too heavy — the navy ship catches you.',
       }}
       resultSuffix={(r) =>
         `Kept ${r.value} kg → a = ${(force / r.value).toFixed(2)} m/s².`

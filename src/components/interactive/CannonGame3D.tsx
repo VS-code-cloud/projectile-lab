@@ -12,11 +12,13 @@ import type { StepComponentProps } from '../../lessons/types'
 import { useMotionPreference } from '../../hooks/useMotionPreference'
 import { positionAt, timeToReturn } from '../../physics/kinematics'
 import { evaluateShot, type ShotStatus } from '../../lib/cannonGame'
+import { Ship } from './naval'
 
 // Meters -> world units. Keeps the ~650 m field at a comfortable scene size.
 const WORLD = 0.2
-const BALL_R = 1.6
-const BARREL_LEN = 11
+const BALL_R = 0.32
+const BARREL_LEN = 1.6
+const CANNON_ORIGIN = new THREE.Vector3(0, 2.18, 2.4)
 // Real flights run up to ~11 s; compress so a shot resolves in a few seconds.
 const TIME_SCALE = 2.5
 
@@ -51,67 +53,37 @@ interface FlightSceneProps extends SceneParams {
 /** Muzzle tip position (world units) for a given aim angle. */
 function muzzle(angleDeg: number): THREE.Vector3 {
   const a = THREE.MathUtils.degToRad(angleDeg)
-  return new THREE.Vector3(Math.cos(a) * BARREL_LEN, Math.sin(a) * BARREL_LEN, 0)
+  return CANNON_ORIGIN.clone().add(
+    new THREE.Vector3(Math.cos(a) * BARREL_LEN, Math.sin(a) * BARREL_LEN, 0),
+  )
 }
 
 // Shared sun direction so the sky, key light, and water glint agree.
 const SUN: [number, number, number] = [-70, 48, 96]
 
-/**
- * The seaside fort the cannon defends: a stone rampart at the shore with
- * crenellations, a stone gun platform, and a grassy headland behind it.
- */
-function Fort() {
-  const merlons = useMemo(() => {
-    const xs: number[] = []
-    for (let z = -16; z <= 16; z += 4) xs.push(z)
-    return xs
-  }, [])
+/** Player ship broadside battery: the cannon sits on the ship's own gun deck. */
+function PlayerShipBattery() {
   return (
     <group>
-      {/* Grassy headland (near side / land). Polygon offset keeps it firmly in
-          front of the coplanar sea so the shoreline doesn't z-fight. */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[-994, 0.05, 0]} receiveShadow>
-        <planeGeometry args={[2000, 2000]} />
-        <meshStandardMaterial
-          color="#3c9446"
-          roughness={1}
-          polygonOffset
-          polygonOffsetFactor={-4}
-          polygonOffsetUnits={-4}
-        />
+      <Ship
+        position={[-1.9, -0.08, 0]}
+        scale={1.05}
+        flag={false}
+        hullColor="#9a6a2f"
+        sailColor="#f7ead2"
+      />
+      <mesh position={[-0.28, 1.96, 2.4]} castShadow>
+        <boxGeometry args={[0.78, 0.14, 0.68]} />
+        <meshStandardMaterial color="#4b2f17" roughness={0.86} />
       </mesh>
-
-      {/* Foam line where the headland meets the sea. */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[6.5, 0.14, 0]}>
-        <planeGeometry args={[2.4, 2000]} />
-        <meshBasicMaterial
-          color="#eaf6ff"
-          transparent
-          opacity={0.55}
-          polygonOffset
-          polygonOffsetFactor={-6}
-          polygonOffsetUnits={-6}
-        />
+      <mesh position={[-0.4, 1.72, 1.82]} rotation={[Math.PI / 2, 0, 0]} castShadow>
+        <cylinderGeometry args={[0.14, 0.14, 0.48, 10]} />
+        <meshStandardMaterial color="#2f1f10" roughness={0.8} />
       </mesh>
-
-      {/* Stone gun platform under the cannon. */}
-      <mesh position={[-2, -0.5, 0]} receiveShadow castShadow>
-        <cylinderGeometry args={[12, 13, 1.2, 32]} />
-        <meshStandardMaterial color="#9c958a" roughness={0.95} />
+      <mesh position={[-0.4, 1.72, 2.98]} rotation={[Math.PI / 2, 0, 0]} castShadow>
+        <cylinderGeometry args={[0.14, 0.14, 0.48, 10]} />
+        <meshStandardMaterial color="#2f1f10" roughness={0.8} />
       </mesh>
-
-      {/* Seaward rampart wall. */}
-      <mesh position={[6, 1.6, 0]} castShadow receiveShadow>
-        <boxGeometry args={[2.2, 3.4, 38]} />
-        <meshStandardMaterial color="#8a8276" roughness={0.95} />
-      </mesh>
-      {merlons.map((z) => (
-        <mesh key={z} position={[6, 3.7, z]} castShadow>
-          <boxGeometry args={[2.4, 1.6, 2.2]} />
-          <meshStandardMaterial color="#7c7468" roughness={0.95} />
-        </mesh>
-      ))}
     </group>
   )
 }
@@ -125,7 +97,7 @@ function PirateShip({ x, animate }: { x: number; animate: boolean }) {
       floatIntensity={animate ? 0.7 : 0}
     >
       <group position={[x, 0.4, 0]}>
-        {/* Hull (long axis across the firing line, broadside to the fort). */}
+        {/* Hull (long axis across the firing line, broadside to the player ship). */}
         <mesh position={[0, 0.4, 0]} castShadow>
           <boxGeometry args={[3.4, 2.2, 11]} />
           <meshStandardMaterial color="#5b3a1d" roughness={0.85} />
@@ -285,7 +257,7 @@ function FlightScene({
       const t = Math.min(simT.current, flight)
       const p = positionAt(v, angle, t)
       const bx = ux(p.x)
-      const by = Math.max(0, ux(p.y))
+      const by = CANNON_ORIGIN.y + Math.max(0, ux(p.y))
       ballRef.current?.position.set(bx, by + BALL_R, 0)
       onFollowDistance(p.x)
       desiredLook = new THREE.Vector3(bx, by, 0)
@@ -338,7 +310,7 @@ function FlightScene({
         shadow-mapSize-height={1024}
       />
 
-      <Fort />
+      <PlayerShipBattery />
 
       {/* Open sea — reflective, oversized, and faded into haze by the fog so it
           has no visible edge. */}
@@ -388,21 +360,29 @@ function FlightScene({
         {`Pirate ship · ${target} m`}
       </Text>
 
-      {/* Cannon: wooden carriage + iron barrel aimed at the chosen angle. */}
-      <mesh position={[0, 1.4, 0]} rotation={[Math.PI / 2, 0, 0]} castShadow>
-        <cylinderGeometry args={[2.4, 2.6, 2.2, 24]} />
+      {/* Cannon: compact broadside gun mounted on the player's ship. */}
+      <mesh
+        position={[
+          CANNON_ORIGIN.x - 0.35,
+          CANNON_ORIGIN.y - 0.34,
+          CANNON_ORIGIN.z,
+        ]}
+        rotation={[Math.PI / 2, 0, 0]}
+        castShadow
+      >
+        <cylinderGeometry args={[0.3, 0.35, 0.7, 12]} />
         <meshStandardMaterial color="#6b4a26" roughness={0.8} />
       </mesh>
       <group
         rotation={[0, 0, THREE.MathUtils.degToRad(displayAngle)]}
-        position={[0, 1.6, 0]}
+        position={CANNON_ORIGIN.toArray()}
       >
         <mesh position={[BARREL_LEN / 2, 0, 0]} rotation={[0, 0, -Math.PI / 2]} castShadow>
-          <cylinderGeometry args={[1.2, 1.45, BARREL_LEN, 20]} />
+          <cylinderGeometry args={[0.16, 0.24, BARREL_LEN, 14]} />
           <meshStandardMaterial color="#23272e" metalness={0.7} roughness={0.35} />
         </mesh>
         <mesh position={[BARREL_LEN, 0, 0]} rotation={[0, 0, -Math.PI / 2]} castShadow>
-          <cylinderGeometry args={[1.35, 1.35, 0.7, 20]} />
+          <cylinderGeometry args={[0.28, 0.28, 0.2, 14]} />
           <meshStandardMaterial color="#16191e" metalness={0.7} roughness={0.4} />
         </mesh>
       </group>
@@ -448,9 +428,9 @@ const STATUS_TEXT: Record<ShotStatus, string> = {
 }
 
 /**
- * Capstone mini-game for the 2D projectile lesson, themed as a seaside fort
- * defending against a pirate ship. The cannon's bearing is already locked onto
- * the ship; the learner sets the launch angle so the shot lands on the ship at
+ * Capstone mini-game for the 2D projectile lesson, themed as ship-to-ship
+ * cannon fire against a pirate ship. The cannon's bearing is already locked onto
+ * the enemy; the learner sets the launch angle so the shot lands on the ship at
  * the target range. An immersive smoothed chase camera follows each shot.
  * Unlimited attempts; the first successful shot completes the step. Falls back
  * to a text-only mode (still completable) when WebGL is unavailable.
@@ -465,6 +445,7 @@ export default function CannonGame3D({
   const v = step.params?.v ?? 80
   const target = step.params?.target ?? 500
   const tolerance = step.params?.tolerance ?? 5
+  const highSeasMode = step.params?.highSeasMode === 1
   const { animationsEnabled } = useMotionPreference()
 
   const [webglOk] = useState(detectWebGL)
@@ -557,7 +538,7 @@ export default function CannonGame3D({
         text: STATUS_TEXT[status],
         tone: status === 'hit' ? ('hit' as const) : ('miss' as const),
       }
-    if (answered) return { text: 'Ship sunk — the fort is safe!', tone: 'hit' as const }
+    if (answered) return { text: 'Ship sunk — your crew is safe!', tone: 'hit' as const }
     return { text: 'Set the cannon angle and fire on the ship!', tone: 'idle' as const }
   })()
 
@@ -574,9 +555,10 @@ export default function CannonGame3D({
     <div className="min-w-0 space-y-3">
       <div className="rounded-xl border border-slate-200 bg-white p-3 sm:p-4">
         <p className="text-sm leading-relaxed text-slate-700">
-          Final challenge: defend your fort! A pirate ship is anchored{' '}
-          <span className="font-semibold text-emerald-700">{target} m</span> offshore.
-          Your cannon is already trained on its bearing and fires every shot at{' '}
+          {highSeasMode ? 'Pirate battle: ' : 'Final challenge: fire from your ship! '}
+          An enemy pirate ship is holding position{' '}
+          <span className="font-semibold text-emerald-700">{target} m</span> away.
+          Your broadside cannon is already trained on its bearing and fires every shot at{' '}
           <span className="font-semibold text-slate-900">v = {v} m/s</span>. Set the
           launch <span className="font-semibold">angle</span> so the ball lands on
           the ship (within {tolerance} m). You can solve this with the projectile

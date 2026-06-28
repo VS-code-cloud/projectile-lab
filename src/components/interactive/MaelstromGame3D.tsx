@@ -27,86 +27,75 @@ interface MaelstromSceneParams {
   tolerance: number
 }
 
-function Vortex({ animate }: { animate: boolean }) {
-  const ring1 = useRef<THREE.Mesh>(null)
-  const ring2 = useRef<THREE.Mesh>(null)
-  const ring3 = useRef<THREE.Mesh>(null)
-
-  useFrame((_, delta) => {
-    if (!animate) return
-    const d = delta * 0.9
-    if (ring1.current) ring1.current.rotation.y += d
-    if (ring2.current) ring2.current.rotation.y -= d * 1.3
-    if (ring3.current) ring3.current.rotation.y += d * 0.7
-  })
-
+/** Spinning rings of foam arcs; each arc gets its own heading offset. */
+function FoamBands({
+  count,
+  baseR,
+  step,
+  tube,
+  y,
+}: {
+  count: number
+  baseR: number
+  step: number
+  tube: number
+  y: number
+}) {
   return (
-    <group position={[0, 0.2, 0]}>
-      <mesh rotation={[Math.PI, 0, 0]} position={[0, 4, 0]}>
-        <coneGeometry args={[7, 8, 32, 1, true]} />
-        <meshStandardMaterial
-          color="#0a1628"
-          roughness={0.85}
-          transparent
-          opacity={0.92}
-          side={THREE.DoubleSide}
-        />
-      </mesh>
-      {[5.5, 7.5, 9.5].map((r, i) => (
-        <mesh
-          key={r}
-          ref={i === 0 ? ring1 : i === 1 ? ring2 : ring3}
-          rotation={[-Math.PI / 2, 0, 0]}
-          position={[0, 0.15 + i * 0.08, 0]}
-        >
-          <torusGeometry args={[r, 0.18, 10, 48]} />
-          <meshStandardMaterial
-            color="#1e3a5f"
-            transparent
-            opacity={0.35 - i * 0.06}
-            roughness={0.6}
-          />
-        </mesh>
+    <>
+      {Array.from({ length: count }, (_, i) => (
+        <group key={i} rotation={[0, i * 1.7, 0]}>
+          <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, y, 0]}>
+            <torusGeometry args={[baseR - i * step, tube, 8, 72, Math.PI * 1.5]} />
+            <meshStandardMaterial
+              color="#eaf7ff"
+              transparent
+              opacity={0.55 - i * 0.1}
+              roughness={0.35}
+            />
+          </mesh>
+        </group>
       ))}
-    </group>
+    </>
   )
 }
 
-function RockRing({ worldR, gapAngle }: { worldR: number; gapAngle: number }) {
-  const rocks = useMemo(() => {
-    const count = 28
-    const gapWidth = 0.45
-    const items: Array<[number, number, number, number]> = []
-    for (let i = 0; i < count; i++) {
-      const t = i / count
-      const angle = t * Math.PI * 2
-      const da = Math.atan2(Math.sin(angle - gapAngle), Math.cos(angle - gapAngle))
-      if (Math.abs(da) < gapWidth) continue
-      const rr = worldR + 4 + (i % 3) * 0.8
-      items.push([
-        Math.cos(angle) * rr,
-        0.6 + (i % 4) * 0.35,
-        Math.sin(angle) * rr,
-        1 + (i % 5) * 0.25,
-      ])
-    }
-    return items
-  }, [worldR, gapAngle])
+/**
+ * A top-down whirlpool: concentric discs darkening toward the eye (reading as
+ * depth on the opaque sea) overlaid with two counter-spinning sets of foam arcs.
+ */
+function Whirlpool({ animate }: { animate: boolean }) {
+  const outer = useRef<THREE.Group>(null)
+  const inner = useRef<THREE.Group>(null)
+
+  useFrame((_, d) => {
+    if (!animate) return
+    if (outer.current) outer.current.rotation.y -= d * 0.7
+    if (inner.current) inner.current.rotation.y -= d * 1.5
+  })
+
+  const eye: Array<[string, number]> = [
+    ['#1b5878', 13],
+    ['#123f59', 9.3],
+    ['#0c2f44', 6],
+    ['#061f2d', 3],
+  ]
 
   return (
-    <>
-      {rocks.map(([x, y, z, h], i) => (
-        <mesh
-          key={i}
-          position={[x, y, z]}
-          rotation={[0, i * 0.9, 0]}
-          castShadow
-        >
-          <coneGeometry args={[1.8, h * 2.4, 5]} />
-          <meshStandardMaterial color="#2a2a2a" roughness={0.95} />
+    <group position={[0, 0.06, 0]}>
+      {eye.map(([color, r], i) => (
+        <mesh key={i} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.01 * i, 0]}>
+          <circleGeometry args={[r, 64]} />
+          <meshStandardMaterial color={color} roughness={0.9} />
         </mesh>
       ))}
-    </>
+      <group ref={outer}>
+        <FoamBands count={3} baseR={12.2} step={2.1} tube={0.26} y={0.06} />
+      </group>
+      <group ref={inner}>
+        <FoamBands count={2} baseR={5.6} step={1.9} tube={0.18} y={0.07} />
+      </group>
+    </group>
   )
 }
 
@@ -130,7 +119,8 @@ function MaelstromScene({
   const orbitDone = useRef(false)
   const shipRef = useRef<THREE.Group>(null)
   const shipPos = useRef(new THREE.Vector3())
-  const gapAngle = 0
+  // Direction the ship flings free on a clean orbit (+x).
+  const exitAngle = 0
 
   const worldR = SCALE * radius
   const totalOrbit = ORBIT_LAPS * Math.PI * 2
@@ -234,7 +224,7 @@ function MaelstromScene({
       )
     } else if (phaseRef.current === 'result') {
       const v = inputRef.current
-      const theta = angle.current || gapAngle
+      const theta = angle.current || exitAngle
       const status = orbitStatus(v)
       if (status === 'short') {
         placeOnOrbit(theta, worldR * 0.25)
@@ -260,7 +250,7 @@ function MaelstromScene({
         shipPos.current.z * 0.35 + 38,
       )
     } else {
-      placeOnOrbit(gapAngle, worldR)
+      placeOnOrbit(exitAngle, worldR)
       desiredPos = idleCam
       desiredLook = idleLook
     }
@@ -282,14 +272,11 @@ function MaelstromScene({
   return (
     <>
       <NavalEnvironment sparkleSpeed={animate ? 0.35 : 0} />
-      <Vortex animate={animate} />
-      <RockRing worldR={worldR} gapAngle={gapAngle} />
+      <Whirlpool animate={animate} />
 
       <group ref={shipRef} position={[worldR, 0.4, 0]}>
         <Ship
           rotation={[0, Math.PI / 2, 0]}
-          hullColor="#4a6fa5"
-          sailColor="#e8eef5"
           flag={false}
           float
           animate={animate}
@@ -318,7 +305,7 @@ function MaelstromScene({
 }
 
 function idleCopy(radius: number, target: number): string {
-  return `Caught in the maelstrom! The eddy holds you at radius r = ${radius} m. Your hull and cable can bear about a = ${target} m/s² inward. Enter the rowing speed v that holds that centripetal acceleration, then slingshot through the gap.`
+  return `Caught in a giant whirlpool! It holds you at radius r = ${radius} m. Your hull and rope can bear about a = ${target} m/s² pulling inward. Enter the rowing speed v that keeps that inward acceleration, then slingshot free.`
 }
 
 export default function MaelstromGame3D({
@@ -329,8 +316,6 @@ export default function MaelstromGame3D({
   const radius = step.params?.radius ?? 5
   const target = step.params?.target ?? 20
   const tolerance = step.params?.tolerance ?? 2
-  const mass = step.params?.mass ?? 50
-  void mass
 
   const idle = idleCopy(radius, target)
 
@@ -352,9 +337,9 @@ export default function MaelstromGame3D({
       statusText={{
         idle,
         acting: 'Circling…',
-        hit: 'Steady orbit — cut the cable and slingshot through the gap!',
-        short: 'Too slow — the vortex drags you inward and down.',
-        far: 'Too fast — the inward force snaps the cable into the rocks.',
+        hit: 'Steady orbit — cut the rope and slingshot free!',
+        short: 'Too slow — the whirlpool drags you inward and down.',
+        far: 'Too fast — the inward force snaps the rope and flings you off course.',
       }}
       resultSuffix={(r) =>
         `Centripetal a = v²/r = ${r.value.toFixed(1)} m/s².`

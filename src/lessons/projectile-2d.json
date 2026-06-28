@@ -92,10 +92,10 @@
     {
       "uid": "step-7-cannon-game",
       "stepType": "question",
-      "displayText": "Capstone: aim the cannon. Every shot launches at v = 80 m/s from the ground; pick the launch angle so the cannonball lands in the 500 m target zone. The camera will follow your shot. You have everything you need from this lesson — fire as many times as you like until you hit it.",
+      "displayText": "Capstone: fire from your player ship. Every shot launches at v = 80 m/s; pick the launch angle so the cannonball lands on the enemy pirate ship 500 m away. The camera will follow your shot. You have everything you need from this lesson — fire as many times as you like until you hit it.",
       "interactiveComponent": "CannonGame3D",
       "expected": [500],
-      "explanation": "Flat-ground range is R = v^2*sin(2*theta)/g. Setting R = 500 with v = 80 and g = 9.8 gives sin(2*theta) = 500*9.8/80^2 = 0.766, so 2*theta = 50 degrees or 130 degrees, i.e. theta = 25 degrees or 65 degrees.",
+      "explanation": "Flat-ground range is R = v^2*sin(2*theta)/g. To hit the enemy pirate ship at 500 m with v = 80 and g = 9.8, set sin(2*theta) = 500*9.8/80^2 = 0.766, so 2*theta = 50 degrees or 130 degrees, i.e. theta = 25 degrees or 65 degrees.",
       "params": { "v": 80, "target": 500, "tolerance": 5 }
     }
   ],

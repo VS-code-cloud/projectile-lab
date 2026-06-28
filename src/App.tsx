@@ -10,6 +10,7 @@ const HomePage = lazy(() => import('./pages/HomePage'))
 const LoginPage = lazy(() => import('./pages/LoginPage'))
 const LessonPage = lazy(() => import('./pages/LessonPage'))
 const PracticePage = lazy(() => import('./pages/PracticePage'))
+const HighSeasPage = lazy(() => import('./pages/HighSeasPage'))
 // Dev-only harness routes for the 3D mini-games (tree-shaken from prod).
 const CannonHarness = import.meta.env.DEV
   ? lazy(() => import('./pages/CannonHarness'))
@@ -28,6 +29,9 @@ const HeelDeckHarness = import.meta.env.DEV
   : null
 const MaelstromHarness = import.meta.env.DEV
   ? lazy(() => import('./pages/MaelstromHarness'))
+  : null
+const HighSeasHarness = import.meta.env.DEV
+  ? lazy(() => import('./pages/HighSeasHarness'))
   : null
 
 /**
@@ -122,6 +126,16 @@ export default function App() {
               </PageTransition>
             }
           />
+          <Route
+            path="/high-seas"
+            element={
+              <PageTransition>
+                <ProtectedRoute>
+                  <HighSeasPage />
+                </ProtectedRoute>
+              </PageTransition>
+            }
+          />
           {CannonHarness && (
             <Route path="/dev/cannon" element={<CannonHarness />} />
           )}
@@ -139,6 +153,9 @@ export default function App() {
           )}
           {MaelstromHarness && (
             <Route path="/dev/maelstrom" element={<MaelstromHarness />} />
+          )}
+          {HighSeasHarness && (
+            <Route path="/dev/high-seas" element={<HighSeasHarness />} />
           )}
         </Routes>
       </AnimatePresence>

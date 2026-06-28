@@ -104,7 +104,7 @@
     {
       "uid": "step-7-maelstrom",
       "stepType": "question",
-      "displayText": "Capstone: the maelstrom has you! The eddy holds you at radius r = 5 m. Your hull and tow-cable can bear a centripetal acceleration of about a = 20 m/s². Enter the rowing speed v (m/s) that holds that inward acceleration, then ride the circle to the gap and slingshot free. Try as many speeds as you like.",
+      "displayText": "Capstone: a giant whirlpool has you! It holds you at radius r = 5 m. Your hull and rope can bear a centripetal acceleration of about a = 20 m/s². Enter the rowing speed v (m/s) that keeps that inward acceleration, then ride the circle and slingshot free. Try as many speeds as you like.",
       "interactiveComponent": "MaelstromGame3D",
       "expected": [20],
       "explanation": "Centripetal acceleration a = v²/r. Solving for the speed at r = 5 that gives a = 20: v = √(a·r) = √(20·5) = √100 = 10 m/s.",

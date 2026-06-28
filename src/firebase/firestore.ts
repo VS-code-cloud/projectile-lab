@@ -41,6 +41,61 @@ export function emptyLessonProgress(): LessonProgress {
   }
 }
 
+/** Status of a "Sail the High Seas" voyage. */
+export type HighSeasStatus = 'docked' | 'sailing' | 'sunk'
+
+/** Normalized sea-map position in [0, 1] coordinates. */
+export interface HighSeasPosition {
+  x: number
+  y: number
+}
+
+/** Recoverable autonav route state between two towns. */
+export interface HighSeasRoute {
+  fromTownId: string
+  toTownId: string
+  progress: number
+}
+
+/**
+ * Persistent save for the "Sail the High Seas" capstone game. Derived values
+ * (cargo capacity, engine force, max hull) come from `upgradeStage` via the
+ * upgrade table in the game module, so only the raw progression is stored.
+ */
+export interface HighSeasSave {
+  /** Banked coins — the score. */
+  coins: number
+  /** Cargo units currently in the hold. */
+  cargo: number
+  /** Index into the upgrade table (0 = starting sloop). */
+  upgradeStage: number
+  /** Remaining hull hit points. */
+  hullHp: number
+  /** Town the ship is currently at or sailing from. */
+  townId: string
+  /** Seed driving deterministic encounter rolls. */
+  seed: number
+  /** Whether the player is docked, at sea, or sunk. */
+  status: HighSeasStatus
+  /** Current sea-map position; older saves are migrated from `townId`. */
+  location?: HighSeasPosition
+  /** Active autonav route, if any. Kept null when docked or free-sailing. */
+  route?: HighSeasRoute | null
+}
+
+/** Returns a fresh High Seas save for a brand-new voyage. */
+export function emptyHighSeasSave(): HighSeasSave {
+  return {
+    coins: 0,
+    cargo: 0,
+    upgradeStage: 0,
+    hullHp: 100,
+    townId: '',
+    seed: Date.now() % 2147483647,
+    status: 'docked',
+  }
+}
+
 /** Shape of a `users/{uid}` Firestore document. */
 export interface UserDoc {
   email: string
@@ -51,6 +106,8 @@ export interface UserDoc {
   lastTimeActive: number
   /** Current consecutive-day streak. */
   currentStreak: number
+  /** Saved "Sail the High Seas" voyage, if the player has started one. */
+  highSeas?: HighSeasSave
 }
 
 /**
@@ -120,4 +177,16 @@ export async function saveLessonProgress(
     { lessons: { [lessonUid]: progress } },
     { merge: true },
   )
+}
+
+/**
+ * Persists the player's High Seas voyage save.
+ * @param uid Firebase auth user id.
+ * @param save Updated voyage state.
+ */
+export async function saveHighSeas(
+  uid: string,
+  save: HighSeasSave,
+): Promise<void> {
+  await setDoc(userRef(uid), { highSeas: save }, { merge: true })
 }

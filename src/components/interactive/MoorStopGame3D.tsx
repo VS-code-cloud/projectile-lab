@@ -135,8 +135,6 @@ function MoorStopScene({
       <group ref={shipRef} position={[0, 0.4, 0]}>
         <Ship
           rotation={[0, Math.PI / 2, 0]}
-          hullColor="#4a6fa5"
-          sailColor="#e8eef5"
           flag={false}
           float
           animate={animate}
@@ -167,20 +165,24 @@ export default function MoorStopGame3D({
   const a = step.params?.a ?? 2
   const target = step.params?.target ?? 100
   const tolerance = step.params?.tolerance ?? 5
+  const highSeasMode = step.params?.highSeasMode === 1
 
   return (
     <NavalGameShell
       hookKey="moorStop"
       intro={
         <>
-          Final challenge: a shipmate is overboard dead ahead! You are making way
+          {highSeasMode
+            ? 'Crew rescue: a swimmer is overboard dead ahead! '
+            : 'Final challenge: a swimmer is overboard dead ahead! '}
+          You&apos;re sailing
           at{' '}
           <span className="font-semibold text-slate-900">v₀ = {v0} m/s</span>{' '}
           when you cut sail, and drag will then slow you down at{' '}
-          <span className="font-semibold text-slate-900">a = {a} m/s²</span>. Calculate
-          how far from the swimmer the ship should cut sail so it glides to a dead
-          stop right alongside, and call that distance to the helm — they'll cut
-          sail with the swimmer exactly that far off the bow.
+          <span className="font-semibold text-slate-900">a = {a} m/s²</span>.
+          Calculate how far the ship will glide before it comes to a complete
+          stop, so your crew cuts the sails with the swimmer exactly that far
+          ahead.
         </>
       }
       target={target}
@@ -196,9 +198,9 @@ export default function MoorStopGame3D({
       evaluate={(input) => evaluateStop(input, v0, a, tolerance)}
       statusText={{
         idle:
-          'A shipmate is overboard dead ahead. Enter how far you\'ll glide so the helm cuts sail with the swimmer that far off the bow.',
+          'A swimmer is overboard dead ahead. Enter how far you\'ll glide so your crew cuts the sails with the swimmer that far ahead.',
         acting: 'Gliding…',
-        hit: 'Dead in the water right alongside — line away!',
+        hit: 'You stop right next to the swimmer — got them!',
         short:
           'You under-judged the glide — the ship sails right past the swimmer.',
         far: 'You over-judged the glide — the ship stops short, swimmer out of reach.',
