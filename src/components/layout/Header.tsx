@@ -177,6 +177,30 @@ export function Header() {
         <div className="flex shrink-0 items-center gap-1 sm:gap-2">
           {user && streak !== null && <StreakBadge streak={streak} />}
 
+          {user && (
+            <Link
+              to="/high-seas"
+              className="btn-ghost min-h-11 px-2.5 py-1.5 text-accent-600 hover:bg-teal-50 sm:px-3"
+              title="Sail the High Seas"
+              aria-label="Sail the High Seas"
+            >
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={1.8}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M3 15c1.5 1 3 1 4.5 0M12 4v9M12 13l7-2-7-3M5 13l7 8 7-8" />
+              </svg>
+              <span className="hidden sm:inline">Sail the High Seas</span>
+            </Link>
+          )}
+
           <MotionControl />
 
           {user ? (

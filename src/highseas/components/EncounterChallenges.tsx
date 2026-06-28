@@ -164,6 +164,7 @@ export function OverboardRescue({
   onResolve,
 }: ChallengeProps & { encounter: OverboardEncounter }) {
   const [rescued, setRescued] = useState(false)
+  const [failed, setFailed] = useState(false)
   const target = Math.round((encounter.v0 * encounter.v0) / (2 * encounter.a))
   const step = stepFor('high-seas-overboard', 'MoorStopGame3D', target, {
     v0: encounter.v0,
@@ -177,7 +178,7 @@ export function OverboardRescue({
     <div className="space-y-3">
       <EncounterHeader
         title="Crew overboard!"
-        body="Cut sails at the right distance so the ship glides to the swimmer."
+        body="A ship is hot on your tail — cut sails at the right distance so you glide right to the swimmer. You only get one shot at this."
       />
       <Suspense fallback={fallback()}>
         <MoorStopGame3D
@@ -185,6 +186,10 @@ export function OverboardRescue({
           answered={rescued}
           submittedValues={rescued ? [target] : null}
           isCorrect={rescued ? true : null}
+          singleAttempt
+          onAttemptSettled={(result) => {
+            if (result.status !== 'hit') setFailed(true)
+          }}
           onSubmit={() => setRescued(true)}
         />
       </Suspense>
@@ -200,6 +205,16 @@ export function OverboardRescue({
               cargo: 0,
               damage: 0,
             })
+          }
+        />
+      )}
+      {failed && !rescued && (
+        <ResultCard
+          tone="danger"
+          text="No one blames you for the failure, but tonight will be a mournful one."
+          action="Sail on"
+          onClick={() =>
+            onResolve({ won: false, coins: 0, cargo: 0, damage: 0 })
           }
         />
       )}

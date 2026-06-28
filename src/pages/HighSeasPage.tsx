@@ -8,6 +8,7 @@ import { mulberry32 } from '../highseas/rng'
 import { isInRange, maxRange } from '../highseas/combat'
 import {
   applyShipControls,
+  approachPosition,
   displayedSpeedMetersPerSecond,
   distanceMeters,
   findTownAtPosition,
@@ -18,9 +19,15 @@ import {
   buildEnvironmentalEncounter,
   buildNavyEncounter,
   buildPirateEncounter,
+  contactChaseSpeed,
+  CONTACT_ENGAGE_RADIUS,
+  CONTACT_SPAWN_INTERVAL_SECONDS,
   generateVisibleContacts,
-  shouldRefreshOpenSeaContacts,
+  MAX_CONTACTS,
+  spawnContact,
   OPEN_SEA_ENCOUNTER_INTERVAL_SECONDS,
+  type ContactKind,
+  type WorldContact,
 } from '../highseas/worldEncounters'
 import type {
   Encounter,
@@ -63,6 +70,9 @@ const HUD_SNAPSHOT_SECONDS = 0.1
 const HARBOR_ARRIVAL_NORMALIZED = 0.012
 // Fraction of speed kept after bumping an island shore (soft collision).
 const COLLISION_SPEED_DAMP = 0.25
+// Distance (m) past which a locked-on pirate is dropped as a target — outrun it
+// and you shake the immediate threat (the ship itself keeps shadowing you).
+const LOSE_TARGET_METERS = 2400
 type PirateFireTarget = {
   contact: SeaContact
   enteredRangeAt: number | null
@@ -76,8 +86,21 @@ type ActiveEncounter =
       nextTownId?: string
       returnMode: SailMode
       autoStart?: boolean
+      /** Open-sea contact that triggered this fight; removed once resolved. */
+      contactId?: string
     }
   | { type: 'mooring'; townId: string }
+
+function toSeaContact(contact: WorldContact): SeaContact {
+  return {
+    id: contact.id,
+    kind: contact.kind,
+    position: { x: contact.x, y: contact.y },
+    headingDeg: contact.kind === 'pirate' ? 210 : 35,
+    muzzleSpeed: contact.muzzleSpeed,
+    aimDelay: contact.aimDelay,
+  }
+}
 
 function contactViews(
   player: HighSeasPosition,
@@ -85,14 +108,38 @@ function contactViews(
   stage: number,
   elapsedSeconds: number,
 ): SeaContact[] {
-  return generateVisibleContacts(seed, stage, player, elapsedSeconds).map((contact) => ({
+  return generateVisibleContacts(seed, stage, player, elapsedSeconds).map(toSeaContact)
+}
+
+/** Lightweight position snapshot for the DOM mini-map / ship list (no combat data). */
+function toContactDot(contact: SeaContact): SeaContactView {
+  return {
     id: contact.id,
     kind: contact.kind,
-    position: { x: contact.x, y: contact.y },
-    headingDeg: contact.kind === 'pirate' ? 210 : 35,
-    muzzleSpeed: contact.muzzleSpeed,
-    aimDelay: contact.aimDelay,
-  }))
+    position: { x: contact.position.x, y: contact.position.y },
+    headingDeg: contact.headingDeg,
+  }
+}
+
+/** Nearest contact to `player` within `radius` (normalized), or null. */
+function nearestContactWithin(
+  contacts: SeaContact[],
+  player: HighSeasPosition,
+  radius: number,
+): SeaContact | null {
+  let best: SeaContact | null = null
+  let bestDistance = radius
+  for (const contact of contacts) {
+    const d = Math.hypot(
+      contact.position.x - player.x,
+      contact.position.y - player.y,
+    )
+    if (d <= bestDistance) {
+      best = contact
+      bestDistance = d
+    }
+  }
+  return best
 }
 
 function rollPirateOrNavy(
@@ -130,7 +177,17 @@ export default function HighSeasPage() {
   const [showMap, setShowMap] = useState(true)
   const [speed, setSpeed] = useState(0)
   const [player, setPlayer] = useState<HighSeasPosition>(TOWNS[0])
+  // Throttled heading snapshot (nav degrees) for the DOM mini-map pointer; the
+  // authoritative heading lives in `headingRef` and is read by the scene each
+  // frame, so this state changing never reconciles the memoized canvas.
+  const [heading, setHeading] = useState(0)
+  // `contacts` is the contact *membership* (which enemy ships exist). It changes
+  // only when a ship spawns, is fought, or is cleared on mooring — never every
+  // frame — so the memoized <Canvas> doesn't re-render while ships glide around.
   const [contacts, setContacts] = useState<SeaContact[]>([])
+  // Throttled (~10 Hz) snapshot of live contact positions for the DOM mini-map +
+  // ship list (kept off the canvas props so dot movement never reconciles it).
+  const [contactDots, setContactDots] = useState<SeaContactView[]>([])
   const [sailingSeconds, setSailingSeconds] = useState(0)
   const [pirateTarget, setPirateTarget] = useState<PirateFireTarget | null>(null)
 
@@ -150,6 +207,10 @@ export default function HighSeasPage() {
   const lastEncounterAtRef = useRef(0)
   // Sailing time (s) of the last HUD snapshot pushed to React state.
   const lastHudAtRef = useRef(0)
+  // Sailing time (s) the last contact spawned, and a monotonic counter for
+  // unique spawn seeds/ids — contacts trickle in over time up to MAX_CONTACTS.
+  const lastSpawnAtRef = useRef(0)
+  const spawnCounterRef = useRef(0)
   // Becomes true once the ship has sailed clear of every harbor this voyage leg,
   // so spawning just offshore can't instantly dock; only then does re-entering a
   // harbor open the mooring mini-game.
@@ -165,8 +226,17 @@ export default function HighSeasPage() {
     [],
   )
 
-  // Stable ref bundle the scene reads each frame for floating-origin rendering.
-  const sim = useMemo(() => ({ player: playerRef, heading: headingRef }), [])
+  // Stable ref bundle the scene reads each frame for floating-origin rendering:
+  // player anchor, heading, sail speed (wake), and the live (moving) contacts.
+  const sim = useMemo(
+    () => ({
+      player: playerRef,
+      heading: headingRef,
+      speed: speedRef,
+      contacts: contactsRef,
+    }),
+    [],
+  )
 
   const currentTown: Town =
     TOWNS.find((t) => t.id === save?.townId) ?? TOWNS[0]
@@ -176,10 +246,6 @@ export default function HighSeasPage() {
     () => findTownAtPosition(player, TOWNS, 0.045),
     [player],
   )
-
-  useEffect(() => {
-    contactsRef.current = contacts
-  }, [contacts])
 
   useEffect(() => {
     pirateTargetRef.current = pirateTarget
@@ -235,12 +301,18 @@ export default function HighSeasPage() {
     elapsedRef.current = 0
     lastEncounterAtRef.current = 0
     lastHudAtRef.current = 0
+    lastSpawnAtRef.current = 0
+    spawnCounterRef.current = 0
     armedForMooringRef.current = false
+    const initialContacts = contactViews(start, save.seed, save.upgradeStage, 0)
+    contactsRef.current = initialContacts
     setPlayer(start)
     setSpeed(0)
+    setHeading(0)
     setSailingSeconds(0)
     setPirateTarget(null)
-    setContacts(contactViews(start, save.seed, save.upgradeStage, 0))
+    setContacts(initialContacts)
+    setContactDots(initialContacts.map(toContactDot))
     setMode('open')
     setActive(null)
   }
@@ -251,7 +323,9 @@ export default function HighSeasPage() {
     // the home port. Completing it (see handleResolve) performs the actual dock.
     speedRef.current = 0
     setSpeed(0)
+    contactsRef.current = []
     setContacts([])
+    setContactDots([])
     setPirateTarget(null)
     setActive({ type: 'mooring', townId: save.townId })
   }
@@ -276,6 +350,7 @@ export default function HighSeasPage() {
     setActive({
       type: 'sea',
       returnMode: 'open',
+      contactId: contact.id,
       encounter: buildNavyEncounter(
         mulberry32(currentSave.seed + Math.round(elapsedRef.current * 1000)),
         currentSave.upgradeStage,
@@ -373,15 +448,49 @@ export default function HighSeasPage() {
       headingRef.current = next.headingDeg
       speedRef.current = collided ? next.speed * COLLISION_SPEED_DAMP : next.speed
 
-      if (currentSave && shouldRefreshOpenSeaContacts(previousElapsed, nextElapsed)) {
-        const nextContacts = contactViews(
+      // Persistent contacts: each enemy ship steadily closes on the player and
+      // never despawns on a timer — they only leave when the player fights them
+      // or moors. Positions are mutated in place here (the scene reads these live
+      // refs each frame); `contacts` React state only tracks which ships exist.
+      // Each step is then pushed out of any island footprint so chasers slide
+      // around the coast instead of clipping through land.
+      const liveContacts = contactsRef.current
+      for (const contact of liveContacts) {
+        const stepped = approachPosition(
+          contact.position,
           corrected,
-          currentSave.seed,
-          currentSave.upgradeStage,
-          nextElapsed,
+          contactChaseSpeed(contact.kind) * delta,
         )
-        contactsRef.current = nextContacts
-        setContacts(nextContacts)
+        contact.position = resolveIslandCollision(
+          stepped,
+          TOWNS,
+          ISLAND_NORMALIZED_RADIUS,
+        ).position
+      }
+
+      // Trickle in fresh contacts over time, up to the cap, so there is always a
+      // sail emerging from the fog (a membership change → rare re-render).
+      if (
+        currentSave &&
+        liveContacts.length < MAX_CONTACTS &&
+        nextElapsed - lastSpawnAtRef.current >= CONTACT_SPAWN_INTERVAL_SECONDS
+      ) {
+        lastSpawnAtRef.current = nextElapsed
+        spawnCounterRef.current += 1
+        const seed =
+          (currentSave.seed + spawnCounterRef.current * 101 + Math.round(nextElapsed)) >>> 0
+        const kind: ContactKind = mulberry32(seed)() < 0.6 ? 'pirate' : 'navy'
+        const raw = spawnContact(seed, kind, corrected)
+        // Never spawn a ship sitting inside an island — nudge it to open water.
+        const clear = resolveIslandCollision(
+          { x: raw.x, y: raw.y },
+          TOWNS,
+          ISLAND_NORMALIZED_RADIUS,
+        ).position
+        const spawned = toSeaContact({ ...raw, x: clear.x, y: clear.y })
+        const next = [...liveContacts, spawned]
+        contactsRef.current = next
+        setContacts(next)
       }
 
       // Docking: the ship must first sail clear of every harbor (so the offshore
@@ -404,18 +513,15 @@ export default function HighSeasPage() {
         !pirateTargetRef.current &&
         nextElapsed - lastEncounterAtRef.current >= OPEN_SEA_ENCOUNTER_INTERVAL_SECONDS
       ) {
-        // ~40% of open-sea events are environmental (overboard rescue or
-        // whirlpool); the rest engage a nearby pirate/navy contact.
-        const roll = mulberry32(currentSave.seed + Math.round(nextElapsed))()
-        if (roll < 0.4) {
-          lastEncounterAtRef.current = nextElapsed
+        // The interval is always consumed (so events can't spam). If an enemy has
+        // closed within engage range it attacks; otherwise the open water may
+        // throw a ~50/50 environmental hazard (overboard rescue / whirlpool).
+        lastEncounterAtRef.current = nextElapsed
+        const nearest = nearestContactWithin(liveContacts, corrected, CONTACT_ENGAGE_RADIUS)
+        if (nearest) {
+          triggerOpenSeaContact(nearest)
+        } else if (mulberry32(currentSave.seed + Math.round(nextElapsed))() < 0.5) {
           triggerEnvironmentalEncounter()
-        } else {
-          const [contact] = contactsRef.current
-          if (contact) {
-            lastEncounterAtRef.current = nextElapsed
-            triggerOpenSeaContact(contact)
-          }
         }
       }
 
@@ -423,9 +529,12 @@ export default function HighSeasPage() {
       // React bails out of re-rendering except on an actual range/ready change.
       setPirateTarget((current) => {
         if (!current) return current
+        const distance = Math.round(distanceMeters(corrected, current.contact.position))
+        // Drop the bead if the pirate was sunk/cleared, or you outran it.
+        const stillPresent = contactsRef.current.some((c) => c.id === current.contact.id)
+        if (!stillPresent || distance > LOSE_TARGET_METERS) return null
         const muzzleSpeed = current.contact.muzzleSpeed ?? stats.cannonMuzzleSpeed
         const aimDelay = current.contact.aimDelay ?? 1
-        const distance = Math.round(distanceMeters(corrected, current.contact.position))
         const inRange = isInRange(distance, muzzleSpeed)
         const enteredRangeAt = inRange
           ? current.enteredRangeAt ?? nextElapsed
@@ -441,12 +550,16 @@ export default function HighSeasPage() {
         return { ...current, enteredRangeAt, ready }
       })
 
-      // Throttled snapshot for the DOM HUD/map (a few times per second).
+      // Throttled snapshot for the DOM HUD/map (a few times per second). The
+      // contact dots come from the live ref, so the mini-map + ship list show
+      // enemies closing in without ever reconciling the memoized canvas.
       if (nextElapsed - lastHudAtRef.current >= HUD_SNAPSHOT_SECONDS) {
         lastHudAtRef.current = nextElapsed
         setPlayer(corrected)
         setSpeed(speedRef.current)
+        setHeading(headingRef.current)
         setSailingSeconds(nextElapsed)
+        setContactDots(contactsRef.current.map(toContactDot))
       }
     },
     [
@@ -463,14 +576,17 @@ export default function HighSeasPage() {
     return () => window.clearTimeout(timer)
   }, [active, mode, player, updateLocation])
 
-  function engageContact(contact: SeaContact) {
+  function engageContact(contactId: string) {
     if (!save) return
+    const contact = contactsRef.current.find((c) => c.id === contactId)
+    if (!contact) return
     if (contact.kind === 'pirate') {
       beginPirateFireTarget(contact)
     } else {
       setActive({
         type: 'sea',
         returnMode: 'open',
+        contactId: contact.id,
         encounter: buildNavyEncounter(
           mulberry32(save.seed + Math.round(sailingSeconds * 1000)),
           save.upgradeStage,
@@ -490,6 +606,7 @@ export default function HighSeasPage() {
       type: 'sea',
       returnMode: 'open',
       autoStart: true,
+      contactId: contact.id,
       encounter: buildPirateEncounter({
         distance,
         muzzleSpeed,
@@ -509,6 +626,16 @@ export default function HighSeasPage() {
       return
     }
 
+    // The fight is over (won, escaped, or surrendered): the contact that started
+    // it leaves the sea. Pirates/navy only disappear here or on mooring.
+    if (active.type === 'sea' && active.contactId) {
+      const id = active.contactId
+      const next = contactsRef.current.filter((c) => c.id !== id)
+      contactsRef.current = next
+      setContacts(next)
+      setContactDots(next.map(toContactDot))
+    }
+
     if (active.type === 'sea' && active.nextTownId) {
       setActive({ type: 'mooring', townId: active.nextTownId })
       return
@@ -521,16 +648,21 @@ export default function HighSeasPage() {
       speedRef.current = 0
       setPlayer(town)
       setSpeed(0)
+      contactsRef.current = []
       setContacts([])
+      setContactDots([])
       setPirateTarget(null)
       setMode('port')
       setActive(null)
       return
     }
 
-    // Returning to the open sea: start a fresh encounter interval so the next
-    // pursuit cannot trigger immediately after this one resolves.
+    // Returning to the open sea: keep the ship exactly where it broke off the
+    // fight (it must NOT snap back to the last port) and persist that position
+    // so a reload resumes here. Reset the encounter interval so the next pursuit
+    // cannot trigger immediately.
     lastEncounterAtRef.current = elapsedRef.current
+    updateLocation(playerRef.current)
     setMode(active.returnMode)
     setPirateTarget(null)
     setActive(null)
@@ -609,8 +741,10 @@ export default function HighSeasPage() {
                 <OpenSeaScene3D
                   sim={sim}
                   player={player}
+                  playerHeadingDeg={heading}
                   towns={TOWNS}
                   contacts={contacts}
+                  contactDots={contactDots}
                   showMap={showMap}
                   fireRangeMeters={fireRangeMeters}
                   fireControl={fireControl}
@@ -619,7 +753,7 @@ export default function HighSeasPage() {
                   onSimFrame={onSimFrame}
                 />
                 <OpenSeaControls
-                  contacts={contacts}
+                  contacts={contactDots}
                   player={player}
                   stats={stats}
                   speed={speed}
@@ -719,7 +853,7 @@ function OpenSeaControls({
   onEngage,
   onReturn,
 }: {
-  contacts: SeaContact[]
+  contacts: SeaContactView[]
   player: HighSeasPosition
   stats: ReturnType<typeof shipStatsFor>
   speed: number
@@ -727,7 +861,7 @@ function OpenSeaControls({
   showMap: boolean
   onToggleMap: () => void
   onMove: (key: 'ArrowUp' | 'ArrowDown' | 'ArrowLeft' | 'ArrowRight') => void
-  onEngage: (contact: SeaContact) => void
+  onEngage: (contactId: string) => void
   onReturn: () => void
 }) {
   return (
@@ -797,7 +931,7 @@ function OpenSeaControls({
                 </div>
                 <button
                   type="button"
-                  onClick={() => onEngage(contact)}
+                  onClick={() => onEngage(contact.id)}
                   disabled={contact.kind === 'pirate' && !inRange}
                   className="btn-primary min-h-10 px-3 disabled:cursor-not-allowed disabled:opacity-50"
                 >
@@ -827,11 +961,11 @@ function VoyageGate({
   onBegin: () => void
 }) {
   return (
-    <div className="card-glass mx-auto flex max-w-lg flex-col items-center gap-4 px-6 py-10 text-center">
-      <h2 className="font-display text-2xl font-bold text-white">
+    <div className="card mx-auto flex max-w-lg flex-col items-center gap-4 bg-white px-6 py-10 text-center shadow-xl">
+      <h2 className="font-display text-2xl font-bold text-slate-900">
         {sunk ? 'Your ship went down!' : 'Ready to set sail?'}
       </h2>
-      <p className="max-w-sm text-sm text-slate-200">
+      <p className="max-w-sm text-sm text-slate-700">
         {sunk
           ? `You banked ${coins} coins before the sea took you. Chart a new course and try to beat it.`
           : 'Start with a small sloop. Buy and sell cargo, defeat pirates, and upgrade your ship to carry more without losing speed.'}

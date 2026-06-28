@@ -7,18 +7,25 @@ import {
   buildPirateEncounter,
   buildWhirlpoolEncounter,
   CAPTURE_RADIUS,
+  contactChaseSpeed,
   contactDistance,
+  CONTACT_SPAWN_MAX_DISTANCE,
+  CONTACT_SPAWN_MIN_DISTANCE,
   elapsedBucket,
   ENEMY_HP_MAX,
   generateVisibleContacts,
   isNavyCaptureReady,
+  NAVY_CHASE_SPEED,
   OPEN_SEA_CONTACT_REFRESH_SECONDS,
   OPEN_SEA_ENCOUNTER_INTERVAL_SECONDS,
+  PIRATE_CHASE_SPEED,
   pirateFiringState,
   shouldRefreshOpenSeaContacts,
   shouldTriggerOpenSeaEncounter,
+  spawnContact,
   type WorldContact,
 } from '../highseas/worldEncounters'
+import { MAX_SAIL_SPEED } from '../highseas/navigation'
 import { mulberry32 } from '../highseas/rng'
 
 const PLAYER = { x: 0.4, y: 0.5 }
@@ -130,6 +137,49 @@ describe('buildEnvironmentalEncounter', () => {
       kinds.add(buildEnvironmentalEncounter(mulberry32(seed), 0).kind)
     }
     expect([...kinds].sort()).toEqual(['overboard', 'whirlpool'])
+  })
+})
+
+describe('contactChaseSpeed', () => {
+  it('closes navy faster than pirates, both slightly above the player top speed', () => {
+    expect(contactChaseSpeed('navy')).toBe(NAVY_CHASE_SPEED)
+    expect(contactChaseSpeed('pirate')).toBe(PIRATE_CHASE_SPEED)
+    expect(NAVY_CHASE_SPEED).toBeGreaterThan(PIRATE_CHASE_SPEED)
+    // Faster than the player's top speed, so a straight-line flight can't shake
+    // a chaser (you escape by mooring or fighting)...
+    expect(PIRATE_CHASE_SPEED).toBeGreaterThan(MAX_SAIL_SPEED)
+    // ...but only slightly, so maneuvering still buys ground.
+    expect(NAVY_CHASE_SPEED).toBeLessThan(MAX_SAIL_SPEED * 1.3)
+  })
+})
+
+describe('spawnContact', () => {
+  const player = { x: 0.5, y: 0.5 }
+
+  it('spawns just past the fog horizon and is deterministic in its seed', () => {
+    const a = spawnContact(123, 'pirate', player)
+    const b = spawnContact(123, 'pirate', player)
+    expect(a).toEqual(b)
+    const d = contactDistance(player, a)
+    expect(d).toBeGreaterThanOrEqual(CONTACT_SPAWN_MIN_DISTANCE - 1e-9)
+    expect(d).toBeLessThanOrEqual(CONTACT_SPAWN_MAX_DISTANCE + 1e-9)
+  })
+
+  it('stays inside the world and carries combat stats only for pirates', () => {
+    const pirate = spawnContact(7, 'pirate', player)
+    expect(pirate.kind).toBe('pirate')
+    expect(pirate.id).toBe('pirate-7')
+    expect(pirate.muzzleSpeed).toBeGreaterThanOrEqual(28)
+    expect(pirate.muzzleSpeed).toBeLessThanOrEqual(34)
+    expect(pirate.aimDelay).toBeGreaterThanOrEqual(0.5)
+
+    const navy = spawnContact(8, 'navy', { x: 0.98, y: 0.02 })
+    expect(navy.kind).toBe('navy')
+    expect(navy.muzzleSpeed).toBeUndefined()
+    expect(navy.x).toBeGreaterThanOrEqual(0)
+    expect(navy.x).toBeLessThanOrEqual(1)
+    expect(navy.y).toBeGreaterThanOrEqual(0)
+    expect(navy.y).toBeLessThanOrEqual(1)
   })
 })
 

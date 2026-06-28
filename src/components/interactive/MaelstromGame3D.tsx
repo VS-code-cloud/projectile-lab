@@ -16,10 +16,18 @@ import {
 } from './naval'
 import type { NavalSceneProps } from './naval'
 
-const SCALE = 3
 const ORBIT_LAPS = 1.5
 const ARROW_SCALE = 0.22
 const OUTCOME_DURATION = 1.4
+// Fixed visual orbit. The ship rings the (fixed-size) whirlpool at this render
+// radius and completes ORBIT_LAPS in ORBIT_TIME seconds, REGARDLESS of the
+// physical radius `r`. This keeps the swirl framed and the motion watchable
+// (the old code orbited at 3·r — 60–180 units around a ~26-unit whirlpool, so
+// the ship flew off alone and the camera lost the vortex, and v/r made it crawl
+// for tens of seconds). The physics a = v²/r is graded separately by
+// evaluateOrbit and shown on the vector arrows + banner.
+const ORBIT_R = 18
+const ORBIT_TIME = 4.2
 
 interface MaelstromSceneParams {
   radius: number
@@ -122,8 +130,9 @@ function MaelstromScene({
   // Direction the ship flings free on a clean orbit (+x).
   const exitAngle = 0
 
-  const worldR = SCALE * radius
+  const worldR = ORBIT_R
   const totalOrbit = ORBIT_LAPS * Math.PI * 2
+  const orbitOmega = totalOrbit / ORBIT_TIME
   const animate = !reducedMotion
 
   const phaseRef = useRef(phase)
@@ -143,7 +152,9 @@ function MaelstromScene({
     }
   }, [phase, shotId])
 
-  const idleCam = useMemo(() => new THREE.Vector3(0, 38, 46), [])
+  // One fixed overview for idle/acting/result: the camera never chases the ship
+  // away, so the whirlpool stays centered while the ship visibly circles it.
+  const idleCam = useMemo(() => new THREE.Vector3(0, 42, 54), [])
   const idleLook = useMemo(() => new THREE.Vector3(0, 0, 0), [])
 
   function orbitStatus(v: number): BandStatus {
@@ -170,7 +181,7 @@ function MaelstromScene({
       onProgress(a)
 
       if (!orbitDone.current) {
-        angle.current += (v / radius) * delta
+        angle.current += orbitOmega * delta
         const theta = angle.current
         placeOnOrbit(theta, worldR)
 
@@ -192,7 +203,7 @@ function MaelstromScene({
             0.4,
             Math.sin(theta) * worldR,
           )
-          shipPos.current.copy(start).addScaledVector(tangent, p * worldR * 1.6)
+          shipPos.current.copy(start).addScaledVector(tangent, p * worldR * 1.2)
         } else if (status === 'short') {
           const r = worldR * (1 - p * 0.85)
           placeOnOrbit(theta + p * 0.6, r)
@@ -216,12 +227,8 @@ function MaelstromScene({
         }
       }
 
-      desiredLook = shipPos.current.clone()
-      desiredPos = new THREE.Vector3(
-        shipPos.current.x * 0.35,
-        34,
-        shipPos.current.z * 0.35 + 38,
-      )
+      desiredLook = shipPos.current.clone().multiplyScalar(0.32)
+      desiredPos = idleCam
     } else if (phaseRef.current === 'result') {
       const v = inputRef.current
       const theta = angle.current || exitAngle
@@ -240,15 +247,11 @@ function MaelstromScene({
         const tangent = new THREE.Vector3(-Math.sin(theta), 0, Math.cos(theta))
         shipPos.current
           .set(Math.cos(theta) * worldR, 0.4, Math.sin(theta) * worldR)
-          .addScaledVector(tangent, worldR * 1.6)
+          .addScaledVector(tangent, worldR * 1.2)
         shipRef.current?.position.copy(shipPos.current)
       }
-      desiredLook = shipPos.current.clone()
-      desiredPos = new THREE.Vector3(
-        shipPos.current.x * 0.35,
-        34,
-        shipPos.current.z * 0.35 + 38,
-      )
+      desiredLook = shipPos.current.clone().multiplyScalar(0.32)
+      desiredPos = idleCam
     } else {
       placeOnOrbit(exitAngle, worldR)
       desiredPos = idleCam
@@ -344,7 +347,7 @@ export default function MaelstromGame3D({
       resultSuffix={(r) =>
         `Centripetal a = v²/r = ${r.value.toFixed(1)} m/s².`
       }
-      cameraInit={[0, 38, 46]}
+      cameraInit={[0, 42, 54]}
       renderScene={(sceneProps) => (
         <MaelstromScene
           radius={radius}

@@ -13,6 +13,7 @@ import {
   headingToMovementVector,
   headingToRenderRotationDeg,
   mapPositionPercent,
+  MAX_SAIL_SPEED,
   WORLD_DISTANCE_METERS,
 } from '../navigation'
 import {
@@ -23,6 +24,7 @@ import {
 } from '../graphicsQuality'
 import { SeaPostFx } from './SeaPostFx'
 import { SeaWater } from './SeaWater'
+import { SeaWake } from './SeaWake'
 import type { HighSeasPosition, Town } from '../types'
 
 export interface SeaContactView {
@@ -44,6 +46,14 @@ export interface OpenSeaSimRefs {
   player: { current: HighSeasPosition }
   /** Player heading in navigation degrees (0 = east, increases clockwise). */
   heading: { current: number }
+  /** Player sail speed (normalized); drives the wake intensity. */
+  speed: { current: number }
+  /**
+   * Live enemy-contact positions, mutated every frame by the sim so the scene
+   * can move/rotate the contact ships smoothly (the `contacts` prop only carries
+   * membership — which ships exist — and changes rarely, on spawn/fight/moor).
+   */
+  contacts: { current: SeaContactView[] }
 }
 
 export interface OpenSeaFireControl {
@@ -61,8 +71,17 @@ interface OpenSeaScene3DProps {
   sim: OpenSeaSimRefs
   /** Throttled snapshot of the player position; used only by the DOM mini-map. */
   player: HighSeasPosition
+  /** Throttled player heading (nav degrees, 0 = east) for the mini-map pointer. */
+  playerHeadingDeg: number
   towns: Town[]
+  /** Contact membership (which ships exist) — drives the 3D scene's groups. */
   contacts: SeaContactView[]
+  /**
+   * Throttled (~10 Hz) snapshot of live contact positions for the DOM mini-map
+   * dots. Kept separate from `contacts` so the memoized canvas never re-renders
+   * just because a dot moved.
+   */
+  contactDots: SeaContactView[]
   showMap: boolean
   /** Max cannon range (m) for the in-canvas firing ring; null when no target. */
   fireRangeMeters: number | null
@@ -329,11 +348,18 @@ function SeaScene({
       if (group) group.position.set(relX(towns[i], player), 0, relZ(towns[i], player))
     }
 
-    for (let i = 0; i < contacts.length; i++) {
-      const contact = contacts[i]
+    // Live contact positions come from the sim ref (mutated every frame), so the
+    // enemy ships slide/turn smoothly even though the `contacts` membership prop
+    // only changes on spawn/fight/moor. Each contact turns to bear on the player.
+    const liveContacts = sim.contacts.current
+    for (let i = 0; i < liveContacts.length; i++) {
+      const contact = liveContacts[i]
       const group = contactRefs.current.get(contact.id)
       if (group) {
-        group.position.set(relX(contact.position, player), 0, relZ(contact.position, player))
+        const rx = relX(contact.position, player)
+        const rz = relZ(contact.position, player)
+        group.position.set(rx, 0, rz)
+        group.rotation.y = Math.atan2(-rx, -rz)
       }
     }
 
@@ -399,6 +425,9 @@ function SeaScene({
 
       <group ref={playerShipRef} rotation={[0, headingRotationY(sim.heading.current), 0]}>
         <Ship scale={0.92} float animate={!reducedMotion} />
+        {!reducedMotion && (
+          <SeaWake speed={sim.speed} maxSpeed={MAX_SAIL_SPEED} animate />
+        )}
       </group>
 
       {contacts.map((contact) => {
@@ -412,8 +441,9 @@ function SeaScene({
             }}
             position={[relX(contact.position, player0), 0, relZ(contact.position, player0)]}
           >
+            {/* The outer group is turned to bear on the player each frame, so the
+                ship model stays at identity rotation here. */}
             <Ship
-              rotation={[0, headingRotationY(contact.headingDeg ?? 180), 0]}
               scale={0.72}
               hullColor={pirate ? '#7c3f18' : '#334155'}
               sailColor={pirate ? '#d6c2a2' : '#e0f2fe'}
@@ -572,7 +602,7 @@ export function OpenSeaScene3D(props: OpenSeaScene3DProps) {
                 {town.name}
               </button>
             ))}
-            {props.contacts.map((contact) => {
+            {props.contactDots.map((contact) => {
               const percent = mapPositionPercent(contact.position)
               return (
                 <span
@@ -584,13 +614,25 @@ export function OpenSeaScene3D(props: OpenSeaScene3DProps) {
                 />
               )
             })}
+            {/* Player marker with a heading pointer. The arrow points east (+x)
+                at 0°; on the chart x runs west→east and y runs north→south, and
+                nav heading increases clockwise (south = 90°), which matches a CSS
+                clockwise rotation — so rotating by the heading aims the bow the
+                way the ship is actually sailing. */}
             <span
-              className="absolute h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white ring-2 ring-emerald-300"
+              className="absolute"
               style={{
                 left: `${mapPositionPercent(props.player).left}%`,
                 top: `${mapPositionPercent(props.player).top}%`,
+                transform: `translate(-50%, -50%) rotate(${props.playerHeadingDeg}deg)`,
               }}
-            />
+              aria-label="Your ship and heading"
+            >
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M22 12 L13 8 L13 16 Z" fill="#6ee7b7" />
+                <circle cx="11" cy="12" r="3.6" fill="#ffffff" stroke="#34d399" strokeWidth="2" />
+              </svg>
+            </span>
           </div>
         </div>
       )}

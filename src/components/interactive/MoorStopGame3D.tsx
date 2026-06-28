@@ -3,6 +3,7 @@ import { useFrame, useThree } from '@react-three/fiber'
 import { Text } from '@react-three/drei'
 import * as THREE from 'three'
 import type { StepComponentProps } from '../../lessons/types'
+import type { BandResult } from '../../lib/navalChallenge'
 import { evaluateStop } from '../../lib/stopGame'
 import {
   dampVec3,
@@ -160,7 +161,14 @@ export default function MoorStopGame3D({
   step,
   answered,
   onSubmit,
-}: StepComponentProps) {
+  singleAttempt,
+  onAttemptSettled,
+}: StepComponentProps & {
+  /** One-shot mode: only a single commit is allowed (e.g. crew-overboard with a pursuer). */
+  singleAttempt?: boolean
+  /** Fires once per attempt with the graded result (lets the caller react to a miss). */
+  onAttemptSettled?: (result: BandResult) => void
+}) {
   const v0 = step.params?.v0 ?? 20
   const a = step.params?.a ?? 2
   const target = step.params?.target ?? 100
@@ -183,11 +191,19 @@ export default function MoorStopGame3D({
           Calculate how far the ship will glide before it comes to a complete
           stop, so your crew cuts the sails with the swimmer exactly that far
           ahead.
+          {highSeasMode && (
+            <span className="mt-2 block font-semibold text-rose-600">
+              There&apos;s a ship hot on your tail, so you&apos;ll need to get
+              this right the first try.
+            </span>
+          )}
         </>
       }
       target={target}
       answered={answered}
       onSubmit={onSubmit}
+      singleAttempt={singleAttempt}
+      onAttemptSettled={onAttemptSettled}
       inputLabel="Coasting distance (m)"
       actionLabel="Cut sail"
       busyLabel="Gliding…"

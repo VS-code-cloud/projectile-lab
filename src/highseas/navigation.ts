@@ -29,8 +29,12 @@ export const WORLD_SCALE_FACTOR = 10
 export const DEFAULT_SAIL_SPEED = 0
 export const MAX_SAIL_SPEED = 0.035 / WORLD_SCALE_FACTOR
 export const MIN_SAIL_SPEED = -0.012 / WORLD_SCALE_FACTOR
-export const SAIL_ACCEL = 0.035 / WORLD_SCALE_FACTOR
-export const SAIL_DRAG = 0.025 / WORLD_SCALE_FACTOR
+// Acceleration and drag are deliberately gentle: the ship keeps the same top
+// speed but takes several seconds to wind up to it and to coast back down, so
+// the helm feels like a heavy sailing vessel with real momentum rather than an
+// arcade kart. (Top speed ÷ accel ≈ 6 s to reach full throttle.)
+export const SAIL_ACCEL = 0.006 / WORLD_SCALE_FACTOR
+export const SAIL_DRAG = 0.004 / WORLD_SCALE_FACTOR
 export const AUTONAV_SPEED = 0.12
 
 export function distance(a: WorldPosition, b: WorldPosition): number {
@@ -56,6 +60,23 @@ export function displayedSpeedMetersPerSecond(normalizedSpeed: number): number {
 
 export function distanceToTown(pos: WorldPosition, town: Town): number {
   return distance(pos, { x: town.x, y: town.y })
+}
+
+/**
+ * Step `from` toward `target` by at most `maxStep` (normalized world units). If
+ * the remaining distance is within one step the position snaps to `target` (no
+ * overshoot/jitter). Used to make enemy contacts steadily close on the player.
+ */
+export function approachPosition(
+  from: WorldPosition,
+  target: WorldPosition,
+  maxStep: number,
+): WorldPosition {
+  const dx = target.x - from.x
+  const dy = target.y - from.y
+  const d = Math.hypot(dx, dy)
+  if (d <= maxStep || d === 0) return { x: target.x, y: target.y }
+  return { x: from.x + (dx / d) * maxStep, y: from.y + (dy / d) * maxStep }
 }
 
 export function clampPosition(pos: WorldPosition): WorldPosition {

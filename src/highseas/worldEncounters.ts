@@ -53,6 +53,68 @@ export const OPEN_SEA_ENCOUNTER_INTERVAL_SECONDS = 20
 const MIN_CONTACT_DISTANCE = 0.08
 const TIME_BUCKET_SECONDS = OPEN_SEA_CONTACT_REFRESH_SECONDS
 
+// Persistent-contact tuning. Contacts no longer despawn on a timer: they emerge
+// from the fog a short sail away and steadily close on the player (chase), and
+// only leave when the player fights them or moors. Chase speeds are normalized
+// world units per second and sit *slightly above* the player's MAX_SAIL_SPEED
+// (0.0035), so a straight-line flight can't shake them — you escape by mooring
+// in a town or fighting — yet the margin is small enough that maneuvering still
+// buys ground. Navy presses a touch harder than pirates.
+export const PIRATE_CHASE_SPEED = 0.0038
+export const NAVY_CHASE_SPEED = 0.004
+/** Most enemy ships shadowing the player at once (kept modest so it never swarms). */
+export const MAX_CONTACTS = 3
+/** Seconds between spawning a fresh contact while below `MAX_CONTACTS`. */
+export const CONTACT_SPAWN_INTERVAL_SECONDS = 15
+/** Normalized range at which an approaching contact forces an engagement. */
+export const CONTACT_ENGAGE_RADIUS = 0.06
+// Fresh contacts spawn in a tight band just *past* the fog horizon. The open-sea
+// scene fogs out around 0.124 normalized (FOG_FAR 34000 / WORLD 275000), so a
+// ship spawned in [0.135, 0.19] is hidden in the haze yet only a short sail
+// away — it emerges plausibly out of the fog rather than popping in across an
+// empty sea or right on top of the player.
+export const CONTACT_SPAWN_MIN_DISTANCE = 0.135
+export const CONTACT_SPAWN_MAX_DISTANCE = 0.19
+
+/** Normalized world units a contact of `kind` closes on the player per second. */
+export function contactChaseSpeed(kind: ContactKind): number {
+  return kind === 'navy' ? NAVY_CHASE_SPEED : PIRATE_CHASE_SPEED
+}
+
+function clamp01(value: number): number {
+  return Math.max(0, Math.min(1, value))
+}
+
+/**
+ * Spawns a single fresh contact just past the fog horizon around the player, so
+ * it emerges from the haze a short sail away and then closes in. Deterministic
+ * in `seed` (which also makes the contact id stable/unique per spawn).
+ */
+export function spawnContact(
+  seed: number,
+  kind: ContactKind,
+  playerPos: WorldPosition,
+): WorldContact {
+  const rand = mulberry32(seed >>> 0)
+  const angle = rand() * Math.PI * 2
+  const dist =
+    CONTACT_SPAWN_MIN_DISTANCE +
+    rand() * (CONTACT_SPAWN_MAX_DISTANCE - CONTACT_SPAWN_MIN_DISTANCE)
+  const x = clamp01(playerPos.x + Math.cos(angle) * dist)
+  const y = clamp01(playerPos.y + Math.sin(angle) * dist)
+  if (kind === 'pirate') {
+    return {
+      id: `pirate-${seed >>> 0}`,
+      kind,
+      x,
+      y,
+      muzzleSpeed: randInt(rand, 28, 34),
+      aimDelay: aimDelaySeconds(rand()),
+    }
+  }
+  return { id: `navy-${seed >>> 0}`, kind, x, y }
+}
+
 function randInt(rand: () => number, min: number, max: number): number {
   return Math.round(min + rand() * (max - min))
 }

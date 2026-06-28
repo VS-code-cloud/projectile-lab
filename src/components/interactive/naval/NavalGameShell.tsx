@@ -44,6 +44,14 @@ export interface NavalGameShellProps {
   target: number
   answered: boolean
   onSubmit: (values: number[]) => void
+  /**
+   * When true, only one commit is allowed: after the first attempt settles the
+   * commit button locks and the scene stays on its result frame (no ease back to
+   * aiming). Used for high-stakes, one-shot encounters.
+   */
+  singleAttempt?: boolean
+  /** Fires once per attempt when it settles, with the graded result. */
+  onAttemptSettled?: (result: BandResult) => void
   /** Renders the R3F scene (environment + objects + camera driver). */
   renderScene: (scene: NavalSceneProps) => ReactNode
   /** Initial camera position; the scene then drives the camera each frame. */
@@ -74,6 +82,8 @@ export function NavalGameShell({
   target,
   answered,
   onSubmit,
+  singleAttempt = false,
+  onAttemptSettled,
   renderScene,
   cameraInit = [-24, 34, 52],
   fallbackNote,
@@ -88,6 +98,8 @@ export function NavalGameShell({
   const [status, setStatus] = useState<BandStatus | null>(null)
   const [result, setResult] = useState<BandResult | null>(null)
   const [shotId, setShotId] = useState(0)
+  // Set once the lone allowed attempt has settled (single-attempt encounters).
+  const [spent, setSpent] = useState(false)
 
   const submitted = useRef(answered)
   const idleTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -132,10 +144,16 @@ export function NavalGameShell({
   /** Called by the scene once its animation settles: score, then ease back. */
   const handleSettled = useCallback(() => {
     setPhase('result')
-    settle(committedInput)
+    const r = settle(committedInput)
+    onAttemptSettled?.(r)
+    if (singleAttempt) {
+      // One-shot: lock further commits and hold on the result frame.
+      setSpent(true)
+      return
+    }
     if (idleTimer.current) clearTimeout(idleTimer.current)
     idleTimer.current = setTimeout(() => setPhase('idle'), 1800)
-  }, [settle, committedInput])
+  }, [settle, committedInput, onAttemptSettled, singleAttempt])
 
   /** Commit the typed input and play it out (or settle immediately, no WebGL). */
   function handleCommit() {
@@ -154,7 +172,9 @@ export function NavalGameShell({
       setShotId((id) => id + 1)
     } else {
       setPhase('result')
-      settle(n)
+      const r = settle(n)
+      onAttemptSettled?.(r)
+      if (singleAttempt) setSpent(true)
     }
   }
 
@@ -180,7 +200,8 @@ export function NavalGameShell({
   // only surface it once the shot is animating or an outcome exists.
   const showBanner = phase === 'acting' || status !== null || answered
 
-  const canCommit = parseInput(inputText) !== null && phase !== 'acting'
+  const canCommit =
+    parseInput(inputText) !== null && phase !== 'acting' && !(singleAttempt && spent)
 
   // The scene receives deferred handlers (onProgress/onSettled) that it invokes
   // from its own frame loop — never during render — so the refs they close over

@@ -3,6 +3,7 @@ import { TOWNS } from '../highseas/constants'
 import {
   advanceAutonavProgress,
   applyShipControls,
+  approachPosition,
   autonavPosition,
   clampPosition,
   displayedSpeedMetersPerSecond,
@@ -20,6 +21,7 @@ import {
   normalizedDistanceToMeters,
   renderRotationToHeadingDeg,
   resolveIslandCollision,
+  SAIL_ACCEL,
   type ShipInput,
   type WorldPosition,
   TOWN_HARBOR_RADIUS,
@@ -183,6 +185,47 @@ describe('applyShipControls', () => {
     expect(next.headingDeg).toBeGreaterThan(0)
     expect(next.position.y).toBeGreaterThan(0.2)
     expect(next.speed).toBeGreaterThan(0)
+  })
+
+  it('takes several seconds of throttle to reach top speed (heavy momentum)', () => {
+    // One second of throttle from rest must NOT already be at max speed...
+    const afterOneSecond = applyShipControls({ x: 0.5, y: 0.5 }, 0, 0, { up: true }, 1)
+    expect(afterOneSecond.speed).toBeCloseTo(SAIL_ACCEL, 6)
+    expect(afterOneSecond.speed).toBeLessThan(MAX_SAIL_SPEED * 0.25)
+    // ...and reaching full throttle should take more than 4 seconds.
+    expect(MAX_SAIL_SPEED / SAIL_ACCEL).toBeGreaterThan(4)
+
+    // Integrating many small ticks still clamps cleanly at the unchanged top speed.
+    let speed = 0
+    for (let i = 0; i < 600; i++) {
+      speed = applyShipControls({ x: 0.5, y: 0.5 }, 0, speed, { up: true }, 0.05).speed
+    }
+    expect(speed).toBeCloseTo(MAX_SAIL_SPEED, 6)
+  })
+})
+
+describe('approachPosition', () => {
+  it('steps toward the target by at most maxStep', () => {
+    const moved = approachPosition({ x: 0, y: 0 }, { x: 1, y: 0 }, 0.25)
+    expect(moved.x).toBeCloseTo(0.25, 6)
+    expect(moved.y).toBeCloseTo(0, 6)
+  })
+
+  it('moves along the diagonal toward the target', () => {
+    const moved = approachPosition({ x: 0, y: 0 }, { x: 3, y: 4 }, 5)
+    // 5 units along a 3-4-5 triangle lands exactly on the target.
+    expect(moved.x).toBeCloseTo(3, 6)
+    expect(moved.y).toBeCloseTo(4, 6)
+  })
+
+  it('snaps to the target without overshooting when within one step', () => {
+    const moved = approachPosition({ x: 0.4, y: 0.4 }, { x: 0.42, y: 0.4 }, 0.1)
+    expect(moved).toEqual({ x: 0.42, y: 0.4 })
+  })
+
+  it('returns the target when already there (no division by zero)', () => {
+    const moved = approachPosition({ x: 0.5, y: 0.5 }, { x: 0.5, y: 0.5 }, 0.1)
+    expect(moved).toEqual({ x: 0.5, y: 0.5 })
   })
 })
 
