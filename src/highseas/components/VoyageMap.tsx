@@ -90,8 +90,8 @@ export function VoyageMap({ currentTownId, onChoose, disabled }: VoyageMapProps)
                 >
                   {town.name}
                 </text>
-                <text y={6.6} textAnchor="middle" fontSize={2.4} fill="#0369a1">
-                  {town.buyRate}/unit
+                <text y={6.6} textAnchor="middle" fontSize={2.2} fill="#0369a1">
+                  Rum {town.buyRates.rum} · Spice {town.buyRates.spice}
                 </text>
               </g>
             )

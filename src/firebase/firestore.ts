@@ -57,6 +57,15 @@ export interface HighSeasRoute {
   progress: number
 }
 
+/** The two tradeable cargo goods carried in the hold and sold at ports. */
+export type CargoGood = 'rum' | 'spice'
+
+/** Quantities of each good currently in the hold. */
+export interface CargoHold {
+  rum: number
+  spice: number
+}
+
 /**
  * Persistent save for the "Sail the High Seas" capstone game. Derived values
  * (cargo capacity, engine force, max hull) come from `upgradeStage` via the
@@ -65,8 +74,8 @@ export interface HighSeasRoute {
 export interface HighSeasSave {
   /** Banked coins — the score. */
   coins: number
-  /** Cargo units currently in the hold. */
-  cargo: number
+  /** Cargo carried in the hold, split by good (rum + spice ≤ capacity). */
+  cargo: CargoHold
   /** Index into the upgrade table (0 = starting sloop). */
   upgradeStage: number
   /** Remaining hull hit points. */
@@ -87,7 +96,7 @@ export interface HighSeasSave {
 export function emptyHighSeasSave(): HighSeasSave {
   return {
     coins: 0,
-    cargo: 0,
+    cargo: { rum: 0, spice: 0 },
     upgradeStage: 0,
     hullHp: 100,
     townId: '',

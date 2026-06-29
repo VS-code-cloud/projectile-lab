@@ -1,0 +1,14 @@
+High Seas — "HD assets" layer (gated behind VITE_NEW_ASSETS_ENABLED).
+
+All bundled assets below are CC0 (Public Domain) — no attribution legally required,
+recorded here as good practice. Sourced 2026-06-28.
+
+models/ship.glb   — "Pirate Ship" by Quaternius — CC0 — https://poly.pizza/m/2kytqGs4rH
+models/palm.glb   — "Palm Tree" by Quaternius   — CC0 — https://poly.pizza/m/A6cKJYFsIb
+models/rock.glb   — "Rock" by Quaternius        — CC0 — https://poly.pizza/m/4MUaQTcDdc
+hdri/sky_1k.hdr   — "Kloofendal 43d Clear (Pure Sky)" by Greg Zaal / Poly Haven — CC0
+                    https://polyhaven.com/a/kloofendal_43d_clear_puresky
+
+These render only when VITE_NEW_ASSETS_ENABLED is truthy (or, in dev only, with a
+?newAssets=1 query param). With the flag off, the scene uses the original
+procedural meshes, so the app works identically with or without these files.

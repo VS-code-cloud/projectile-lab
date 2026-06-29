@@ -1,4 +1,5 @@
 import { STARTING_TOWN_ID, TOWNS } from './constants'
+import { applyCargoDelta, emptyHold, toHold } from './cargo'
 import { nextSeed } from './rng'
 import type { EncounterResult, HighSeasPosition, HighSeasSave } from './types'
 import { capacityFor, hullMaxFor } from './upgrades'
@@ -11,7 +12,7 @@ function townPosition(townId: string) {
 export function startVoyage(): HighSeasSave {
   return {
     coins: 0,
-    cargo: 0,
+    cargo: emptyHold(),
     upgradeStage: 0,
     hullHp: hullMaxFor(0),
     townId: STARTING_TOWN_ID,
@@ -25,6 +26,8 @@ export function startVoyage(): HighSeasSave {
 export function normalizeHighSeasSave(save: HighSeasSave): HighSeasSave {
   return {
     ...save,
+    // Migrate legacy saves where `cargo` was a single number into the hold shape.
+    cargo: toHold(save.cargo),
     location: save.location ?? townPosition(save.townId),
     route: save.route ?? null,
   }
@@ -42,10 +45,22 @@ export function applyResult(
   return {
     ...save,
     coins: Math.max(0, save.coins + result.coins),
-    cargo: Math.max(0, Math.min(cap, save.cargo + result.cargo)),
+    cargo: applyCargoDelta(toHold(save.cargo), result.cargo, cap),
     hullHp,
     status: hullHp <= 0 ? 'sunk' : save.status,
   }
+}
+
+/**
+ * Whether applying `result` would actually sink the ship. Mirrors `applyResult`'s
+ * hull floor, so a `survivable` failure (failed whirlpool, navy escape) never
+ * counts as a sink even when its damage exceeds the current hull — it bruises to
+ * 1 HP and the voyage continues. The page MUST use this (not a raw
+ * `hullHp - damage <= 0`) to decide game-over, or survivable hazards would
+ * wrongly end the run.
+ */
+export function wouldSink(save: HighSeasSave, result: EncounterResult): boolean {
+  return applyResult(save, result).hullHp <= 0
 }
 
 export function arriveAt(save: HighSeasSave, townId: string): HighSeasSave {

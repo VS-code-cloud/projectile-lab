@@ -6,9 +6,12 @@ import {
   buildOverboardEncounter,
   buildPirateEncounter,
   buildWhirlpoolEncounter,
+  BOARDING_RADIUS,
   CAPTURE_RADIUS,
   contactChaseSpeed,
   contactDistance,
+  contactStandoffRadius,
+  CONTACT_ENGAGE_RADIUS,
   CONTACT_SPAWN_MAX_DISTANCE,
   CONTACT_SPAWN_MIN_DISTANCE,
   elapsedBucket,
@@ -16,9 +19,11 @@ import {
   generateVisibleContacts,
   isNavyCaptureReady,
   NAVY_CHASE_SPEED,
+  NAVY_STANDOFF_RADIUS,
   OPEN_SEA_CONTACT_REFRESH_SECONDS,
   OPEN_SEA_ENCOUNTER_INTERVAL_SECONDS,
   PIRATE_CHASE_SPEED,
+  PIRATE_STANDOFF_RADIUS,
   pirateFiringState,
   shouldRefreshOpenSeaContacts,
   shouldTriggerOpenSeaEncounter,
@@ -150,6 +155,36 @@ describe('contactChaseSpeed', () => {
     expect(PIRATE_CHASE_SPEED).toBeGreaterThan(MAX_SAIL_SPEED)
     // ...but only slightly, so maneuvering still buys ground.
     expect(NAVY_CHASE_SPEED).toBeLessThan(MAX_SAIL_SPEED * 1.3)
+  })
+})
+
+describe('contactStandoffRadius', () => {
+  it('closes pirates in to board while navy keeps its distance', () => {
+    expect(contactStandoffRadius('pirate')).toBe(PIRATE_STANDOFF_RADIUS)
+    expect(contactStandoffRadius('navy')).toBe(NAVY_STANDOFF_RADIUS)
+    // Pirates now press all the way in to board (melee): they hold inside both
+    // the navy standoff and the 50 m boarding trigger, so closing starts a fight.
+    expect(PIRATE_STANDOFF_RADIUS).toBeLessThan(NAVY_STANDOFF_RADIUS)
+    expect(PIRATE_STANDOFF_RADIUS).toBeLessThanOrEqual(BOARDING_RADIUS)
+  })
+
+  it('holds chasers off the hull (a positive standoff, not a ram)', () => {
+    expect(PIRATE_STANDOFF_RADIUS).toBeGreaterThan(0)
+    expect(NAVY_STANDOFF_RADIUS).toBeGreaterThan(0)
+  })
+})
+
+describe('BOARDING_RADIUS', () => {
+  it('is the 50 m boarding trigger in normalized world units', () => {
+    // 50 m / 6000 m world distance ≈ 0.00833.
+    expect(BOARDING_RADIUS).toBeCloseTo(50 / 6000, 9)
+  })
+})
+
+describe('CONTACT_ENGAGE_RADIUS', () => {
+  it('matches the ~650 m cannon reach so closing to firing range starts combat', () => {
+    // 0.108 normalized × 6000 m world distance ≈ 648 m, the 80 m/s cannon reach.
+    expect(CONTACT_ENGAGE_RADIUS).toBeCloseTo(0.108, 6)
   })
 })
 

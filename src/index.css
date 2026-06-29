@@ -27,6 +27,11 @@
   --font-display: 'Sora', 'Inter', system-ui, sans-serif;
   --font-mono:
     ui-monospace, 'SF Mono', 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+
+  /* Width at which the High Seas dashboards flank the full-size ship view /
+     sea chart (below this they stack underneath). Sized for the original
+     ~62rem center plus both side panels. */
+  --breakpoint-flank: 1450px;
 }
 
 :root {

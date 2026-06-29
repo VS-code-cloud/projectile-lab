@@ -8,7 +8,7 @@ import { mulberry32 } from '../highseas/rng'
 import { isInRange, maxRange } from '../highseas/combat'
 import {
   applyShipControls,
-  approachPosition,
+  approachToStandoff,
   displayedSpeedMetersPerSecond,
   distanceMeters,
   findTownAtPosition,
@@ -16,10 +16,15 @@ import {
   type ShipInput,
 } from '../highseas/navigation'
 import {
+  BOARDING_METERS,
+  NAVY_PURSUIT_METERS,
+  buildBoardingEncounter,
   buildEnvironmentalEncounter,
   buildNavyEncounter,
+  buildOverboardEncounter,
   buildPirateEncounter,
   contactChaseSpeed,
+  contactStandoffRadius,
   CONTACT_ENGAGE_RADIUS,
   CONTACT_SPAWN_INTERVAL_SECONDS,
   generateVisibleContacts,
@@ -35,14 +40,18 @@ import type {
   HighSeasPosition,
   Town,
 } from '../highseas/types'
-import { normalizeHighSeasSave } from '../highseas/voyage'
+import { normalizeHighSeasSave, wouldSink } from '../highseas/voyage'
 import { hullMaxFor, shipStatsFor } from '../highseas/upgrades'
 import { ShipHUD } from '../highseas/components/ShipHUD'
 import { VoyageMap } from '../highseas/components/VoyageMap'
 import { TownMarket } from '../highseas/components/TownMarket'
 import { ShipUpgrades } from '../highseas/components/ShipUpgrades'
 import { PirateBattle } from '../highseas/components/PirateBattle'
+import { BoardingBattle } from '../highseas/components/BoardingBattle'
 import {
+  FOV_DEFAULT,
+  FOV_MAX,
+  FOV_MIN,
   ISLAND_NORMALIZED_RADIUS,
   OFFSHORE_SPAWN_NORMALIZED,
   OpenSeaScene3D,
@@ -73,6 +82,9 @@ const COLLISION_SPEED_DAMP = 0.25
 // Distance (m) past which a locked-on pirate is dropped as a target — outrun it
 // and you shake the immediate threat (the ship itself keeps shadowing you).
 const LOSE_TARGET_METERS = 2400
+// Minimum gap (sailing seconds) between boardings, so resolving one melee can't
+// instantly re-trigger off a second pirate already at the rail.
+const BOARDING_COOLDOWN_SECONDS = 2.5
 type PirateFireTarget = {
   contact: SeaContact
   enteredRangeAt: number | null
@@ -142,13 +154,18 @@ function nearestContactWithin(
   return best
 }
 
-function rollPirateOrNavy(
+/**
+ * The one guaranteed encounter when teleporting to a port: an equal one-in-three
+ * chance of a pirate fight, a navy pursuit, or a crew-overboard rescue.
+ */
+function rollTeleportEncounter(
   seed: number,
   stage: number,
   muzzleSpeed: number,
 ): Encounter {
   const rand = mulberry32(seed)
-  if (rand() < 0.58) {
+  const roll = rand()
+  if (roll < 1 / 3) {
     const range = maxRange(muzzleSpeed)
     return buildPirateEncounter({
       distance: Math.round(range * (0.35 + rand() * 0.45)),
@@ -157,7 +174,10 @@ function rollPirateOrNavy(
       rand,
     })
   }
-  return buildNavyEncounter(rand, stage)
+  if (roll < 2 / 3) {
+    return buildNavyEncounter(rand, stage)
+  }
+  return buildOverboardEncounter(rand, stage)
 }
 
 export default function HighSeasPage() {
@@ -167,6 +187,7 @@ export default function HighSeasPage() {
     beginVoyage,
     resolveEncounter,
     sell,
+    buy,
     upgrade,
     dock,
     depart,
@@ -190,6 +211,9 @@ export default function HighSeasPage() {
   const [contactDots, setContactDots] = useState<SeaContactView[]>([])
   const [sailingSeconds, setSailingSeconds] = useState(0)
   const [pirateTarget, setPirateTarget] = useState<PirateFireTarget | null>(null)
+  // Camera field of view (degrees), adjustable via the helm slider. Mirrored to
+  // `fovRef` so the scene reads it each frame without re-rendering the canvas.
+  const [fov, setFov] = useState(FOV_DEFAULT)
 
   // The open-sea simulation runs inside the scene's render loop (`onSimFrame`)
   // and treats these refs as the source of truth. The `player`/`speed`/
@@ -218,6 +242,11 @@ export default function HighSeasPage() {
   const contactsRef = useRef(contacts)
   const pirateTargetRef = useRef(pirateTarget)
   const saveRef = useRef(save)
+  const fovRef = useRef(FOV_DEFAULT)
+
+  useEffect(() => {
+    fovRef.current = fov
+  }, [fov])
 
   // Dev-only: `/dev/high-seas?calm` pauses auto-encounters so the open sea
   // stays mounted indefinitely for inspection/verification.
@@ -234,6 +263,7 @@ export default function HighSeasPage() {
       heading: headingRef,
       speed: speedRef,
       contacts: contactsRef,
+      fov: fovRef,
     }),
     [],
   )
@@ -258,7 +288,7 @@ export default function HighSeasPage() {
   const startTeleportEncounter = useCallback((destId: string) => {
     if (!save) return
     const dest = TOWNS.find((town) => town.id === destId) ?? TOWNS[0]
-    const encounter = rollPirateOrNavy(
+    const encounter = rollTeleportEncounter(
       save.seed + destId.length,
       save.upgradeStage,
       stats.cannonMuzzleSpeed,
@@ -456,10 +486,14 @@ export default function HighSeasPage() {
       // around the coast instead of clipping through land.
       const liveContacts = contactsRef.current
       for (const contact of liveContacts) {
-        const stepped = approachPosition(
+        // Hold at a standoff distance (pirates just inside cannon range) instead
+        // of sailing onto the player, so ships line up for a duel rather than
+        // overlapping the hull.
+        const stepped = approachToStandoff(
           contact.position,
           corrected,
           contactChaseSpeed(contact.kind) * delta,
+          contactStandoffRadius(contact.kind),
         )
         contact.position = resolveIslandCollision(
           stepped,
@@ -507,19 +541,74 @@ export default function HighSeasPage() {
         return
       }
 
+      // Per-frame proximity encounters (separate from the 20 s interval). A pirate
+      // that closes within the 50 m boarding range grapples on and boards; a navy
+      // ship that closes within ~300 m commits to a pursuit (the jettison escape),
+      // so it engages well before the 20 s interval would. Both clear any aim bead
+      // and respect a short cooldown so one can't chain straight into the next.
+      if (
+        currentSave &&
+        !calm &&
+        nextElapsed - lastEncounterAtRef.current >= BOARDING_COOLDOWN_SECONDS
+      ) {
+        const boarder = liveContacts.find(
+          (c) =>
+            c.kind === 'pirate' &&
+            distanceMeters(corrected, c.position) <= BOARDING_METERS,
+        )
+        if (boarder) {
+          lastEncounterAtRef.current = nextElapsed
+          setPirateTarget(null)
+          setActive({
+            type: 'sea',
+            returnMode: 'open',
+            contactId: boarder.id,
+            encounter: buildBoardingEncounter(
+              mulberry32(currentSave.seed + Math.round(nextElapsed * 1000)),
+              currentSave.upgradeStage,
+            ),
+          })
+          return
+        }
+        const pursuer = liveContacts.find(
+          (c) =>
+            c.kind === 'navy' &&
+            distanceMeters(corrected, c.position) <= NAVY_PURSUIT_METERS,
+        )
+        if (pursuer) {
+          lastEncounterAtRef.current = nextElapsed
+          setPirateTarget(null)
+          setActive({
+            type: 'sea',
+            returnMode: 'open',
+            contactId: pursuer.id,
+            encounter: buildNavyEncounter(
+              mulberry32(currentSave.seed + Math.round(nextElapsed * 1000)),
+              currentSave.upgradeStage,
+            ),
+          })
+          return
+        }
+      }
+
       if (
         currentSave &&
         !calm &&
         !pirateTargetRef.current &&
         nextElapsed - lastEncounterAtRef.current >= OPEN_SEA_ENCOUNTER_INTERVAL_SECONDS
       ) {
-        // The interval is always consumed (so events can't spam). If an enemy has
-        // closed within engage range it attacks; otherwise the open water may
-        // throw a ~50/50 environmental hazard (overboard rescue / whirlpool).
+        // The interval is always consumed (so events can't spam). Only pirate
+        // contacts arm a fire-control bead here (navy is handled by the 300 m
+        // proximity trigger above); otherwise the open water may throw a ~50/50
+        // environmental hazard (overboard rescue / whirlpool).
         lastEncounterAtRef.current = nextElapsed
-        const nearest = nearestContactWithin(liveContacts, corrected, CONTACT_ENGAGE_RADIUS)
-        if (nearest) {
-          triggerOpenSeaContact(nearest)
+        const nearestPirate = nearestContactWithin(
+          liveContacts.filter((c) => c.kind === 'pirate'),
+          corrected,
+          CONTACT_ENGAGE_RADIUS,
+        )
+        if (nearestPirate) {
+          triggerOpenSeaContact(nearestPirate)
         } else if (mulberry32(currentSave.seed + Math.round(nextElapsed))() < 0.5) {
           triggerEnvironmentalEncounter()
         }
@@ -533,7 +622,8 @@ export default function HighSeasPage() {
         // Drop the bead if the pirate was sunk/cleared, or you outran it.
         const stillPresent = contactsRef.current.some((c) => c.id === current.contact.id)
         if (!stillPresent || distance > LOSE_TARGET_METERS) return null
-        const muzzleSpeed = current.contact.muzzleSpeed ?? stats.cannonMuzzleSpeed
+        // Range is governed by OUR cannon (the player fires), not the enemy's.
+        const muzzleSpeed = stats.cannonMuzzleSpeed
         const aimDelay = current.contact.aimDelay ?? 1
         const inRange = isInRange(distance, muzzleSpeed)
         const enteredRangeAt = inRange
@@ -598,7 +688,7 @@ export default function HighSeasPage() {
   function handleFirePirate() {
     if (!save || !pirateTarget?.ready) return
     const contact = pirateTarget.contact
-    const muzzleSpeed = contact.muzzleSpeed ?? stats.cannonMuzzleSpeed
+    const muzzleSpeed = stats.cannonMuzzleSpeed
     const distance = Math.round(distanceMeters(player, contact.position))
     if (!isInRange(distance, muzzleSpeed)) return
     setPirateTarget(null)
@@ -618,7 +708,10 @@ export default function HighSeasPage() {
 
   function handleResolve(result: EncounterResult) {
     if (!save || !active) return
-    const willSink = save.hullHp - result.damage <= 0
+    // Use the shared floor logic: a `survivable` failure (failed whirlpool, navy
+    // escape) bruises the hull to 1 HP and must NOT end the voyage, even if its
+    // damage exceeds the current hull.
+    const willSink = wouldSink(save, result)
     resolveEncounter(result)
     if (willSink) {
       setActive(null)
@@ -670,7 +763,7 @@ export default function HighSeasPage() {
 
   const fireControl = pirateTarget
     ? (() => {
-        const muzzleSpeed = pirateTarget.contact.muzzleSpeed ?? stats.cannonMuzzleSpeed
+        const muzzleSpeed = stats.cannonMuzzleSpeed
         const distance = Math.round(distanceMeters(player, pirateTarget.contact.position))
         const range = maxRange(muzzleSpeed)
         const inRange = isInRange(distance, muzzleSpeed)
@@ -694,13 +787,16 @@ export default function HighSeasPage() {
   // Discrete range value for the in-canvas firing ring (changes only when a
   // target is acquired/lost), kept separate from the throttled `fireControl`.
   const fireRangeMeters = pirateTarget
-    ? maxRange(pirateTarget.contact.muzzleSpeed ?? stats.cannonMuzzleSpeed)
+    ? maxRange(stats.cannonMuzzleSpeed)
     : null
 
   return (
     <ImmersiveBackground>
       <Header />
-      <main className="mx-auto max-w-5xl px-3 py-6 sm:px-4">
+      {/* Stays at the original ~max-w-5xl width until the screen is wide enough to
+          fit the full-size ship view PLUS both flanking dashboards (~1450px+), at
+          which point it widens so the center keeps its original size. */}
+      <main className="mx-auto max-w-5xl px-3 py-6 sm:px-4 flank:max-w-[94rem]">
         <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className="text-sm font-semibold text-accent-400">Capstone voyage</p>
@@ -737,34 +833,47 @@ export default function HighSeasPage() {
           <div className="space-y-4">
             <ShipHUD save={save} />
             {mode === 'open' ? (
-              <>
-                <OpenSeaScene3D
-                  sim={sim}
-                  player={player}
-                  playerHeadingDeg={heading}
-                  towns={TOWNS}
-                  contacts={contacts}
-                  contactDots={contactDots}
-                  showMap={showMap}
-                  fireRangeMeters={fireRangeMeters}
-                  fireControl={fireControl}
-                  onFire={handleFirePirate}
-                  onTeleportTown={startTeleportEncounter}
-                  onSimFrame={onSimFrame}
-                />
-                <OpenSeaControls
-                  contacts={contactDots}
-                  player={player}
-                  stats={stats}
-                  speed={speed}
-                  nearbyTown={nearbyTown}
-                  showMap={showMap}
-                  onToggleMap={() => setShowMap((v) => !v)}
-                  onMove={handleInputButton}
-                  onEngage={engageContact}
-                  onReturn={handleReturnToPort}
-                />
-              </>
+              // Flank the ship view with the Helm (left) and Visible ships
+              // (right) on desktop; stack them below the view on mobile.
+              <div className="grid grid-cols-1 gap-4 flank:grid-cols-[13rem_minmax(0,62rem)_15rem] flank:justify-center">
+                <div className="order-2 flank:order-1">
+                  <HelmPanel
+                    speed={speed}
+                    nearbyTown={nearbyTown}
+                    showMap={showMap}
+                    fov={fov}
+                    onFovChange={setFov}
+                    onToggleMap={() => setShowMap((v) => !v)}
+                    onMove={handleInputButton}
+                    onReturn={handleReturnToPort}
+                  />
+                </div>
+                <div className="order-1 flank:order-2">
+                  <OpenSeaScene3D
+                    sim={sim}
+                    player={player}
+                    playerHeadingDeg={heading}
+                    towns={TOWNS}
+                    contacts={contacts}
+                    contactDots={contactDots}
+                    showMap={showMap}
+                    fireRangeMeters={fireRangeMeters}
+                    fireControl={fireControl}
+                    onFire={handleFirePirate}
+                    onTeleportTown={startTeleportEncounter}
+                    onSimFrame={onSimFrame}
+                  />
+                </div>
+                <div className="order-3">
+                  <ShipsPanel
+                    contacts={contactDots}
+                    player={player}
+                    stats={stats}
+                    armedContactId={pirateTarget?.contact.id ?? null}
+                    onEngage={engageContact}
+                  />
+                </div>
+              </div>
             ) : (
               <>
                 <div className="card flex flex-wrap items-center justify-between gap-3 p-4">
@@ -781,14 +890,23 @@ export default function HighSeasPage() {
                     Enter open sea
                   </button>
                 </div>
-                <VoyageMap currentTownId={save.townId} onChoose={handleChoose} />
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <TownMarket
-                    save={save}
-                    town={currentTown}
-                    onSell={() => sell(currentTown)}
-                  />
-                  <ShipUpgrades save={save} onBuy={upgrade} />
+                {/* Flank the sea chart with the market (left) and shipwright
+                    (right) on desktop; stack on mobile (chart first). */}
+                <div className="grid grid-cols-1 gap-4 flank:grid-cols-[15rem_minmax(0,62rem)_15rem] flank:justify-center">
+                  <div className="order-2 flank:order-1">
+                    <TownMarket
+                      save={save}
+                      town={currentTown}
+                      onSell={() => sell(currentTown)}
+                      onBuy={(good, amount) => buy(currentTown, good, amount)}
+                    />
+                  </div>
+                  <div className="order-1 flank:order-2">
+                    <VoyageMap currentTownId={save.townId} onChoose={handleChoose} />
+                  </div>
+                  <div className="order-3">
+                    <ShipUpgrades save={save} onBuy={upgrade} />
+                  </div>
                 </div>
               </>
             )}
@@ -822,6 +940,18 @@ function EncounterOverlay({
         autoStart={active.autoStart}
         hull={save.hullHp}
         hullMax={hullMaxFor(save.upgradeStage)}
+        seed={save.seed}
+        stage={save.upgradeStage}
+        onResolve={onResolve}
+      />
+    )
+  }
+  if (encounter.kind === 'boarding') {
+    return (
+      <BoardingBattle
+        encounter={encounter}
+        hull={save.hullHp}
+        hullMax={hullMaxFor(save.upgradeStage)}
         onResolve={onResolve}
       />
     )
@@ -831,6 +961,10 @@ function EncounterOverlay({
       <NavyPursuit
         encounter={encounter}
         cargo={save.cargo}
+        hull={save.hullHp}
+        hullMax={hullMaxFor(save.upgradeStage)}
+        seed={save.seed}
+        stage={save.upgradeStage}
         onResolve={onResolve}
       />
     )
@@ -841,110 +975,140 @@ function EncounterOverlay({
   return <WhirlpoolHazard encounter={encounter} onResolve={onResolve} />
 }
 
-function OpenSeaControls({
-  contacts,
-  player,
-  stats,
+/** Left-of-view Helm panel: steering, map toggle, field-of-view, return. */
+function HelmPanel({
   speed,
   nearbyTown,
   showMap,
+  fov,
+  onFovChange,
   onToggleMap,
   onMove,
-  onEngage,
   onReturn,
+}: {
+  speed: number
+  nearbyTown: Town | null
+  showMap: boolean
+  fov: number
+  onFovChange: (fov: number) => void
+  onToggleMap: () => void
+  onMove: (key: 'ArrowUp' | 'ArrowDown' | 'ArrowLeft' | 'ArrowRight') => void
+  onReturn: () => void
+}) {
+  return (
+    <div className="card h-full p-4">
+      <h2 className="font-display text-base font-semibold text-slate-900">Helm</h2>
+      <p className="mt-0.5 text-sm text-slate-600">
+        Use arrow keys, or tap these controls. Open the map to steer toward towns.
+      </p>
+      <p className="mt-2 text-xs font-semibold text-slate-500">
+        Speed {displayedSpeedMetersPerSecond(speed).toFixed(0)} m/s
+        {nearbyTown ? ` · near ${nearbyTown.name}` : ' · open water'}
+      </p>
+      <div className="mt-3 grid grid-cols-3 gap-2">
+        <span />
+        <button type="button" onClick={() => onMove('ArrowUp')} className="btn-ghost">
+          Forward
+        </button>
+        <span />
+        <button type="button" onClick={() => onMove('ArrowLeft')} className="btn-ghost">
+          Turn left
+        </button>
+        <button type="button" onClick={() => onMove('ArrowDown')} className="btn-ghost">
+          Back
+        </button>
+        <button type="button" onClick={() => onMove('ArrowRight')} className="btn-ghost">
+          Turn right
+        </button>
+      </div>
+      <div className="mt-3 flex flex-wrap gap-2">
+        <button type="button" onClick={onToggleMap} className="btn-primary">
+          {showMap ? 'Hide map' : 'Open map'}
+        </button>
+        <button type="button" onClick={onReturn} className="btn-ghost">
+          Return to port
+        </button>
+      </div>
+      <label className="mt-3 flex flex-col text-xs font-semibold text-slate-500">
+        <span>Field of view · {Math.round(fov)}°</span>
+        <input
+          type="range"
+          min={FOV_MIN}
+          max={FOV_MAX}
+          step={1}
+          value={fov}
+          onChange={(e) => onFovChange(Number(e.target.value))}
+          className="mt-1 w-full accent-brand-500"
+          aria-label="Camera field of view"
+        />
+      </label>
+    </div>
+  )
+}
+
+/** Right-of-view dashboard listing visible enemy ships and engage actions. */
+function ShipsPanel({
+  contacts,
+  player,
+  stats,
+  armedContactId,
+  onEngage,
 }: {
   contacts: SeaContactView[]
   player: HighSeasPosition
   stats: ReturnType<typeof shipStatsFor>
-  speed: number
-  nearbyTown: Town | null
-  showMap: boolean
-  onToggleMap: () => void
-  onMove: (key: 'ArrowUp' | 'ArrowDown' | 'ArrowLeft' | 'ArrowRight') => void
+  /** The contact currently locked as the firing target (its row shows "Aiming"). */
+  armedContactId: string | null
   onEngage: (contactId: string) => void
-  onReturn: () => void
 }) {
   return (
-    <div className="grid gap-4 lg:grid-cols-[1fr_1.2fr]">
-      <div className="card p-4">
-        <h2 className="font-display text-base font-semibold text-slate-900">
-          Helm
-        </h2>
-        <p className="mt-0.5 text-sm text-slate-600">
-          Use arrow keys, or tap these controls. Open the map to steer toward towns.
-        </p>
-        <p className="mt-2 text-xs font-semibold text-slate-500">
-          Speed {displayedSpeedMetersPerSecond(speed).toFixed(0)} m/s
-          {nearbyTown ? ` · near ${nearbyTown.name}` : ' · open water'}
-        </p>
-        <div className="mt-3 grid grid-cols-3 gap-2">
-          <span />
-          <button type="button" onClick={() => onMove('ArrowUp')} className="btn-ghost">
-            Forward
-          </button>
-          <span />
-          <button type="button" onClick={() => onMove('ArrowLeft')} className="btn-ghost">
-            Turn left
-          </button>
-          <button type="button" onClick={() => onMove('ArrowDown')} className="btn-ghost">
-            Back
-          </button>
-          <button type="button" onClick={() => onMove('ArrowRight')} className="btn-ghost">
-            Turn right
-          </button>
-        </div>
-        <div className="mt-3 flex flex-wrap gap-2">
-          <button type="button" onClick={onToggleMap} className="btn-primary">
-            {showMap ? 'Hide map' : 'Open map'}
-          </button>
-          <button type="button" onClick={onReturn} className="btn-ghost">
-            Return to port
-          </button>
-        </div>
-      </div>
-
-      <div className="card p-4">
-        <h2 className="font-display text-base font-semibold text-slate-900">
-          Visible ships
-        </h2>
-        <div className="mt-3 space-y-2">
-          {contacts.map((contact) => {
-            const distance = Math.round(distanceMeters(player, contact.position))
-            const inRange =
-              contact.kind === 'pirate' &&
-              isInRange(distance, stats.cannonMuzzleSpeed)
-            return (
-              <div
-                key={contact.id}
-                className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2"
-              >
-                <div>
-                  <p className="text-sm font-semibold text-slate-900">
-                    {contact.kind === 'pirate' ? 'Pirate ship' : 'Navy ship'}
-                  </p>
-                  <p className="text-xs text-slate-500">
-                    {distance} m away
-                    {contact.kind === 'pirate'
-                      ? ` · arm Fire within ${stats.maxFiringRange.toFixed(0)} m`
-                      : ' · avoid capture range'}
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => onEngage(contact.id)}
-                  disabled={contact.kind === 'pirate' && !inRange}
-                  className="btn-primary min-h-10 px-3 disabled:cursor-not-allowed disabled:opacity-50"
-                >
+    <div className="card h-full p-4">
+      <h2 className="font-display text-base font-semibold text-slate-900">
+        Visible ships
+      </h2>
+      <div className="mt-3 space-y-2">
+        {contacts.length === 0 && (
+          <p className="text-xs text-slate-500">Open water — no ships in sight.</p>
+        )}
+        {contacts.map((contact) => {
+          const distance = Math.round(distanceMeters(player, contact.position))
+          const inRange =
+            contact.kind === 'pirate' &&
+            isInRange(distance, stats.cannonMuzzleSpeed)
+          const armed = contact.id === armedContactId
+          return (
+            <div
+              key={contact.id}
+              className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2"
+            >
+              <div>
+                <p className="text-sm font-semibold text-slate-900">
+                  {contact.kind === 'pirate' ? 'Pirate ship' : 'Navy ship'}
+                </p>
+                <p className="text-xs text-slate-500">
+                  {distance} m away
                   {contact.kind === 'pirate'
+                    ? ` · arm Fire within ${stats.maxFiringRange.toFixed(0)} m`
+                    : ' · avoid capture range'}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => onEngage(contact.id)}
+                disabled={armed || (contact.kind === 'pirate' && !inRange)}
+                className="btn-primary min-h-10 px-3 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {armed
+                  ? 'Aiming — Fire on the map'
+                  : contact.kind === 'pirate'
                     ? inRange
                       ? 'Arm cannons'
                       : 'Sail closer'
                     : 'Evade'}
-                </button>
-              </div>
-            )
-          })}
-        </div>
+              </button>
+            </div>
+          )
+        })}
       </div>
     </div>
   )

@@ -2,12 +2,17 @@ import { Suspense, lazy, useMemo, useState } from 'react'
 import type { Step } from '../../lessons/types'
 import { generateMooringSituation } from '../mooringSituation'
 import type {
+  CargoHold,
   EncounterResult,
   NavyEncounter,
   OverboardEncounter,
   WhirlpoolEncounter,
 } from '../types'
 import { keepMass } from '../../lib/jettisonGame'
+import { holdTotal, toHold } from '../cargo'
+import { buildBoardingEncounter } from '../worldEncounters'
+import { mulberry32 } from '../rng'
+import { BoardingBattle } from './BoardingBattle'
 
 const JettisonGame3D = lazy(
   () => import('../../components/interactive/JettisonGame3D'),
@@ -79,16 +84,43 @@ function ResultCard({
 export function NavyPursuit({
   encounter,
   cargo,
+  hull,
+  hullMax,
+  seed,
+  stage,
   onResolve,
-}: ChallengeProps & { encounter: NavyEncounter; cargo: number }) {
+}: ChallengeProps & {
+  encounter: NavyEncounter
+  cargo: CargoHold
+  hull: number
+  hullMax: number
+  seed: number
+  stage: number
+}) {
   const [escaped, setEscaped] = useState(false)
+  const [fighting, setFighting] = useState(false)
   const target = Math.round(keepMass(encounter.force, encounter.escapeAccel))
+  const hold = toHold(cargo)
+  const total = holdTotal(hold)
   // Ship hull weighs 200 kg, plus 40 kg per cargo unit aboard.
-  const ladenMass = 200 + cargo * 40
-  const cargoLost = Math.max(1, Math.min(cargo, Math.ceil(cargo * 0.35)))
+  const ladenMass = 200 + total * 40
+  const cargoLost = Math.max(1, Math.min(total, Math.ceil(total * 0.35)))
+  // Split the jettisoned units across the two goods proportionally to the hold.
+  const lostRum =
+    total > 0 ? Math.min(hold.rum, Math.round((cargoLost * hold.rum) / total)) : 0
+  const lostSpice = Math.min(hold.spice, cargoLost - lostRum)
+  const lostShort = cargoLost - (lostRum + lostSpice)
+  const dropRum = Math.min(hold.rum, lostRum + Math.max(0, lostShort))
+  const jettisonDelta = { rum: -dropRum, spice: -lostSpice }
   // If the laden ship is already lighter than the escape keep-mass, it is fast
   // enough to outrun the navy without throwing anything overboard.
   const alreadyFast = ladenMass <= target
+  // Standing to fight a navy ship plays the same boarding melee as a pirate,
+  // just against the marines (built from a stable per-encounter seed).
+  const navyBoarding = useMemo(
+    () => buildBoardingEncounter(mulberry32(seed + 4242), stage),
+    [seed, stage],
+  )
   const step = stepFor('high-seas-navy', 'JettisonGame3D', target, {
     force: encounter.force,
     accelReq: encounter.escapeAccel,
@@ -96,6 +128,18 @@ export function NavyPursuit({
     target,
     tolerance: encounter.tolerance,
   })
+
+  if (fighting) {
+    return (
+      <BoardingBattle
+        encounter={navyBoarding}
+        foe="navy"
+        hull={hull}
+        hullMax={hullMax}
+        onResolve={onResolve}
+      />
+    )
+  }
 
   if (alreadyFast) {
     return (
@@ -108,8 +152,15 @@ export function NavyPursuit({
           tone="success"
           text={`Your ship weighs only ${ladenMass} kg — light enough to outrun the navy with sails alone.`}
           action="Return to sea"
-          onClick={() => onResolve({ won: true, coins: 0, cargo: 0, damage: 0 })}
+          onClick={() => onResolve({ won: true, coins: 0, cargo: {}, damage: 0 })}
         />
+        <button
+          type="button"
+          onClick={() => setFighting(true)}
+          className="min-h-11 self-start rounded-xl bg-white px-4 font-semibold text-slate-900 shadow-sm ring-1 ring-slate-200 transition hover:bg-slate-100"
+        >
+          Or board them and fight to plunder their hold
+        </button>
       </div>
     )
   }
@@ -118,7 +169,7 @@ export function NavyPursuit({
     <div className="space-y-3">
       <EncounterHeader
         title="Navy pursuit!"
-        body={`A commissioned ship is closing in. Drop cargo until your ship can accelerate away.`}
+        body={`A commissioned ship is closing in. Drop cargo until your ship can accelerate away — or stand and board them for the prize.`}
       />
       <Suspense fallback={fallback()}>
         <JettisonGame3D
@@ -135,25 +186,34 @@ export function NavyPursuit({
           text={`You escape, losing ${cargoLost} cargo in the chase.`}
           action="Return to sea"
           onClick={() =>
-            onResolve({ won: true, coins: 0, cargo: -cargoLost, damage: 0 })
+            onResolve({ won: true, coins: 0, cargo: jettisonDelta, damage: 0 })
           }
         />
       ) : (
-        <button
-          type="button"
-          onClick={() =>
-            onResolve({
-              won: false,
-              coins: 0,
-              cargo: 0,
-              damage: encounter.damage,
-              survivable: true,
-            })
-          }
-          className="btn-ghost min-h-11 px-4 text-rose-600"
-        >
-          Surrender the chase and take hull damage
-        </button>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => setFighting(true)}
+            className="btn-primary min-h-11 px-4"
+          >
+            Stand and fight — board them
+          </button>
+          <button
+            type="button"
+            onClick={() =>
+              onResolve({
+                won: false,
+                coins: 0,
+                cargo: {},
+                damage: encounter.damage,
+                survivable: true,
+              })
+            }
+            className="btn-ghost min-h-11 px-4 text-rose-600"
+          >
+            Surrender the chase and take hull damage
+          </button>
+        </div>
       )}
     </div>
   )
@@ -202,7 +262,7 @@ export function OverboardRescue({
             onResolve({
               won: true,
               coins: encounter.reward,
-              cargo: 0,
+              cargo: {},
               damage: 0,
             })
           }
@@ -214,7 +274,7 @@ export function OverboardRescue({
           text="No one blames you for the failure, but tonight will be a mournful one."
           action="Sail on"
           onClick={() =>
-            onResolve({ won: false, coins: 0, cargo: 0, damage: 0 })
+            onResolve({ won: false, coins: 0, cargo: {}, damage: 0 })
           }
         />
       )}
@@ -260,7 +320,7 @@ export function TownMooring({
           tone="success"
           text="You are safely tied up at the dock."
           action="Enter town"
-          onClick={() => onResolve({ won: true, coins: 0, cargo: 0, damage: 0 })}
+          onClick={() => onResolve({ won: true, coins: 0, cargo: {}, damage: 0 })}
         />
       ) : (
         <p className="text-xs text-slate-500">
@@ -306,7 +366,7 @@ export function WhirlpoolHazard({
           tone="success"
           text="You ride the current and break free."
           action="Return to sea"
-          onClick={() => onResolve({ won: true, coins: 0, cargo: 0, damage: 0 })}
+          onClick={() => onResolve({ won: true, coins: 0, cargo: {}, damage: 0 })}
         />
       ) : (
         <button
@@ -315,7 +375,7 @@ export function WhirlpoolHazard({
             onResolve({
               won: false,
               coins: 0,
-              cargo: 0,
+              cargo: {},
               damage: encounter.damage,
               survivable: true,
             })
@@ -358,7 +418,7 @@ export function ReloadChallenge({ onResolve }: ChallengeProps) {
           tone="success"
           text="Cannons are ready."
           action="Return to sea"
-          onClick={() => onResolve({ won: true, coins: 0, cargo: 0, damage: 0 })}
+          onClick={() => onResolve({ won: true, coins: 0, cargo: {}, damage: 0 })}
         />
       )}
     </div>

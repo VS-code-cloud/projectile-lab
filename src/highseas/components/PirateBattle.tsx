@@ -1,7 +1,12 @@
-import { Suspense, lazy, useEffect, useState } from 'react'
+import { Suspense, lazy, useEffect, useMemo, useState } from 'react'
 import type { Step } from '../../lessons/types'
+import type { ShotStatus } from '../../lib/cannonGame'
 import type { EncounterResult, PirateEncounter } from '../types'
-import { maxRange, requiredAngleDeg } from '../combat'
+import { maxRange } from '../combat'
+import { mulberry32 } from '../rng'
+import { CARGO_LABELS, lootDelta } from '../cargo'
+import { BOARDING_METERS, buildBoardingEncounter } from '../worldEncounters'
+import { BoardingBattle } from './BoardingBattle'
 import {
   enemyReturnFire,
   enemySunk,
@@ -26,29 +31,32 @@ interface PirateBattleProps {
   hull: number
   /** The player's max hull HP at this ship tier. */
   hullMax: number
+  /** Voyage seed + upgrade stage, used to build a boarding melee if they close in. */
+  seed: number
+  stage: number
   onResolve: (result: EncounterResult) => void
 }
 
-type Phase = 'intro' | 'firing' | 'reloading' | 'won' | 'lost'
+type Phase = 'intro' | 'firing' | 'reloading' | 'boarding' | 'won' | 'lost'
 
 function gameFallback() {
   return <div className="h-72 w-full animate-shimmer rounded-xl" />
 }
 
 /**
- * Ship-to-ship duel against a pirate. Both hulls have a health bar. Each landed
- * cannon shot (the projectile mini-game) chips the enemy hull; if the enemy
- * survives you must reload via the inclined-plane challenge before firing
- * again, and the pirate returns fire while you reload. Win by sinking the enemy
- * (seize its cargo); lose if your hull is shot away, or retreat early and take a
- * parting shot. The cannon fires at a fixed muzzle speed, so the target is
- * always within range.
+ * Ship-to-ship duel against a pirate. Both hulls have a health bar. Two clean
+ * cannon hits sink the enemy — but each MISS lets the pirate either return fire
+ * (minor hull damage) or close the distance (~50/50). If they close inside the
+ * boarding range, the duel turns into a three-phase melee. You must work out the
+ * firing angle yourself: the scene shows the range, not the solution.
  */
 export function PirateBattle({
   encounter,
   autoStart = false,
   hull,
   hullMax,
+  seed,
+  stage,
   onResolve,
 }: PirateBattleProps) {
   const [duel, setDuel] = useState<DuelState>(() =>
@@ -56,6 +64,8 @@ export function PirateBattle({
   )
   const [phase, setPhase] = useState<Phase>(autoStart ? 'firing' : 'intro')
   const [ready, setReady] = useState(encounter.aimDelay <= 0)
+  // Current distance to the pirate (m); shrinks each time a miss lets it close.
+  const [distance, setDistance] = useState(encounter.distance)
   // Increments per fired shot so the cannon/reload mini-games remount fresh.
   const [round, setRound] = useState(0)
 
@@ -65,23 +75,35 @@ export function PirateBattle({
     return () => clearTimeout(timer)
   }, [encounter.aimDelay])
 
-  // Each clean hit chips the enemy down in ~3 shots; the pirate's reply while
-  // you reload takes a portion of its full broadside off your hull.
-  const chip = Math.max(1, Math.ceil(encounter.enemyHpMax / 3))
-  const returnFire = Math.max(5, Math.round(encounter.damage * 0.6))
+  // Two clean hits sink the enemy. A full broadside lands while you reload after
+  // a hit; a miss earns only a graze if they choose to shoot back.
+  const chip = Math.max(1, Math.ceil(encounter.enemyHpMax / 2))
+  const fullBroadside = Math.max(5, Math.round(encounter.damage * 0.6))
+  const grazeDamage = Math.max(3, Math.round(encounter.damage * 0.35))
   const range = maxRange(encounter.muzzleSpeed)
-  const angle = requiredAngleDeg(encounter.distance, encounter.muzzleSpeed)
+
+  // Which good this pirate is carrying as plunder (stable per encounter).
+  const lootGood = useMemo(
+    () => (mulberry32(seed + encounter.distance + 3)() < 0.5 ? 'rum' : 'spice'),
+    [seed, encounter.distance],
+  )
+
+  // A boarding melee built once, used if the pirate closes inside boarding range.
+  const boardingEncounter = useMemo(
+    () => buildBoardingEncounter(mulberry32(seed + encounter.distance + 17), stage),
+    [seed, encounter.distance, stage],
+  )
 
   const cannonStep: Step = {
     uid: 'high-seas-pirate',
     stepType: 'question',
     displayText: '',
     interactiveComponent: 'CannonGame3D',
-    expected: [encounter.distance],
+    expected: [distance],
     explanation: '',
     params: {
       v: encounter.muzzleSpeed,
-      target: encounter.distance,
+      target: distance,
       tolerance: encounter.tolerance,
       highSeasMode: 1,
     },
@@ -105,15 +127,45 @@ export function PirateBattle({
       setPhase('won')
       return
     }
-    const afterReply = enemyReturnFire(afterHit, returnFire)
+    const afterReply = enemyReturnFire(afterHit, fullBroadside)
     setDuel(afterReply)
     setPhase(shipSunk(afterReply) ? 'lost' : 'reloading')
+  }
+
+  /** A cannon shot missed: ~50/50 they return fire (minor) or close the gap. */
+  function handleMiss() {
+    if (Math.random() < 0.5) {
+      const afterReply = enemyReturnFire(duel, grazeDamage)
+      setDuel(afterReply)
+      if (shipSunk(afterReply)) setPhase('lost')
+      return
+    }
+    const closer = Math.round(distance * 0.5)
+    if (closer <= BOARDING_METERS) {
+      setPhase('boarding')
+      return
+    }
+    setDistance(closer)
+    setRound((r) => r + 1)
   }
 
   /** Reload finished (keg rolled to the gun crew): line up the next shot. */
   function handleReloaded() {
     setRound((r) => r + 1)
     setPhase('firing')
+  }
+
+  if (phase === 'boarding') {
+    return (
+      <BoardingBattle
+        encounter={boardingEncounter}
+        foe="pirate"
+        hull={duel.hull}
+        hullMax={hullMax}
+        priorDamage={hull - duel.hull}
+        onResolve={onResolve}
+      />
+    )
   }
 
   return (
@@ -125,12 +177,12 @@ export function PirateBattle({
               Pirates ahead!
             </h2>
             <p className="mt-0.5 text-sm text-slate-600">
-              Trade broadsides until one ship goes down. Land a hit, then{' '}
-              <span className="font-semibold">reload</span> to fire again — the
-              pirate shoots back while you do.
+              Two solid hits will sink them — but every miss lets them shoot back
+              or close in. Land a hit, then <span className="font-semibold">reload</span>{' '}
+              to fire again. Get the launch angle right and they go down fast.
             </p>
             <p className="mt-1 text-xs text-slate-500">
-              Distance {encounter.distance} m · cannon range {range.toFixed(0)} m.
+              Distance {distance} m · cannon range {range.toFixed(0)} m.
               {phase === 'intro' &&
                 (ready
                   ? ' Your gun crew has a firing solution.'
@@ -149,7 +201,7 @@ export function PirateBattle({
               onResolve({
                 won: false,
                 coins: 0,
-                cargo: 0,
+                cargo: {},
                 damage: encounter.damage,
               })
             }
@@ -169,24 +221,19 @@ export function PirateBattle({
       )}
 
       {phase === 'firing' && (
-        <>
-          <ProjectileSolutionPanel
-            distance={encounter.distance}
-            muzzleSpeed={encounter.muzzleSpeed}
-            range={range}
-            angle={angle}
+        <Suspense fallback={gameFallback()}>
+          <CannonGame3D
+            key={`fire-${round}`}
+            step={cannonStep}
+            answered={false}
+            submittedValues={null}
+            isCorrect={null}
+            onSubmit={handleHit}
+            onAttempt={(status: ShotStatus) => {
+              if (status !== 'hit') handleMiss()
+            }}
           />
-          <Suspense fallback={gameFallback()}>
-            <CannonGame3D
-              key={`fire-${round}`}
-              step={cannonStep}
-              answered={false}
-              submittedValues={null}
-              isCorrect={null}
-              onSubmit={handleHit}
-            />
-          </Suspense>
-        </>
+        </Suspense>
       )}
 
       {phase === 'reloading' && (
@@ -205,7 +252,7 @@ export function PirateBattle({
       {phase === 'won' && (
         <div className="card flex flex-wrap items-center justify-between gap-3 border-emerald-300 bg-emerald-50 p-4">
           <p className="text-sm font-semibold text-emerald-800">
-            Pirate ship sunk! You haul {encounter.loot} cargo aboard.
+            Pirate ship sunk! You haul {encounter.loot} {CARGO_LABELS[lootGood]} aboard.
           </p>
           <button
             type="button"
@@ -213,7 +260,7 @@ export function PirateBattle({
               onResolve({
                 won: true,
                 coins: 0,
-                cargo: encounter.loot,
+                cargo: lootDelta(lootGood, encounter.loot),
                 damage: hull - duel.hull,
               })
             }
@@ -232,7 +279,7 @@ export function PirateBattle({
           <button
             type="button"
             onClick={() =>
-              onResolve({ won: false, coins: 0, cargo: 0, damage: hull })
+              onResolve({ won: false, coins: 0, cargo: {}, damage: hull })
             }
             className="btn-primary min-h-11 px-4"
           >
@@ -277,32 +324,6 @@ function HealthBar({
           style={{ width: `${pct}%` }}
         />
       </div>
-    </div>
-  )
-}
-
-function ProjectileSolutionPanel({
-  distance,
-  muzzleSpeed,
-  range,
-  angle,
-}: {
-  distance: number
-  muzzleSpeed: number
-  range: number
-  angle: number | null
-}) {
-  return (
-    <div className="card border-sky-200 bg-sky-50 p-4 text-sm text-sky-900">
-      <h3 className="font-display text-sm font-semibold">Fire-control math</h3>
-      <p className="mt-1">
-        With v = {muzzleSpeed} m/s, max range is {range.toFixed(0)} m at 45°.
-        This target is {distance} m away, so a valid low arc is{' '}
-        <span className="font-semibold">
-          {angle === null ? 'out of range' : `${angle.toFixed(1)}°`}
-        </span>
-        .
-      </p>
     </div>
   )
 }

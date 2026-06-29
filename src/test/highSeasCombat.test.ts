@@ -58,6 +58,14 @@ describe('shipStatsFor', () => {
     expect(stats.maxFiringRange).toBe(maxRange(stats.cannonMuzzleSpeed))
   })
 
+  it('fires at ~80 m/s for a ~650 m combat range at stage 0', () => {
+    const stats = shipStatsFor(0)
+    expect(stats.cannonMuzzleSpeed).toBe(80)
+    // v²/g = 6400 / 9.8 ≈ 653 m.
+    expect(stats.maxFiringRange).toBeGreaterThan(640)
+    expect(stats.maxFiringRange).toBeLessThan(660)
+  })
+
   it('improves ship capability by upgrade stage', () => {
     const start = shipStatsFor(0)
     const upgraded = shipStatsFor(3)

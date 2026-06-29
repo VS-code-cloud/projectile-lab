@@ -1,14 +1,21 @@
 import { useCallback } from 'react'
 import { useUserData } from '../hooks/useUserData'
-import type { EncounterResult, HighSeasPosition, HighSeasSave, Town } from './types'
+import type {
+  CargoGood,
+  EncounterResult,
+  HighSeasPosition,
+  HighSeasSave,
+  Town,
+} from './types'
 import {
   applyResult,
   arriveAt,
+  normalizeHighSeasSave,
   setSail,
   startVoyage,
   updateLocation as updateVoyageLocation,
 } from './voyage'
-import { buyUpgrade, sellAllCargo } from './economy'
+import { buyCargo, buyUpgrade, sellAllCargo } from './economy'
 
 /** Hook API for driving a High Seas voyage, persisted via the user-data context. */
 export interface UseHighSeasResult {
@@ -22,6 +29,8 @@ export interface UseHighSeasResult {
   resolveEncounter: (result: EncounterResult) => void
   /** Sell the entire hold at the given town. */
   sell: (town: Town) => void
+  /** Buy up to `amount` units of a good at the given town. */
+  buy: (town: Town, good: CargoGood, amount: number) => void
   /** Buy the next ship upgrade if affordable. */
   upgrade: () => void
   /** Dock at a town (ends the leg). */
@@ -58,6 +67,13 @@ export function useHighSeas(): UseHighSeasResult {
     [updateHighSeas],
   )
 
+  const buy = useCallback(
+    (town: Town, good: CargoGood, amount: number) => {
+      updateHighSeas((prev) => buyCargo(prev ?? startVoyage(), town, good, amount))
+    },
+    [updateHighSeas],
+  )
+
   const upgrade = useCallback(() => {
     updateHighSeas((prev) => buyUpgrade(prev ?? startVoyage()))
   }, [updateHighSeas])
@@ -81,11 +97,14 @@ export function useHighSeas(): UseHighSeasResult {
   )
 
   return {
-    save: highSeas,
+    // Always hand consumers a normalized save (hold shape migrated, location/route
+    // defaulted) so cargo is reliably a CargoHold everywhere.
+    save: highSeas ? normalizeHighSeasSave(highSeas) : null,
     loading,
     beginVoyage,
     resolveEncounter,
     sell,
+    buy,
     upgrade,
     dock,
     depart,

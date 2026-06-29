@@ -79,6 +79,26 @@ export function approachPosition(
   return { x: from.x + (dx / d) * maxStep, y: from.y + (dy / d) * maxStep }
 }
 
+/**
+ * Step `from` toward `target` by at most `maxStep`, but stop once it reaches
+ * `standoff` units away — a chaser that holds at firing distance instead of
+ * sailing onto the player. If `from` is already at or inside the standoff ring
+ * it holds position (never pushes back out), and it never crosses the ring.
+ */
+export function approachToStandoff(
+  from: WorldPosition,
+  target: WorldPosition,
+  maxStep: number,
+  standoff: number,
+): WorldPosition {
+  const dx = target.x - from.x
+  const dy = target.y - from.y
+  const d = Math.hypot(dx, dy)
+  if (d <= standoff || d === 0) return { x: from.x, y: from.y }
+  const step = Math.min(maxStep, d - standoff)
+  return { x: from.x + (dx / d) * step, y: from.y + (dy / d) * step }
+}
+
 export function clampPosition(pos: WorldPosition): WorldPosition {
   return {
     x: Math.max(WORLD_MIN, Math.min(WORLD_MAX, pos.x)),

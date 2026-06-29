@@ -1,7 +1,8 @@
-import { aimDelaySeconds, isInRange } from './combat'
-import type { WorldPosition } from './navigation'
+import { aimDelaySeconds, isInRange, maxRange } from './combat'
+import { WORLD_DISTANCE_METERS, type WorldPosition } from './navigation'
 import { mulberry32, nextSeed } from './rng'
 import type {
+  BoardingEncounter,
   NavyEncounter,
   OverboardEncounter,
   PirateEncounter,
@@ -66,8 +67,35 @@ export const NAVY_CHASE_SPEED = 0.004
 export const MAX_CONTACTS = 3
 /** Seconds between spawning a fresh contact while below `MAX_CONTACTS`. */
 export const CONTACT_SPAWN_INTERVAL_SECONDS = 15
-/** Normalized range at which an approaching contact forces an engagement. */
-export const CONTACT_ENGAGE_RADIUS = 0.06
+// Normalized range at which an approaching contact forces an engagement. Set to
+// ~650 m (0.108 × WORLD_DISTANCE_METERS 6000), matching the cannon's max reach
+// at 80 m/s, so an enemy that has closed to within firing range engages — it is
+// far easier to get into combat than the old 360 m.
+export const CONTACT_ENGAGE_RADIUS = 0.108
+
+// Chasers hold at a standoff range instead of overrunning the player. Pirates
+// now press all the way in to BOARD: they close to ~45 m (just inside the 50 m
+// boarding trigger) so the melee challenge fires on contact. Navy still stands
+// off (~180 m) to threaten a jettison chase rather than grapple aboard. Both are
+// normalized world units (× WORLD_DISTANCE_METERS).
+export const PIRATE_STANDOFF_RADIUS = 0.0075
+export const NAVY_STANDOFF_RADIUS = 0.03
+
+/** A pirate that closes within this many meters grapples on and boards. */
+export const BOARDING_METERS = 50
+/** Boarding trigger range in normalized world units (BOARDING_METERS / world). */
+export const BOARDING_RADIUS = BOARDING_METERS / WORLD_DISTANCE_METERS
+/**
+ * A navy ship that closes within this many meters forces a pursuit (the jettison
+ * escape). Much larger than the boarding range, so the navy commits to the chase
+ * well before it could ever board — pirate combat triggers are unaffected.
+ */
+export const NAVY_PURSUIT_METERS = 300
+
+/** Normalized range a chaser of `kind` holds at instead of overrunning the player. */
+export function contactStandoffRadius(kind: ContactKind): number {
+  return kind === 'navy' ? NAVY_STANDOFF_RADIUS : PIRATE_STANDOFF_RADIUS
+}
 // Fresh contacts spawn in a tight band just *past* the fog horizon. The open-sea
 // scene fogs out around 0.124 normalized (FOG_FAR 34000 / WORLD 275000), so a
 // ship spawned in [0.135, 0.19] is hidden in the haze yet only a short sail
@@ -234,6 +262,66 @@ export function buildPirateEncounter({
     damage: randInt(rand, 15, 30),
     aimDelay,
     enemyHpMax: ENEMY_HP_MAX,
+  }
+}
+
+// Curated rope-swing setups whose centripetal answer v = √(a·r) is an exact
+// integer, so boarding phase 2 always has a clean solution. Radii read as real
+// boarding ropes (4–8 m); `accel` is what the fraying rope can bear before it
+// snaps and drops the boarder into the sea.
+const ROPE_SWINGS: ReadonlyArray<{ radius: number; accel: number }> = [
+  { radius: 4, accel: 9 }, // v = 6
+  { radius: 4, accel: 16 }, // v = 8
+  { radius: 4, accel: 25 }, // v = 10
+  { radius: 5, accel: 20 }, // v = 10
+  { radius: 6, accel: 6 }, // v = 6
+  { radius: 6, accel: 24 }, // v = 12
+  { radius: 8, accel: 8 }, // v = 8
+  { radius: 8, accel: 18 }, // v = 12
+]
+
+/**
+ * A pirate boarding party: a three-phase melee. Phase 1 throws a powder grenade
+ * onto the boarding party (2D projectile), phase 2 cuts a rope-swinging boarder
+ * loose (uniform circular motion), and phase 3 shoves off the grappled hull
+ * after looting (Newton's 2nd law). Generated so every phase has a clean,
+ * solvable answer inside the mini-games' input ranges. Loot beats firing (a >1
+ * multiplier on the same base roll); a percentage hull hit is guaranteed and
+ * grows with each phase missed.
+ */
+export function buildBoardingEncounter(
+  rand: () => number,
+  stage: number,
+): BoardingEncounter {
+  // Phase 1 — grenade: even throw speed (clean), target well inside max range so
+  // the required launch angle 0.5·asin(g·d/v²) is always solvable.
+  const grenadeSpeed = 2 * randInt(rand, 9, 12) // 18..24 m/s
+  const reach = maxRange(grenadeSpeed)
+  const grenadeDistance = Math.round(reach * (0.3 + rand() * 0.4)) // 30–70% of reach
+  // Phase 2 — rope swing: an exact-integer-answer setup.
+  const swing =
+    ROPE_SWINGS[Math.min(ROPE_SWINGS.length - 1, Math.floor(rand() * ROPE_SWINGS.length))]
+  // Phase 3 — shove off: ship-scale mass (×100) and a gentle separation accel so
+  // F = m·a lands on a tidy few-thousand-newton target.
+  const pirateShipMass = randInt(rand, 60, 120) * 100 // 6000..12000 kg
+  const separationAccel = randInt(rand, 1, 3) / 2 // 0.5, 1.0, or 1.5 m/s²
+  return {
+    kind: 'boarding',
+    grenadeDistance,
+    grenadeSpeed,
+    grenadeTolerance: randInt(rand, 6, 10),
+    ropeRadius: swing.radius,
+    ropeBreakAccel: swing.accel,
+    ropeTolerance: 2,
+    pirateShipMass,
+    separationAccel,
+    shoveTolerance: randInt(rand, 200, 400),
+    baseLoot: randInt(rand, 6, 12),
+    lootMultiplierPct: randInt(rand, 150, 210),
+    hullDamagePct: randInt(rand, 12, 18),
+    // Fumbling a phase hurts: a hefty extra hull hit per miss (scaling with
+    // ship tier) so botching the melee can genuinely cost the voyage.
+    missDamage: 12 + stage * 4,
   }
 }
 

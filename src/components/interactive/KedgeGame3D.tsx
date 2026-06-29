@@ -310,7 +310,9 @@ export default function KedgeGame3D({
         far: 'Too much pull — you crash into the dock!',
       }}
       resultSuffix={(r) =>
-        `Total force ${r.value >= 0 ? '+' : ''}${r.value} N toward the dock.`
+        r.status === 'hit'
+          ? `Total force ${r.value >= 0 ? '+' : ''}${r.value} N toward the dock.`
+          : ''
       }
       cameraInit={[-26, 28, 54]}
       renderScene={(sceneProps) => (

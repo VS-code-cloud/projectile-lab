@@ -36,7 +36,9 @@ export interface ShipStats {
 export function shipStatsFor(stage: number): ShipStats {
   const clamped = clampStage(stage)
   const upgrade = UPGRADES[clamped]
-  const cannonMuzzleSpeed = 28 + clamped * 2
+  // Cannons fire at ~80 m/s, giving a flat-ground reach of v²/g ≈ 653 m at
+  // stage 0 (the practical "combat range"); each upgrade extends it a little.
+  const cannonMuzzleSpeed = 80 + clamped * 4
 
   return {
     capacity: upgrade.capacity,

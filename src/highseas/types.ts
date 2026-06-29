@@ -1,10 +1,15 @@
 import type {
+  CargoGood,
+  CargoHold,
   HighSeasPosition,
   HighSeasRoute,
   HighSeasSave,
 } from '../firebase/firestore'
 
-export type { HighSeasPosition, HighSeasRoute, HighSeasSave }
+export type { CargoGood, CargoHold, HighSeasPosition, HighSeasRoute, HighSeasSave }
+
+/** A per-good change to the hold: loot is positive, jettison negative. */
+export type CargoDelta = Partial<CargoHold>
 
 /** A port the player can sail to and trade cargo at. */
 export interface Town {
@@ -13,8 +18,8 @@ export interface Town {
   /** Normalized map position in [0, 1] (x = west→east, y = north→south). */
   x: number
   y: number
-  /** Coins paid per unit of cargo sold here. */
-  buyRate: number
+  /** Coins paid per unit of each good sold here (rates differ by port). */
+  buyRates: Record<CargoGood, number>
 }
 
 /** A cargo-hold + engine upgrade tier. */
@@ -32,7 +37,12 @@ export interface UpgradeTier {
 }
 
 /** The kinds of encounter that can occur while sailing a route. */
-export type EncounterKind = 'pirate' | 'navy' | 'overboard' | 'whirlpool'
+export type EncounterKind =
+  | 'pirate'
+  | 'navy'
+  | 'overboard'
+  | 'whirlpool'
+  | 'boarding'
 
 /** Attack a pirate via the 2D cannon (projectile) challenge. */
 export interface PirateEncounter {
@@ -92,12 +102,56 @@ export interface WhirlpoolEncounter {
   damage: number
 }
 
+/**
+ * Repel a pirate boarding party in melee — a three-phase challenge that combines
+ * three physics lessons: a thrown powder grenade (2D projectile), a boarder
+ * swinging aboard on a rope (uniform circular motion), and shoving off the
+ * grappled pirate hull after looting it (Newton's second law). You always fight
+ * through all three one-shot phases; winning grants a loot multiplier that beats
+ * firing on the pirate, but a percentage hull hit is guaranteed and grows with
+ * each phase missed.
+ */
+export interface BoardingEncounter {
+  kind: 'boarding'
+  // Phase 1 — grenade toss (projectile R = v² sin(2θ)/g).
+  /** Distance to the boarding party the grenade must land on (m). */
+  grenadeDistance: number
+  /** Throw speed of the grenade (m/s). */
+  grenadeSpeed: number
+  /** Landing tolerance band (m). */
+  grenadeTolerance: number
+  // Phase 2 — rope-swing snap (circular motion a = v²/r).
+  /** Length of the boarder's swing rope (m). */
+  ropeRadius: number
+  /** Centripetal acceleration at which the fraying rope snaps (m/s²). */
+  ropeBreakAccel: number
+  /** Acceleration tolerance band (m/s²). */
+  ropeTolerance: number
+  // Phase 3 — shove off the grappled ship (Newton's 2nd law F = m·a).
+  /** Mass of the grappled pirate hull to push off (kg). */
+  pirateShipMass: number
+  /** Separation acceleration to break the two hulls apart (m/s²). */
+  separationAccel: number
+  /** Push-force tolerance band (N). */
+  shoveTolerance: number
+  // Economy
+  /** Base cargo (same 6–12 roll as a cannon kill) before the boarding multiplier. */
+  baseLoot: number
+  /** Loot multiplier as a percent (>100); applied to baseLoot so it beats firing. */
+  lootMultiplierPct: number
+  /** Guaranteed hull damage as a percent of hull max, taken even on a clean sweep. */
+  hullDamagePct: number
+  /** Extra hull damage (HP) added for each phase the player gets wrong. */
+  missDamage: number
+}
+
 /** Any sea encounter, discriminated by `kind`. */
 export type Encounter =
   | PirateEncounter
   | NavyEncounter
   | OverboardEncounter
   | WhirlpoolEncounter
+  | BoardingEncounter
 
 /** The consequence of resolving an encounter, applied to the save. */
 export interface EncounterResult {
@@ -105,8 +159,8 @@ export interface EncounterResult {
   won: boolean
   /** Direct coin delta (selling looted cargo at a town is separate). */
   coins: number
-  /** Cargo delta: positive = loot gained, negative = jettisoned. */
-  cargo: number
+  /** Per-good cargo change: positive = loot gained, negative = jettisoned. */
+  cargo: CargoDelta
   /** Hull damage taken (>= 0). */
   damage: number
   /**

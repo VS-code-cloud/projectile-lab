@@ -1,12 +1,19 @@
 import { describe, expect, it } from 'vitest'
 import { TOWNS, UPGRADES } from '../highseas/constants'
-import { buyUpgrade, canAfford, sellAllCargo } from '../highseas/economy'
+import {
+  buyCargo,
+  buyUpgrade,
+  canAfford,
+  maxBuyable,
+  sellAllCargo,
+} from '../highseas/economy'
+import { capacityFor } from '../highseas/upgrades'
 import type { HighSeasSave } from '../highseas/types'
 
 function makeSave(overrides: Partial<HighSeasSave> = {}): HighSeasSave {
   return {
     coins: 0,
-    cargo: 0,
+    cargo: { rum: 0, spice: 0 },
     upgradeStage: 0,
     hullHp: 100,
     townId: TOWNS[0].id,
@@ -17,13 +24,74 @@ function makeSave(overrides: Partial<HighSeasSave> = {}): HighSeasSave {
 }
 
 describe('sellAllCargo', () => {
-  it('converts cargo to coins at town buyRate and zeroes cargo', () => {
+  it('converts each good to coins at the town per-good rates and empties the hold', () => {
     const town = TOWNS[0]
-    const save = makeSave({ cargo: 10 })
+    const save = makeSave({ cargo: { rum: 10, spice: 4 } })
     const result = sellAllCargo(save, town)
-    expect(result.coins).toBe(10 * town.buyRate)
-    expect(result.cargo).toBe(0)
+    expect(result.coins).toBe(10 * town.buyRates.rum + 4 * town.buyRates.spice)
+    expect(result.cargo).toEqual({ rum: 0, spice: 0 })
     expect(result.townId).toBe(save.townId)
+  })
+
+  it('values the same hold differently at specialist ports', () => {
+    const hold = { rum: 10, spice: 10 }
+    const tortuga = TOWNS.find((t) => t.id === 'tortuga')!
+    const nassau = TOWNS.find((t) => t.id === 'nassau')!
+    const atTortuga = sellAllCargo(makeSave({ cargo: { ...hold } }), tortuga).coins
+    const atNassau = sellAllCargo(makeSave({ cargo: { ...hold } }), nassau).coins
+    // Tortuga pays more for rum, Nassau more for spice — equal totals here, but
+    // a rum-heavy hold should beat Nassau at Tortuga.
+    const rumHeavy = { rum: 20, spice: 0 }
+    expect(sellAllCargo(makeSave({ cargo: rumHeavy }), tortuga).coins).toBeGreaterThan(
+      sellAllCargo(makeSave({ cargo: rumHeavy }), nassau).coins,
+    )
+    expect(atTortuga).toBe(atNassau)
+  })
+})
+
+describe('buyCargo', () => {
+  it('adds the good and deducts coins at the town rate', () => {
+    const town = TOWNS[0]
+    const save = makeSave({ coins: 1000 })
+    const result = buyCargo(save, town, 'rum', 3)
+    expect(result.cargo.rum).toBe(3)
+    expect(result.coins).toBe(1000 - 3 * town.buyRates.rum)
+  })
+
+  it('caps the purchase at what the player can afford', () => {
+    const town = TOWNS[0]
+    const save = makeSave({ coins: town.buyRates.spice * 2 })
+    const result = buyCargo(save, town, 'spice', 99)
+    expect(result.cargo.spice).toBe(2)
+    expect(result.coins).toBe(0)
+  })
+
+  it('caps the purchase at remaining hold capacity', () => {
+    const town = TOWNS[0]
+    const cap = capacityFor(0)
+    const save = makeSave({ coins: 1_000_000, cargo: { rum: cap - 1, spice: 0 } })
+    const result = buyCargo(save, town, 'rum', 50)
+    expect(result.cargo.rum).toBe(cap)
+    expect(maxBuyable(result, town, 'rum')).toBe(0)
+  })
+
+  it('is a no-op when nothing can be bought', () => {
+    const town = TOWNS[0]
+    const save = makeSave({ coins: 0 })
+    expect(buyCargo(save, town, 'rum', 5)).toBe(save)
+  })
+
+  it('enables a buy-low/sell-high loop across ports', () => {
+    const tortuga = TOWNS.find((t) => t.id === 'tortuga')!
+    const nassau = TOWNS.find((t) => t.id === 'nassau')!
+    // Rum is cheap at Nassau, dear at Tortuga.
+    const bought = buyCargo(makeSave({ coins: 1000 }), nassau, 'rum', 10)
+    const spent = 1000 - bought.coins
+    const sold = sellAllCargo(bought, tortuga)
+    expect(sold.coins).toBeGreaterThan(1000)
+    expect(sold.coins - 1000).toBe(
+      10 * tortuga.buyRates.rum - spent,
+    )
   })
 })
 

@@ -66,5 +66,9 @@ export function rollEncounter(rand: () => number, stage: number): Encounter {
         tolerance: 2,
         damage: randInt(rand, 20, 30),
       }
+    default:
+      // `pickKind` only draws the weighted kinds above; boarding is triggered by
+      // closing on an open-sea pirate contact, not this route roll.
+      throw new Error(`Unhandled encounter kind: ${kind}`)
   }
 }

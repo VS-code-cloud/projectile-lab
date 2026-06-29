@@ -33,6 +33,9 @@ const MaelstromHarness = import.meta.env.DEV
 const HighSeasHarness = import.meta.env.DEV
   ? lazy(() => import('./pages/HighSeasHarness'))
   : null
+const BoardingHarness = import.meta.env.DEV
+  ? lazy(() => import('./pages/BoardingHarness'))
+  : null
 
 /**
  * Wraps the lesson player with a key on the lesson uid so navigating between
@@ -156,6 +159,9 @@ export default function App() {
           )}
           {HighSeasHarness && (
             <Route path="/dev/high-seas" element={<HighSeasHarness />} />
+          )}
+          {BoardingHarness && (
+            <Route path="/dev/boarding" element={<BoardingHarness />} />
           )}
         </Routes>
       </AnimatePresence>

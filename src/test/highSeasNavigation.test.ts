@@ -4,6 +4,7 @@ import {
   advanceAutonavProgress,
   applyShipControls,
   approachPosition,
+  approachToStandoff,
   autonavPosition,
   clampPosition,
   displayedSpeedMetersPerSecond,
@@ -225,6 +226,37 @@ describe('approachPosition', () => {
 
   it('returns the target when already there (no division by zero)', () => {
     const moved = approachPosition({ x: 0.5, y: 0.5 }, { x: 0.5, y: 0.5 }, 0.1)
+    expect(moved).toEqual({ x: 0.5, y: 0.5 })
+  })
+})
+
+describe('approachToStandoff', () => {
+  it('steps toward the target but never crosses the standoff ring', () => {
+    // From 1.0 away, a 0.5 step toward standoff 0.2 lands at 0.5 (still outside).
+    const moved = approachToStandoff({ x: 0, y: 0 }, { x: 1, y: 0 }, 0.5, 0.2)
+    expect(moved.x).toBeCloseTo(0.5, 6)
+    expect(moved.y).toBeCloseTo(0, 6)
+  })
+
+  it('stops exactly at the standoff ring instead of overshooting onto the target', () => {
+    // Distance 1.0, standoff 0.2: a huge step still only closes to 0.2 away.
+    const moved = approachToStandoff({ x: 0, y: 0 }, { x: 1, y: 0 }, 10, 0.2)
+    expect(moved.x).toBeCloseTo(0.8, 6)
+    expect(moved.y).toBeCloseTo(0, 6)
+  })
+
+  it('holds position when already at or inside the standoff ring', () => {
+    const inside = approachToStandoff({ x: 0.9, y: 0 }, { x: 1, y: 0 }, 10, 0.2)
+    expect(inside).toEqual({ x: 0.9, y: 0 })
+  })
+
+  it('never pushes back out when closer than the standoff ring', () => {
+    const veryClose = approachToStandoff({ x: 0.99, y: 0 }, { x: 1, y: 0 }, 10, 0.2)
+    expect(veryClose).toEqual({ x: 0.99, y: 0 })
+  })
+
+  it('returns the source when already on the target (no division by zero)', () => {
+    const moved = approachToStandoff({ x: 0.5, y: 0.5 }, { x: 0.5, y: 0.5 }, 0.1, 0.2)
     expect(moved).toEqual({ x: 0.5, y: 0.5 })
   })
 })

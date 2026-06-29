@@ -1,13 +1,19 @@
 import { describe, expect, it } from 'vitest'
 import { STARTING_TOWN_ID, TOWNS } from '../highseas/constants'
 import { capacityFor, hullMaxFor } from '../highseas/upgrades'
-import { applyResult, normalizeHighSeasSave, startVoyage } from '../highseas/voyage'
+import type { HighSeasSave } from '../highseas/types'
+import {
+  applyResult,
+  normalizeHighSeasSave,
+  startVoyage,
+  wouldSink,
+} from '../highseas/voyage'
 
 describe('startVoyage', () => {
   it('returns fresh save with defaults', () => {
     const save = startVoyage()
     expect(save.coins).toBe(0)
-    expect(save.cargo).toBe(0)
+    expect(save.cargo).toEqual({ rum: 0, spice: 0 })
     expect(save.upgradeStage).toBe(0)
     expect(save.hullHp).toBe(hullMaxFor(0))
     expect(save.townId).toBe(STARTING_TOWN_ID)
@@ -19,7 +25,9 @@ describe('startVoyage', () => {
 })
 
 describe('normalizeHighSeasSave', () => {
-  it('adds open-world fields to older saves', () => {
+  it('adds open-world fields and migrates legacy numeric cargo', () => {
+    // Older saves stored `cargo` as a single number; normalize migrates it into
+    // the two-good hold shape (treated as rum).
     const legacy = {
       coins: 12,
       cargo: 3,
@@ -28,13 +36,14 @@ describe('normalizeHighSeasSave', () => {
       townId: STARTING_TOWN_ID,
       seed: 42,
       status: 'docked' as const,
-    }
+    } as unknown as HighSeasSave
 
     const save = normalizeHighSeasSave(legacy)
 
     expect(save.location).toEqual({ x: TOWNS[0].x, y: TOWNS[0].y })
     expect(save.route).toBeNull()
     expect(save.coins).toBe(12)
+    expect(save.cargo).toEqual({ rum: 3, spice: 0 })
   })
 })
 
@@ -45,10 +54,10 @@ describe('applyResult', () => {
     const result = applyResult(save, {
       won: true,
       coins: 0,
-      cargo: cap + 50,
+      cargo: { rum: cap + 50 },
       damage: 0,
     })
-    expect(result.cargo).toBe(cap)
+    expect(result.cargo).toEqual({ rum: cap, spice: 0 })
   })
 
   it('floors coins at 0', () => {
@@ -56,7 +65,7 @@ describe('applyResult', () => {
     const result = applyResult(save, {
       won: false,
       coins: -50,
-      cargo: 0,
+      cargo: {},
       damage: 0,
     })
     expect(result.coins).toBe(0)
@@ -67,7 +76,7 @@ describe('applyResult', () => {
     const result = applyResult(save, {
       won: false,
       coins: 0,
-      cargo: 0,
+      cargo: {},
       damage: 25,
     })
     expect(result.hullHp).toBe(0)
@@ -79,7 +88,7 @@ describe('applyResult', () => {
     const result = applyResult(save, {
       won: false,
       coins: 0,
-      cargo: 0,
+      cargo: {},
       damage: 999,
       survivable: true,
     })
@@ -92,11 +101,56 @@ describe('applyResult', () => {
     const result = applyResult(save, {
       won: false,
       coins: 0,
-      cargo: 0,
+      cargo: {},
       damage: 5,
       survivable: true,
     })
     expect(result.hullHp).toBe(0)
     expect(result.status).toBe('sunk')
+  })
+})
+
+describe('wouldSink', () => {
+  it('is true when a non-survivable hit drops hull to 0 or below', () => {
+    const save = { ...startVoyage(), hullHp: 20, status: 'sailing' as const }
+    expect(wouldSink(save, { won: false, coins: 0, cargo: {}, damage: 25 })).toBe(
+      true,
+    )
+  })
+
+  it('is false for a survivable hazard even when damage exceeds the hull', () => {
+    // The user requirement: failing a whirlpool or escaping the navy must
+    // damage but NOT destroy the ship. A raw `hull - damage <= 0` check would
+    // wrongly end the voyage here; wouldSink must mirror applyResult's floor.
+    const save = { ...startVoyage(), hullHp: 18, status: 'sailing' as const }
+    expect(
+      wouldSink(save, {
+        won: false,
+        coins: 0,
+        cargo: {},
+        damage: 26,
+        survivable: true,
+      }),
+    ).toBe(false)
+  })
+
+  it('is false when damage leaves hull above 0', () => {
+    const save = { ...startVoyage(), hullHp: 100, status: 'sailing' as const }
+    expect(wouldSink(save, { won: false, coins: 0, cargo: {}, damage: 30 })).toBe(
+      false,
+    )
+  })
+
+  it('agrees with applyResult about the resulting sunk status', () => {
+    const save = { ...startVoyage(), hullHp: 10, status: 'sailing' as const }
+    for (const result of [
+      { won: false, coins: 0, cargo: {}, damage: 10 },
+      { won: false, coins: 0, cargo: {}, damage: 9 },
+      { won: false, coins: 0, cargo: {}, damage: 999, survivable: true },
+    ]) {
+      expect(wouldSink(save, result)).toBe(
+        applyResult(save, result).hullHp <= 0,
+      )
+    }
   })
 })

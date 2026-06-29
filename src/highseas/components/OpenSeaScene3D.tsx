@@ -1,4 +1,5 @@
-import { memo, useEffect, useMemo, useRef } from 'react'
+import { memo, Suspense, useEffect, useMemo, useRef } from 'react'
+import type { ReactNode } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { Sparkles } from '@react-three/drei'
 import * as THREE from 'three'
@@ -9,11 +10,15 @@ import {
   NavalEnvironment,
   Ship,
 } from '../../components/interactive/naval'
+import { newAssetsEnabled } from '../assets'
+import { AssetErrorBoundary } from './AssetErrorBoundary'
+import { AssetShip } from './AssetShip'
+import { AssetIslandDecor } from './AssetIslandDecor'
+import { AssetSky } from './AssetSky'
 import {
   headingToMovementVector,
   headingToRenderRotationDeg,
   mapPositionPercent,
-  MAX_SAIL_SPEED,
   WORLD_DISTANCE_METERS,
 } from '../navigation'
 import {
@@ -24,7 +29,6 @@ import {
 } from '../graphicsQuality'
 import { SeaPostFx } from './SeaPostFx'
 import { SeaWater } from './SeaWater'
-import { SeaWake } from './SeaWake'
 import type { HighSeasPosition, Town } from '../types'
 
 export interface SeaContactView {
@@ -54,6 +58,11 @@ export interface OpenSeaSimRefs {
    * membership — which ships exist — and changes rarely, on spawn/fight/moor).
    */
   contacts: { current: SeaContactView[] }
+  /**
+   * Player-adjustable camera field of view (degrees). Read each frame and applied
+   * to the camera, so the FOV slider never re-renders the memoized canvas.
+   */
+  fov: { current: number }
 }
 
 export interface OpenSeaFireControl {
@@ -122,17 +131,27 @@ const SUN_DIR: [number, number, number] = [-70, 48, 96]
 // Foam-fleck tile size (render units) used to convey motion over open water.
 const SPARKLE_TILE = 240
 // Chase-camera framing: distance behind the heading and height above the ship.
-const CAMERA_BACK = 34
-const CAMERA_HEIGHT = 20
+// Pulled back + raised so the whole ship — bow to stern — fits in the taller
+// view (see the canvas height below), rather than cropping the ends.
+const CAMERA_BACK = 44
+const CAMERA_HEIGHT = 27
+// Ship render scale — doubled from the original tuning (player 0.92, contact
+// 0.72) so approaching ships read clearly against the very large world.
+const PLAYER_SHIP_SCALE = 1.84
+const CONTACT_SHIP_SCALE = 1.44
+// Camera field-of-view bounds for the in-scene slider (degrees).
+export const FOV_MIN = 55
+export const FOV_MAX = 120
+export const FOV_DEFAULT = 75
 
 // Stable Canvas-level config. These MUST keep a constant reference so R3F never
 // reconfigures the renderer (re-apply camera, setPixelRatio/resize) on a parent
 // re-render, which would reallocate the drawing buffer and flicker the canvas.
 const CAMERA_PROPS = {
   position: [0, CAMERA_HEIGHT, CAMERA_BACK] as [number, number, number],
-  // Wider field of view so more of the open sea and the (now much larger)
-  // islands fit on screen, reinforcing the sense of a big world.
-  fov: 68,
+  // Initial field of view; the player can widen/narrow it at runtime via the
+  // FOV slider (applied to the camera each frame from `sim.fov`).
+  fov: FOV_DEFAULT,
   // Pull the near plane out and the far plane in (the horizon is fogged by
   // FOG_FAR long before `far` anyway): a tighter depth range hugely improves
   // z-buffer precision, which removes the z-fighting "flicker" on the
@@ -207,6 +226,74 @@ function headingRotationY(deg: number): number {
   return THREE.MathUtils.degToRad(headingToRenderRotationDeg(deg))
 }
 
+/** Apply a field-of-view (degrees) to a perspective camera, if it changed. */
+function applyCameraFov(camera: THREE.Camera, fov: number): void {
+  const cam = camera as THREE.PerspectiveCamera
+  if (cam.isPerspectiveCamera && cam.fov !== fov) {
+    cam.fov = fov
+    cam.updateProjectionMatrix()
+  }
+}
+
+interface ShipModelProps {
+  hd: boolean
+  scale: number
+  float?: boolean
+  animate?: boolean
+  hullColor?: string
+  sailColor?: string
+  flag?: boolean
+  /** Hull tint for the glTF ship (used to read navy vs pirate). */
+  tint?: string
+}
+
+/**
+ * Renders either the original procedural `Ship` or the CC0 glTF ship, picked by
+ * the HD-assets flag. The glTF path is wrapped in Suspense + an error boundary
+ * whose fallback is the SAME procedural ship, so the scene looks correct while
+ * the model loads and degrades gracefully if it ever fails — the UI works
+ * identically with or without the downloaded assets.
+ */
+function ShipModel({
+  hd,
+  scale,
+  float,
+  animate,
+  hullColor,
+  sailColor,
+  flag,
+  tint,
+}: ShipModelProps) {
+  const procedural = (
+    <Ship
+      scale={scale}
+      float={float}
+      animate={animate}
+      hullColor={hullColor}
+      sailColor={sailColor}
+      flag={flag}
+    />
+  )
+  if (!hd) return procedural
+  return (
+    <AssetErrorBoundary fallback={procedural}>
+      <Suspense fallback={procedural}>
+        <AssetShip scale={scale} float={float} animate={animate} tint={tint} />
+      </Suspense>
+    </AssetErrorBoundary>
+  )
+}
+
+/** Gate + Suspense + error-boundary wrapper for an HD-only asset subtree. */
+function HdAssets({ hd, children }: { hd: boolean; children: ReactNode }) {
+  if (!hd) return null
+  return (
+    <AssetErrorBoundary fallback={null}>
+      <Suspense fallback={null}>{children}</Suspense>
+    </AssetErrorBoundary>
+  )
+}
+
 // Island elevation profile (render units). A sandy base frustum rises from below
 // the waterline to a grassy hill topped by a flat plateau where the town sits.
 // Giving the island real volume (instead of a flat disc) means the buildings
@@ -216,7 +303,7 @@ function headingRotationY(deg: number): number {
 const ISLAND_PLATEAU_Y = 300
 const ISLAND_PLATEAU_RADIUS = ISLAND_RADIUS * 0.62
 
-function TownIsland() {
+function TownIsland({ hd }: { hd: boolean }) {
   return (
     <group>
       {/* Sandy beach base: widest underwater, breaking the surface as a shore. */}
@@ -256,6 +343,10 @@ function TownIsland() {
             </mesh>
           </group>
         ))}
+        {/* HD-only: CC0 palms + rocks share this building-space coordinate frame. */}
+        <HdAssets hd={hd}>
+          <AssetIslandDecor />
+        </HdAssets>
       </group>
     </group>
   )
@@ -289,6 +380,7 @@ interface SeaSceneProps {
   contacts: SeaContactView[]
   fireRangeMeters: number | null
   reducedMotion: boolean
+  hd: boolean
   onSimFrame: (deltaSeconds: number) => void
 }
 
@@ -298,6 +390,7 @@ function SeaScene({
   contacts,
   fireRangeMeters,
   reducedMotion,
+  hd,
   onSimFrame,
 }: SeaSceneProps) {
   const { camera, gl } = useThree()
@@ -325,6 +418,10 @@ function SeaScene({
     // Advance the entire open-sea simulation (mutates the sim refs in place and
     // lifts only discrete/throttled events to React). No per-frame React state.
     onSimFrameRef.current(delta)
+
+    // Apply the player's chosen field of view (from the slider) without ever
+    // re-rendering the memoized canvas — read straight off the sim ref.
+    applyCameraFov(camera, sim.fov.current)
 
     const player = sim.player.current
     const heading = sim.heading.current
@@ -397,6 +494,12 @@ function SeaScene({
         fogArgs={[HORIZON_COLOR, FOG_NEAR, FOG_FAR]}
       />
 
+      {/* HD-only: CC0 HDRI sky + image-based lighting. The fog still fades the
+          sea into the horizon, so the fogged water meets the sky seamlessly. */}
+      <HdAssets hd={hd}>
+        <AssetSky background />
+      </HdAssets>
+
       {/* Open sea: a large flat plane centered on the ship (origin) with a custom
           fog-enabled water shader (Fresnel deep/shallow, sun specular, foam),
           world-anchored so the surface streams past as the ship sails. */}
@@ -424,10 +527,7 @@ function SeaScene({
       {rangeRadius != null && <RangeCircle radius={rangeRadius} />}
 
       <group ref={playerShipRef} rotation={[0, headingRotationY(sim.heading.current), 0]}>
-        <Ship scale={0.92} float animate={!reducedMotion} />
-        {!reducedMotion && (
-          <SeaWake speed={sim.speed} maxSpeed={MAX_SAIL_SPEED} animate />
-        )}
+        <ShipModel hd={hd} scale={PLAYER_SHIP_SCALE} float animate={!reducedMotion} />
       </group>
 
       {contacts.map((contact) => {
@@ -443,11 +543,13 @@ function SeaScene({
           >
             {/* The outer group is turned to bear on the player each frame, so the
                 ship model stays at identity rotation here. */}
-            <Ship
-              scale={0.72}
+            <ShipModel
+              hd={hd}
+              scale={CONTACT_SHIP_SCALE}
               hullColor={pirate ? '#7c3f18' : '#334155'}
               sailColor={pirate ? '#d6c2a2' : '#e0f2fe'}
               flag={pirate}
+              tint={pirate ? undefined : '#9fb1cc'}
               float
               animate={!reducedMotion}
             />
@@ -463,7 +565,7 @@ function SeaScene({
           }}
           position={[relX(town, player0), 0, relZ(town, player0)]}
         >
-          <TownIsland />
+          <TownIsland hd={hd} />
         </group>
       ))}
     </>
@@ -489,6 +591,7 @@ interface SeaCanvasProps {
   contacts: SeaContactView[]
   fireRangeMeters: number | null
   reducedMotion: boolean
+  hd: boolean
   settings: GraphicsSettings
   onSimFrame: (deltaSeconds: number) => void
 }
@@ -505,6 +608,7 @@ const SeaCanvas = memo(function SeaCanvas({
   contacts,
   fireRangeMeters,
   reducedMotion,
+  hd,
   settings,
   onSimFrame,
 }: SeaCanvasProps) {
@@ -526,6 +630,7 @@ const SeaCanvas = memo(function SeaCanvas({
         contacts={contacts}
         fireRangeMeters={fireRangeMeters}
         reducedMotion={reducedMotion}
+        hd={hd}
         onSimFrame={onSimFrame}
       />
       <SeaPostFx settings={settings} />
@@ -545,6 +650,9 @@ export function OpenSeaScene3D(props: OpenSeaScene3DProps) {
     [animationsEnabled],
   )
   const settings = useMemo(() => graphicsSettings(quality), [quality])
+  // HD asset layer is opt-in (env var, or ?newAssets in dev). Stable per mount so
+  // the memoized canvas never re-renders on account of it.
+  const hd = useMemo(() => newAssetsEnabled(), [])
 
   if (DEV) {
     const d = devSim()
@@ -568,13 +676,14 @@ export function OpenSeaScene3D(props: OpenSeaScene3DProps) {
       {/* Back the canvas with the horizon color: the R3F canvas composites with
           an alpha channel, so if a frame is ever transiently transparent the
           sea/horizon color shows through seamlessly — never the dark page. */}
-      <div className="h-[420px] w-full" style={{ backgroundColor: HORIZON_COLOR }}>
+      <div className="h-[560px] w-full" style={{ backgroundColor: HORIZON_COLOR }}>
         <SeaCanvas
           sim={props.sim}
           towns={props.towns}
           contacts={props.contacts}
           fireRangeMeters={props.fireRangeMeters}
           reducedMotion={!animationsEnabled}
+          hd={hd}
           settings={settings}
           onSimFrame={props.onSimFrame}
         />

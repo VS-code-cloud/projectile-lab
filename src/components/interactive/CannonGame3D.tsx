@@ -441,7 +441,11 @@ export default function CannonGame3D({
   step,
   answered,
   onSubmit,
-}: StepComponentProps) {
+  onAttempt,
+}: StepComponentProps & {
+  /** Fires once per settled shot with its outcome (used to react to misses). */
+  onAttempt?: (status: ShotStatus) => void
+}) {
   const v = step.params?.v ?? 80
   const target = step.params?.target ?? 500
   const tolerance = step.params?.tolerance ?? 5
@@ -491,6 +495,7 @@ export default function CannonGame3D({
       submitted.current = true
       onSubmit([target])
     }
+    onAttempt?.(result.status)
   }
 
   function parseAngle(): number | null {
