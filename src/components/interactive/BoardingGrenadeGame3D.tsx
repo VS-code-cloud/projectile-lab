@@ -185,7 +185,7 @@ export default function BoardingGrenadeGame3D({
   const target = step.params?.target ?? 40
   const tolerance = step.params?.tolerance ?? 8
 
-  const idle = `Pirates are massing to board! Hurl a powder grenade onto their boarding party ${target} m down the rail. You lob it at v = ${v} m/s — set the launch angle so it lands right on them (within ${tolerance} m). Split the throw into its components vₓ = v·cosθ and v_y = v·sinθ: it stays airborne for t = 2·v_y/g (up then back down to deck height), and covers x = vₓ·t. Pick θ so x = ${target} m.`
+  const idle = `Pirates are massing to board! Hurl a powder grenade onto their boarding party ${target} m down the rail. You lob it at v = ${v} m/s — set the launch angle so it lands right on them (within ${tolerance} m). Split the throw into its components vₓ = v·cosθ and v_y = v·sinθ. Pick your angle so distance = ${target} m.`
 
   return (
     <NavalGameShell

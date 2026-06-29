@@ -106,12 +106,12 @@ export function NavyPursuit({
   const ladenMass = 200 + total * 40
   const cargoLost = Math.max(1, Math.min(total, Math.ceil(total * 0.35)))
   // Split the jettisoned units across the two goods proportionally to the hold.
-  const lostRum =
-    total > 0 ? Math.min(hold.rum, Math.round((cargoLost * hold.rum) / total)) : 0
-  const lostSpice = Math.min(hold.spice, cargoLost - lostRum)
-  const lostShort = cargoLost - (lostRum + lostSpice)
-  const dropRum = Math.min(hold.rum, lostRum + Math.max(0, lostShort))
-  const jettisonDelta = { rum: -dropRum, spice: -lostSpice }
+  const lostSilk =
+    total > 0 ? Math.min(hold.silk, Math.round((cargoLost * hold.silk) / total)) : 0
+  const lostSpice = Math.min(hold.spice, cargoLost - lostSilk)
+  const lostShort = cargoLost - (lostSilk + lostSpice)
+  const dropSilk = Math.min(hold.silk, lostSilk + Math.max(0, lostShort))
+  const jettisonDelta = { silk: -dropSilk, spice: -lostSpice }
   // If the laden ship is already lighter than the escape keep-mass, it is fast
   // enough to outrun the navy without throwing anything overboard.
   const alreadyFast = ladenMass <= target

@@ -39,9 +39,9 @@ export function buyCargo(
   const price = town.buyRates[good]
   const hold = toHold(save.cargo)
   const cargo =
-    good === 'rum'
-      ? { rum: hold.rum + count, spice: hold.spice }
-      : { rum: hold.rum, spice: hold.spice + count }
+    good === 'silk'
+      ? { silk: hold.silk + count, spice: hold.spice }
+      : { silk: hold.silk, spice: hold.spice + count }
   return { ...save, coins: save.coins - count * price, cargo }
 }
 

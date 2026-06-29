@@ -35,7 +35,7 @@ export function ShipHUD({ save }: { save: HighSeasSave }) {
             </span>
           </span>
           <span className="mt-0.5 text-xs font-medium text-slate-500">
-            Cargo · <span className="num">{hold.rum}</span> rum ·{' '}
+            Cargo · <span className="num">{hold.silk}</span> silk ·{' '}
             <span className="num">{hold.spice}</span> spice
           </span>
           <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-slate-100">

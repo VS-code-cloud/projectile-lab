@@ -58,11 +58,11 @@ export interface HighSeasRoute {
 }
 
 /** The two tradeable cargo goods carried in the hold and sold at ports. */
-export type CargoGood = 'rum' | 'spice'
+export type CargoGood = 'silk' | 'spice'
 
 /** Quantities of each good currently in the hold. */
 export interface CargoHold {
-  rum: number
+  silk: number
   spice: number
 }
 
@@ -74,7 +74,7 @@ export interface CargoHold {
 export interface HighSeasSave {
   /** Banked coins — the score. */
   coins: number
-  /** Cargo carried in the hold, split by good (rum + spice ≤ capacity). */
+  /** Cargo carried in the hold, split by good (silk + spice ≤ capacity). */
   cargo: CargoHold
   /** Index into the upgrade table (0 = starting sloop). */
   upgradeStage: number
@@ -96,7 +96,7 @@ export interface HighSeasSave {
 export function emptyHighSeasSave(): HighSeasSave {
   return {
     coins: 0,
-    cargo: { rum: 0, spice: 0 },
+    cargo: { silk: 0, spice: 0 },
     upgradeStage: 0,
     hullHp: 100,
     townId: '',

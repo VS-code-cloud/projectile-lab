@@ -84,7 +84,7 @@ export function BoardingBattle({
   const loot = boardingLootFor(encounter)
   // The good plundered from their hold (deterministic per encounter).
   const lootGood: CargoGood =
-    (encounter.baseLoot + encounter.grenadeDistance) % 2 === 0 ? 'rum' : 'spice'
+    (encounter.baseLoot + encounter.grenadeDistance) % 2 === 0 ? 'silk' : 'spice'
 
   const grenadeStep = buildStep('boarding-grenade', 'BoardingGrenadeGame3D', {
     v: encounter.grenadeSpeed,

@@ -84,7 +84,7 @@ export function PirateBattle({
 
   // Which good this pirate is carrying as plunder (stable per encounter).
   const lootGood = useMemo(
-    () => (mulberry32(seed + encounter.distance + 3)() < 0.5 ? 'rum' : 'spice'),
+    () => (mulberry32(seed + encounter.distance + 3)() < 0.5 ? 'silk' : 'spice'),
     [seed, encounter.distance],
   )
 

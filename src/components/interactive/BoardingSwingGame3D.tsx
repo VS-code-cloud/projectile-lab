@@ -182,7 +182,7 @@ export default function BoardingSwingGame3D({
   const target = step.params?.target ?? 24
   const tolerance = step.params?.tolerance ?? 2
 
-  const idle = `A pirate swings across on a fraying rope (length r = ${radius} m). It snaps the instant the inward pull reaches a = ${target} m/s². Judge the swing speed v that hits that breaking acceleration so the rope parts and he drops into the sea. Circular motion: a = v²/r.`
+  const idle = `A pirate swings across on a fraying rope (length r = ${radius} m). It snaps the instant the inward pull reaches a = ${target} m/s². Judge the swing speed v that hits that breaking acceleration so the rope parts and he drops into the sea.`
 
   return (
     <NavalGameShell

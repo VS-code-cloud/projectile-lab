@@ -13,7 +13,7 @@ describe('startVoyage', () => {
   it('returns fresh save with defaults', () => {
     const save = startVoyage()
     expect(save.coins).toBe(0)
-    expect(save.cargo).toEqual({ rum: 0, spice: 0 })
+    expect(save.cargo).toEqual({ silk: 0, spice: 0 })
     expect(save.upgradeStage).toBe(0)
     expect(save.hullHp).toBe(hullMaxFor(0))
     expect(save.townId).toBe(STARTING_TOWN_ID)
@@ -27,7 +27,7 @@ describe('startVoyage', () => {
 describe('normalizeHighSeasSave', () => {
   it('adds open-world fields and migrates legacy numeric cargo', () => {
     // Older saves stored `cargo` as a single number; normalize migrates it into
-    // the two-good hold shape (treated as rum).
+    // the two-good hold shape (treated as silk).
     const legacy = {
       coins: 12,
       cargo: 3,
@@ -43,7 +43,7 @@ describe('normalizeHighSeasSave', () => {
     expect(save.location).toEqual({ x: TOWNS[0].x, y: TOWNS[0].y })
     expect(save.route).toBeNull()
     expect(save.coins).toBe(12)
-    expect(save.cargo).toEqual({ rum: 3, spice: 0 })
+    expect(save.cargo).toEqual({ silk: 3, spice: 0 })
   })
 })
 
@@ -54,10 +54,10 @@ describe('applyResult', () => {
     const result = applyResult(save, {
       won: true,
       coins: 0,
-      cargo: { rum: cap + 50 },
+      cargo: { silk: cap + 50 },
       damage: 0,
     })
-    expect(result.cargo).toEqual({ rum: cap, spice: 0 })
+    expect(result.cargo).toEqual({ silk: cap, spice: 0 })
   })
 
   it('floors coins at 0', () => {

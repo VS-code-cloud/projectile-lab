@@ -164,17 +164,17 @@ describe('winnability: heel reload', () => {
 describe('success resolutions via applyResult', () => {
   describe('pirate victory', () => {
     it('adds loot to cargo, applies damage, and keeps sailing when hull remains', () => {
-      const save = sailingSave({ cargo: { rum: 5, spice: 0 }, hullHp: 80 })
+      const save = sailingSave({ cargo: { silk: 5, spice: 0 }, hullHp: 80 })
       const encounter = buildSolvablePirate(42)
       const damage = 12
       const next = applyResult(save, {
         won: true,
         coins: 0,
-        cargo: { rum: encounter.loot },
+        cargo: { silk: encounter.loot },
         damage,
       })
       expect(next.cargo).toEqual({
-        rum: Math.min(capacityFor(0), 5 + encounter.loot),
+        silk: Math.min(capacityFor(0), 5 + encounter.loot),
         spice: 0,
       })
       expect(next.hullHp).toBe(save.hullHp - damage)
@@ -184,14 +184,14 @@ describe('success resolutions via applyResult', () => {
 
   describe('navy escape', () => {
     it('auto-escape leaves cargo and hull unchanged', () => {
-      const save = sailingSave({ cargo: { rum: 2, spice: 0 }, hullHp: 90 })
+      const save = sailingSave({ cargo: { silk: 2, spice: 0 }, hullHp: 90 })
       const next = applyResult(save, {
         won: true,
         coins: 0,
         cargo: {},
         damage: 0,
       })
-      expect(next.cargo).toEqual({ rum: 2, spice: 0 })
+      expect(next.cargo).toEqual({ silk: 2, spice: 0 })
       expect(next.hullHp).toBe(90)
       expect(next.status).toBe('sailing')
     })
@@ -209,16 +209,16 @@ describe('success resolutions via applyResult', () => {
         const lost = jettisonCargoLost(cargo)
         expect(lost).toBe(Math.max(1, Math.min(cargo, Math.ceil(cargo * 0.35))))
 
-        const save = sailingSave({ cargo: { rum: cargo, spice: 0 }, upgradeStage: stage })
+        const save = sailingSave({ cargo: { silk: cargo, spice: 0 }, upgradeStage: stage })
         const cap = capacityFor(stage)
         const next = applyResult(save, {
           won: true,
           coins: 0,
-          cargo: { rum: -lost },
+          cargo: { silk: -lost },
           damage: 0,
         })
         expect(next.cargo).toEqual({
-          rum: Math.max(0, Math.min(cap, cargo - lost)),
+          silk: Math.max(0, Math.min(cap, cargo - lost)),
           spice: 0,
         })
       }
@@ -243,7 +243,7 @@ describe('success resolutions via applyResult', () => {
 
   describe('mooring and whirlpool success', () => {
     it('leaves the save unchanged except status stays sailing', () => {
-      const save = sailingSave({ coins: 40, cargo: { rum: 8, spice: 0 }, hullHp: 70 })
+      const save = sailingSave({ coins: 40, cargo: { silk: 8, spice: 0 }, hullHp: 70 })
       const unchanged = applyResult(save, {
         won: true,
         coins: 0,
@@ -291,7 +291,7 @@ describe('failure resolutions and survivable rule', () => {
   })
 
   it('overboard miss leaves the save unchanged', () => {
-    const save = sailingSave({ coins: 22, cargo: { rum: 6, spice: 0 }, hullHp: 55 })
+    const save = sailingSave({ coins: 22, cargo: { silk: 6, spice: 0 }, hullHp: 55 })
     const result: EncounterResult = {
       won: false,
       coins: 0,

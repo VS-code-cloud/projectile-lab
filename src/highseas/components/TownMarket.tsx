@@ -25,7 +25,7 @@ export function TownMarket({ save, town, onSell, onBuy }: TownMarketProps) {
           {town.name} market
         </h2>
         <p className="mt-0.5 text-xs text-slate-500">
-          Trade rum and spice — this port's rates differ from the others.
+          Trade silk and spice — this port's rates differ from the others.
         </p>
       </div>
 

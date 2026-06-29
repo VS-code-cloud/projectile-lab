@@ -20,8 +20,8 @@ export default function BoardingHarness() {
       {result ? (
         <div className="card space-y-2 p-4">
           <p className="text-sm font-semibold text-slate-900">
-            Resolved: cargo +{(result.cargo.rum ?? 0) + (result.cargo.spice ?? 0)} (
-            {result.cargo.rum ?? 0} rum · {result.cargo.spice ?? 0} spice), hull damage{' '}
+            Resolved: cargo +{(result.cargo.silk ?? 0) + (result.cargo.spice ?? 0)} (
+            {result.cargo.silk ?? 0} silk · {result.cargo.spice ?? 0} spice), hull damage{' '}
             {result.damage}.
           </p>
           <button

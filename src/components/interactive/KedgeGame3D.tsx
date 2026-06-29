@@ -247,21 +247,18 @@ function KedgeScene({
           dir={[-1, 0, 0]}
           length={windLen}
           color="#ef4444"
-          label={`Wind ${windForce} N`}
         />
         <VectorArrow
           origin={[0, 7, 0]}
           dir={[1, 0, 0]}
           length={currentLen}
           color="#22d3ee"
-          label={`Current +${currentForce} N`}
         />
         <VectorArrow
           origin={[0, 7, 2]}
           dir={[1, 0, 0]}
           length={haulLen}
           color="#fbbf24"
-          label={phase === 'idle' ? 'Your pull ? N' : `Your pull +${committedInput} N`}
         />
       </group>
     </>

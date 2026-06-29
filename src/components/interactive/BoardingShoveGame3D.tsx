@@ -150,7 +150,7 @@ export default function BoardingShoveGame3D({
   const tolerance = step.params?.tolerance ?? 300
   const target = step.params?.target ?? mass * accelReq
 
-  const idle = `The loot's aboard, but the grapnels still bind you to the pirate hull (m = ${mass} kg) — shove off before they swarm back! Push so the two ships break apart at a = ${accelReq} m/s². Newton's second law: F = m·a.`
+  const idle = `The loot's aboard, but the grapnels still bind you to the pirate hull (m = ${mass} kg) — shove off before they swarm back! Push so the two ships break apart at a = ${accelReq} m/s².
 
   return (
     <NavalGameShell
